@@ -88,6 +88,13 @@ CHAIN_META = {
 }
 
 LIQ_MCAP_MIN = 0.30
+LP_LOCK_MIN = 0.01  # locked+burned share of LP; none → skip
+LP_DOMINATE_MAX = 0.30  # top unlocked LP holder
+BURN_LP_ADDRS = {
+    "0x0000000000000000000000000000000000000000",
+    "0x000000000000000000000000000000000000dead",
+    "0xdead000000000000000000000000000000000000",
+}
 MULTIPLIER_MILESTONES = (1.5, 2.0, 3.0, 5.0)
 ALERT_MAX_AGE_SEC = 24 * 3600
 FOLLOWUP_COOLDOWN_SEC = 30 * 60
@@ -238,22 +245,42 @@ def discord_webhook(url: str, content: str = "", embeds: list | None = None) -> 
         return None
 
 
+def _wallet_realized(o: dict) -> float:
+    for key in ("realized_pnl_usd", "pnlUsd", "pnl_usd", "gmgn_pnl_usd"):
+        v = _num(o.get(key))
+        if v is not None:
+            return v
+    return 0.0
+
+
+def _is_fomo_only(o: dict) -> bool:
+    srcs = [str(s) for s in (o.get("source_endpoints") or [])]
+    others = [s for s in srcs if s != "fomo_leaderboard"]
+    return (not others) and bool(srcs or o.get("fomo_handle"))
+
+
 def wallet_passes_filter(o: dict, min_realized: float) -> bool:
-    if bool(o.get("pass_pnl")):
-        return True
+    """Keep winners. FOMO-only uses leaderboard PnL (no win-rate)."""
+    rp = _wallet_realized(o)
+    if rp <= 0:
+        return False
+    if min_realized > 0 and rp <= min_realized:
+        return False
+    min_wr = float(os.environ.get("WATCH_MIN_WINRATE", "0.40"))
+    min_n = int(os.environ.get("WATCH_MIN_TRADES_FOR_WR", "10"))
+    wr = o.get("win_rate")
+    if wr is None:
+        wr = o.get("gmgn_winrate")
+    wrn = _num(wr)
     try:
-        if float(o.get("realized_pnl_usd") or 0) > min_realized:
-            return True
+        nt = int(o.get("n_trades") or o.get("trades") or 0)
     except (TypeError, ValueError):
-        pass
-    for key in ("pnl_usd", "gmgn_pnl_usd"):
-        if key in o and o[key] is not None:
-            try:
-                if float(o[key]) > 0:
-                    return True
-            except (TypeError, ValueError):
-                pass
-    return False
+        nt = 0
+    if _is_fomo_only(o) and wrn is None:
+        return True
+    if wrn is not None and nt >= min_n and wrn < min_wr:
+        return False
+    return True
 
 
 def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], int, bool]:
@@ -269,6 +296,9 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
             continue
         raw[addr] = o
     filtered = {a: o for a, o in raw.items() if wallet_passes_filter(o, min_realized)}
+    dropped = len(raw) - len(filtered)
+    if dropped:
+        print(f"watchlist drop losers={dropped} keep={len(filtered)} raw={len(raw)}")
     if not filtered:
         print(
             f"WARNING: watchlist filter emptied list (raw={len(raw)}); falling back to all",
@@ -849,6 +879,109 @@ def refresh_wallets_nansen(watch_path: Path, pages: int = 2) -> int:
     return 0
 
 
+
+def refresh_fomo_wallets(watch_path: Path) -> int:
+    """Weekly: 7d FOMO leaderboard → keep PnL+ EVM, drop fallen FOMO-only wallets."""
+    load_box_secrets(["FOMO_API_KEY"])
+    key = (os.environ.get("FOMO_API_KEY") or "").strip()
+    if not key:
+        print("refresh-fomo skip: no FOMO_API_KEY")
+        return 0
+    req = urllib.request.Request(
+        "https://api.fomoapi.io/v2/leaderboard/7d?limit=150",
+        headers={"Authorization": f"Bearer {key}", "Accept": "application/json", "User-Agent": "meme-discord-bot/2.0"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            body = json.loads(resp.read().decode() or "{}")
+            remain = resp.headers.get("x-credits-remaining")
+            cost = resp.headers.get("x-credits-cost")
+    except Exception as e:
+        print(f"refresh-fomo fail: {type(e).__name__}", file=sys.stderr)
+        return 1
+    traders = body.get("traders") or []
+    print(f"refresh-fomo traders={len(traders)} cost={cost} remain={remain}")
+    fomo_dir = ROOT / "fomo-wallets"
+    fomo_dir.mkdir(parents=True, exist_ok=True)
+    live: dict[str, dict] = {}
+    for tr in traders:
+        if not isinstance(tr, dict):
+            continue
+        handle = (tr.get("handle") or "").strip()
+        wallets = tr.get("wallets") or {}
+        evm = ((wallets.get("evm") if isinstance(wallets, dict) else "") or "").lower()
+        pnl = _num(tr.get("pnlUsd")) or 0.0
+        if not handle or pnl <= 0:
+            continue
+        rec = {
+            "handle": handle,
+            "displayName": tr.get("displayName"),
+            "window": "7d",
+            "pnlUsd": pnl,
+            "solana": wallets.get("solana") if isinstance(wallets, dict) else None,
+            "evm": evm if evm.startswith("0x") and len(evm) == 42 else "",
+            "source": "fomoapi_leaderboard",
+            "verified": tr.get("verified"),
+        }
+        live[handle.lower()] = rec
+    evm_path = fomo_dir / "wallets_evm.jsonl"
+    with evm_path.open("w", encoding="utf-8") as f:
+        for rec in live.values():
+            if rec.get("evm"):
+                f.write(json.dumps({"address": rec["evm"], "handle": rec["handle"], "displayName": rec.get("displayName"), "pnlUsd": rec["pnlUsd"], "solana": rec.get("solana"), "source": "fomo_leaderboard"}, ensure_ascii=False) + "\n")
+    lb_path = fomo_dir / "leaderboard.jsonl"
+    with lb_path.open("w", encoding="utf-8") as f:
+        for rec in live.values():
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+    existing: dict[str, dict] = {}
+    if watch_path.exists():
+        for line in watch_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            o = json.loads(line)
+            a = (o.get("address") or "").lower()
+            if a.startswith("0x"):
+                existing[a] = o
+    live_evm = {rec["evm"]: rec for rec in live.values() if rec.get("evm")}
+    now = datetime.now(timezone.utc).isoformat()
+    added = dropped = 0
+    # drop FOMO-only no longer on board / pnl+
+    for addr, o in list(existing.items()):
+        if not _is_fomo_only(o):
+            continue
+        if addr not in live_evm:
+            del existing[addr]
+            dropped += 1
+    for addr, rec in live_evm.items():
+        if addr in existing:
+            o = existing[addr]
+            srcs = list(o.get("source_endpoints") or [])
+            if "fomo_leaderboard" not in srcs:
+                srcs.append("fomo_leaderboard")
+            o["source_endpoints"] = srcs
+            o["fomo_handle"] = rec["handle"]
+            o["realized_pnl_usd"] = max(float(o.get("realized_pnl_usd") or 0), rec["pnlUsd"])
+            o["pass_pnl"] = True
+            continue
+        existing[addr] = {
+            "address": addr,
+            "address_label": rec["handle"],
+            "fomo_handle": rec["handle"],
+            "realized_pnl_usd": rec["pnlUsd"],
+            "pass_pnl": True,
+            "source_endpoints": ["fomo_leaderboard"],
+            "collected_at": now,
+        }
+        added += 1
+    watch_path.parent.mkdir(parents=True, exist_ok=True)
+    with watch_path.open("w", encoding="utf-8") as f:
+        for a in sorted(existing):
+            f.write(json.dumps(existing[a], ensure_ascii=False) + "\n")
+    print(f"refresh-fomo done watch={len(existing)} added={added} dropped_fomo={dropped}")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Signal detection
 # ---------------------------------------------------------------------------
@@ -968,6 +1101,36 @@ def fetch_dexscreener(ca: str, chain: str) -> dict:
     }
 
 
+
+def lp_from_goplus(info: dict) -> dict:
+    """LP lock/burn vs unlocked whale. percents from GoPlus are 0–1 fractions."""
+    holders = info.get("lp_holders") or []
+    if not isinstance(holders, list) or not holders:
+        return {"status": "fail", "reason": "lp_unknown", "locked_pct": None, "top_unlocked": None}
+    locked = 0.0
+    top_unlocked = 0.0
+    for h in holders:
+        if not isinstance(h, dict):
+            continue
+        pct = _num(h.get("percent")) or 0.0
+        addr = (h.get("address") or "").lower()
+        tag = (h.get("tag") or "").lower()
+        locked_flag = str(h.get("is_locked") or "0") in ("1", "true", "True")
+        is_burn = addr in BURN_LP_ADDRS or addr.endswith("dead") or "burn" in tag
+        is_lock = locked_flag or any(x in tag for x in ("lock", "uncx", "pink", "team.finance"))
+        if is_burn or is_lock:
+            locked += pct
+        elif pct > top_unlocked:
+            top_unlocked = pct
+    lock_min = float(os.environ.get("LP_LOCK_MIN", str(LP_LOCK_MIN)))
+    dom_max = float(os.environ.get("LP_DOMINATE_MAX", str(LP_DOMINATE_MAX)))
+    if locked < lock_min:
+        return {"status": "fail", "reason": "lp_unlocked", "locked_pct": locked, "top_unlocked": top_unlocked}
+    if top_unlocked >= dom_max:
+        return {"status": "fail", "reason": "lp_dominate", "locked_pct": locked, "top_unlocked": top_unlocked}
+    return {"status": "pass", "reason": None, "locked_pct": locked, "top_unlocked": top_unlocked}
+
+
 def fetch_goplus(ca: str, chain: str) -> dict:
     meta = CHAIN_META.get(chain, {})
     gid = meta.get("goplus_id")
@@ -1002,16 +1165,25 @@ def fetch_goplus(ca: str, chain: str) -> dict:
         sell_tax = sell_tax / 100.0
     high_tax = buy_tax >= 0.10 or sell_tax >= 0.10
 
-    if is_hp or cannot_sell or high_tax:
-        reasons = []
-        if is_hp:
-            reasons.append("honeypot")
-        if cannot_sell:
-            reasons.append("cannot_sell")
-        if high_tax:
-            reasons.append(f"high_tax(b={buy_tax:.0%}/s={sell_tax:.0%})")
-        return {"status": "fail", "reason": ",".join(reasons), "buy_tax": buy_tax, "sell_tax": sell_tax}
-    return {"status": "pass", "reason": None, "buy_tax": buy_tax, "sell_tax": sell_tax}
+    reasons = []
+    if is_hp:
+        reasons.append("honeypot")
+    if cannot_sell:
+        reasons.append("cannot_sell")
+    if high_tax:
+        reasons.append(f"high_tax(b={buy_tax:.0%}/s={sell_tax:.0%})")
+    lp = lp_from_goplus(info)
+    if lp.get("status") == "fail" and lp.get("reason"):
+        reasons.append(str(lp["reason"]))
+    if reasons:
+        return {
+            "status": "fail",
+            "reason": ",".join(reasons),
+            "buy_tax": buy_tax,
+            "sell_tax": sell_tax,
+            "lp": lp,
+        }
+    return {"status": "pass", "reason": None, "buy_tax": buy_tax, "sell_tax": sell_tax, "lp": lp}
 
 
 def safety_check(ca: str, chain: str) -> dict:
@@ -1040,7 +1212,8 @@ def safety_check(ca: str, chain: str) -> dict:
 
     ok = len(fail_reasons) == 0
     go_note = "goplus=skip" if go.get("status") == "skip" else f"goplus={go.get('status')}"
-    print(f"safety ca={ca[:10]}… ok={ok} ratio={ratio} {go_note} reasons={fail_reasons or ['ok']}")
+    lp = (go.get("lp") or {})
+    print(f"safety ca={ca[:10]}… ok={ok} ratio={ratio} {go_note} lp={lp.get('status')}:{lp.get('reason')} locked={lp.get('locked_pct')} reasons={fail_reasons or ['ok']}")
 
     if ok:
         ratio_txt = f"流動性/時価≈{ratio:.0%}" if ratio is not None else "流動性OK"
@@ -1065,6 +1238,12 @@ def safety_check(ca: str, chain: str) -> dict:
                 jp_bits.append("売却制限")
             elif "high_tax" in r:
                 jp_bits.append("手数料が高い")
+            elif "lp_unlocked" in r:
+                jp_bits.append("流動性がロックされていない")
+            elif "lp_dominate" in r:
+                jp_bits.append("LPが一部に偏っている")
+            elif "lp_unknown" in r:
+                jp_bits.append("LPロック不明")
             else:
                 jp_bits.append("検査NG")
         jp = "見送り（" + "・".join(jp_bits) + "）"
@@ -1211,6 +1390,12 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("売却制限")
         elif "high_tax" in rs:
             bits.append("手数料高")
+        elif "lp_unlocked" in rs:
+            bits.append("未ロック")
+        elif "lp_dominate" in rs:
+            bits.append("LP偏り")
+        elif "lp_unknown" in rs:
+            bits.append("LP不明")
         else:
             bits.append("検査NG")
     reason_jp = "・".join(bits) if bits else (safety.get("jp") or "見送り")
@@ -1640,6 +1825,7 @@ def main() -> int:
     p.add_argument("--loop", action="store_true", help="poll forever")
     p.add_argument("--test-webhook", action="store_true")
     p.add_argument("--refresh-wallets", action="store_true", help="Nansen pnl-leaderboard → wallets.jsonl (infrequent)")
+    p.add_argument("--refresh-fomo", action="store_true", help="FOMO 7d leaderboard → drop fallen FOMO-only wallets")
     p.add_argument("--paper-summary", action="store_true", help="Write paper_summary.md from logs/state")
     p.add_argument("--pages", type=int, default=2, help="legacy Nansen pages if NANSEN_FOR_TRADES=1")
     p.add_argument("--per-page", type=int, default=100, help="GMGN --limit / Nansen per_page")
@@ -1692,6 +1878,13 @@ def main() -> int:
             os.environ.get("WATCHLIST_PATH", str(default_watchlist_path(chain)))
         ).resolve()
         return refresh_wallets_nansen(watch_path, pages=max(1, args.pages))
+
+    if args.refresh_fomo:
+        chain = os.environ.get("CHAIN", "robinhood").strip().lower()
+        watch_path = Path(
+            os.environ.get("WATCHLIST_PATH", str(default_watchlist_path(chain)))
+        ).resolve()
+        return refresh_fomo_wallets(watch_path)
 
     if args.loop:
         poll = int(os.environ.get("POLL_SECONDS", "60"))

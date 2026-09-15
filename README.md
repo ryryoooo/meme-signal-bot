@@ -28,8 +28,9 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - 週次: `refresh-wallets.yml` → `python3 bot.py --refresh-wallets`（artifact）
 
 ## 投稿前ゲート
-- 監視財布: `pass_pnl` または実現損益>0
-- 安全: DexScreener **流動性/時価 ≥30%**。時価なしは見送り。GoPlus未対応はスキップ
+- 監視財布: 実現PnL>0。勝率データがある場合は <40%かつ10戦以上を除外（FOMO専任は週次PnL）
+- 安全: DexScreener **流動性/時価 ≥30%**。GoPlusで **LPロックorバーン**（未ロック見送り、LP上位が30%以上も見送り）。GoPlus未対応チェーンは契約/LP検査スキップ
+- 監視脱落: 実現PnL≤0、または勝率<40%かつ10戦以上。FOMO専任は勝率なし→週次リーダーPnLで入れ直し
 - 安全見送りは Discord に短い通知（1実行あたり最大3件）
 - 冷却: 既定 **2時間**（`COOLDOWN_SECONDS=7200`）
 

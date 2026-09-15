@@ -25,11 +25,20 @@ jobs:
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
         run: python3 bot.py --refresh-wallets --pages 2
 
+      - name: Refresh FOMO 7d board (drop fallen FOMO-only)
+        env:
+          FOMO_API_KEY: ${{ secrets.FOMO_API_KEY }}
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+        run: python3 bot.py --refresh-fomo
+
       - name: Upload wallets artifact
         uses: actions/upload-artifact@v4
         with:
           name: rh-wallets-jsonl
-          path: rh-wallets/wallets.jsonl
+          path: |
+            rh-wallets/wallets.jsonl
+            fomo-wallets/
           retention-days: 30
 
       # Prefer artifact over noisy commits; optional commit if small delta desired later.
