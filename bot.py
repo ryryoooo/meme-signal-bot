@@ -1450,57 +1450,79 @@ def strength_label(n: int, total_usd: float) -> tuple[str, int]:
     return "買いが重なった", 0x3498DB
 
 
-def build_embed(s: dict, chain: str, safety: dict, source_mode: str) -> dict:
+def _wallet_tag(w: dict, watch: dict[str, dict] | None) -> str:
+    """fomo | sm | both — for mixed Discord layout."""
+    src = (w.get("source") or "").lower()
+    addr = (w.get("address") or "").lower()
+    meta = (watch or {}).get(addr) or {}
+    srcs = [str(x) for x in (meta.get("source_endpoints") or [])]
+    has_fomo = src in ("fomo", "fomo_holders") or "fomo_leaderboard" in srcs or bool(meta.get("fomo_handle"))
+    has_sm = src in ("gmgn", "onchain", "nansen") or any(
+        x in srcs for x in ("pnl-leaderboard", "gmgn_cli", "gmgn_browser", "dex-trades")
+    )
+    if has_fomo and has_sm:
+        return "both"
+    if has_fomo:
+        return "fomo"
+    return "sm"
+
+
+def build_embed(
+    s: dict,
+    chain: str,
+    safety: dict,
+    source_mode: str,
+    watch: dict[str, dict] | None = None,
+) -> dict:
     meta = CHAIN_META.get(chain, {})
     chain_jp = meta.get("jp") or chain
     sym = s.get("symbol") or safety.get("symbol_hint") or "不明"
-    n = s["n"]
-    total_usd = sum(float(w.get("usd") or 0) for w in s["wallets"])
+    wallets = list(s.get("wallets") or [])
+    n = int(s.get("n") or len(wallets))
+    total_usd = sum(float(w.get("usd") or 0) for w in wallets)
+    tagged = [(w, _wallet_tag(w, watch)) for w in wallets]
+    n_fomo = sum(1 for _, k in tagged if k == "fomo")
+    n_sm = sum(1 for _, k in tagged if k == "sm")
+    n_both = sum(1 for _, k in tagged if k == "both")
+    mixed = (n_fomo + n_both) > 0 and (n_sm + n_both) > 0
+
     strength, color = strength_label(n, total_usd)
+    if mixed:
+        color = 0x9B59B6
+        mix = f"混合 FOMO{n_fomo + n_both} / スマート{n_sm + n_both}"
+    elif n_fomo and not n_sm:
+        color = 0xE67E22
+        mix = f"FOMO {n_fomo}人"
+    else:
+        mix = f"スマートウォレット {n_sm + n_both}人"
+
+    title = f"${sym} · {mix}"
+    if n >= 3:
+        title = f"{strength} · {title}"
 
     elapsed = int(s.get("elapsed") or 0)
-    if elapsed < 60:
-        when = f"約{elapsed}秒のあいだ"
+    if elapsed <= 0:
+        when = "いま"
+    elif elapsed < 60:
+        when = f"約{elapsed}秒"
     else:
-        when = f"約{elapsed // 60}分{elapsed % 60}秒のあいだ"
+        when = f"約{elapsed // 60}分"
 
-    srcs = {(w.get("source") or "") for w in s.get("wallets") or []}
-    has_fomo = "fomo" in srcs
-    has_gmgn = "gmgn" in srcs or source_mode in ("watchlist", "gmgn_cluster")
-    if source_mode == "gmgn_cluster":
-        who_jp = "GMGNスマートマネー（監視リスト外含む）"
-        desc_extra = f"出典: {who_jp}\n"
-    elif source_mode == "onchain":
-        who_jp = "オンチェーン（探索・限定）"
-        desc_extra = f"出典: {who_jp}\n"
-    elif has_fomo and has_gmgn:
-        who_jp = "監視中の勝ち財布（GMGN + FOMO）"
-        desc_extra = "出典: 監視リスト ∩ GMGNスマートマネー + FOMOリーダー\n"
-    elif source_mode == "fomo_holders" or "fomo_holders" in srcs:
-        who_jp = "FOMOリーダーの保有が重なった"
-        desc_extra = "出典: FOMOリーダー保有人数（買い1本＋既存ホルダー）\n"
-    elif has_fomo:
-        who_jp = "FOMOリーダーの勝ち財布"
-        desc_extra = "出典: FOMOリーダーボード（検証PnL+）\n"
-    else:
-        who_jp = "監視中の勝ち財布"
-        desc_extra = "出典: 監視リスト ∩ GMGNスマートマネー\n"
-
-    title = f"{strength}（{n}人）· ${sym}"
     ratio = safety.get("ratio")
     ratio_txt = f"{ratio:.0%}" if isinstance(ratio, (int, float)) else "—"
     description = (
-        f"{desc_extra}"
-        f"{chain_jp}で、{when}に{who_jp}が同じコインを購入しました。\n"
-        f"購入合計の目安: 約 ${total_usd:,.0f}\n"
-        f"安全チェック: {safety.get('jp') or '未実施'}"
+        f"{chain_jp} · {when}\n"
+        f"FOMO **{n_fomo}** · スマートウォレット **{n_sm}**"
+        + (f" · 両方 **{n_both}**" if n_both else "")
+        + f"\n安全: {safety.get('jp') or '未実施'}"
     )
 
     fields = [
-        {"name": "コントラクト", "value": f"`{s['ca']}`", "inline": False},
+        {"name": "内訳", "value": f"FOMO {n_fomo}人\nスマート {n_sm}人" + (f"\n両方 {n_both}人" if n_both else ""), "inline": True},
         {"name": "時価総額", "value": fmt_usd(safety.get("mcap_usd") or safety.get("fdv")), "inline": True},
         {"name": "流動性", "value": fmt_usd(safety.get("liq_usd")), "inline": True},
         {"name": "liq/mcap", "value": ratio_txt, "inline": True},
+        {"name": "コントラクト", "value": f"`{s['ca']}`", "inline": False},
     ]
 
     dex_slug = meta.get("dex_slug") or chain
@@ -1511,13 +1533,24 @@ def build_embed(s: dict, chain: str, safety: dict, source_mode: str) -> dict:
         link_lines.append(f"[エクスプローラー]({explorer_base}{s['ca']})")
     fields.append({"name": "リンク", "value": " · ".join(link_lines), "inline": False})
 
-    who_lines = []
-    for w in s["wallets"]:
-        short = w["address"][:6] + "…" + w["address"][-4:]
+    def line(w: dict) -> str:
+        addr = w.get("address") or ""
+        short = (addr[:6] + "…" + addr[-4:]) if len(addr) >= 10 else addr
         lab = (w.get("label") or "").strip()
         name = lab if lab and not lab.startswith("0x") else short
-        who_lines.append(f"• {name} · 約 ${float(w.get('usd') or 0):,.0f}")
-    fields.append({"name": "誰が買ったか", "value": "\n".join(who_lines)[:1000] or "—", "inline": False})
+        return f"• {name} · 約 ${float(w.get('usd') or 0):,.0f}"
+
+    fomo_lines = [line(w) for w, k in tagged if k == "fomo"]
+    sm_lines = [line(w) for w, k in tagged if k == "sm"]
+    both_lines = [line(w) for w, k in tagged if k == "both"]
+    if fomo_lines:
+        fields.append({"name": "FOMO", "value": "\n".join(fomo_lines)[:1000], "inline": False})
+    if sm_lines:
+        fields.append({"name": "スマートウォレット", "value": "\n".join(sm_lines)[:1000], "inline": False})
+    if both_lines:
+        fields.append({"name": "両方（FOMOかつ監視）", "value": "\n".join(both_lines)[:1000], "inline": False})
+    if not (fomo_lines or sm_lines or both_lines):
+        fields.append({"name": "誰が買ったか", "value": "—", "inline": False})
 
     return {
         "title": title[:256],
@@ -1928,7 +1961,7 @@ def run_once(args: argparse.Namespace) -> int:
             skipped += 1
             continue
 
-        embed = build_embed(s, chain, safety, source_mode)
+        embed = build_embed(s, chain, safety, source_mode, watch=watch)
         resp = discord_webhook(webhook, content="", embeds=[embed])
         msg_id = None
         if isinstance(resp, dict):
@@ -2071,7 +2104,7 @@ def test_fomo_holders_post() -> int:
         "wallets": wallets[:12],
     }
     safety = safety_check(ca, chain)
-    embed = build_embed(s, chain, safety, "fomo_holders")
+    embed = build_embed(s, chain, safety, "fomo_holders", watch=load_watchlist(default_watchlist_path(chain), 0)[0])
     embed["title"] = ("【仮投稿】" + (embed.get("title") or ""))[:256]
     embed["footer"] = {"text": "仮投稿・紙も実弾もなし・ホルダー重なりの見た目確認"}
     discord_webhook(webhook, content="", embeds=[embed])
