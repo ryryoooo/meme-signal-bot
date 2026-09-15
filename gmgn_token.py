@@ -350,7 +350,7 @@ def gmgn_security_checklist(sec: dict, chain: str) -> list[dict]:
 
 
 def checklist_all_ok(items: list[dict]) -> tuple[bool, list[str]]:
-    """True only when every applicable field is ok (all checkmarks). na ignored."""
+    """Legacy: True only when every applicable field is ok. Prefer checklist_no_danger."""
     fails: list[str] = []
     for it in items:
         st = it["status"]
@@ -359,6 +359,15 @@ def checklist_all_ok(items: list[dict]) -> tuple[bool, list[str]]:
         if st == "ok":
             continue
         fails.append(f"audit_{it['key']}:{st}:{it.get('detail') or ''}")
+    return (len(fails) == 0, fails)
+
+
+def checklist_no_danger(items: list[dict]) -> tuple[bool, list[str]]:
+    """Pass unless any checklist item is danger (🚫). warn/missing/ok/na do not fail the gate."""
+    fails: list[str] = []
+    for it in items:
+        if it["status"] == "danger":
+            fails.append(f"audit_{it['key']}:danger:{it.get('detail') or ''}")
     return (len(fails) == 0, fails)
 
 
@@ -443,8 +452,8 @@ def evaluate(
     checklist: list[dict] = []
     if sec:
         checklist = gmgn_security_checklist(parsed_sec, chain)
-        all_ok, audit_fails = checklist_all_ok(checklist)
-        if not all_ok:
+        no_danger, audit_fails = checklist_no_danger(checklist)
+        if not no_danger:
             fail.extend(audit_fails)
 
     hp = parsed_sec.get("honeypot") or ""
@@ -485,7 +494,7 @@ def evaluate(
     audit = _audit_checklist_jp(checklist, parsed_info)
     if ok:
         ratio_txt = f"流動性/時価≈{ratio:.0%}" if ratio is not None else "流動性OK"
-        jp = f"通過（{ratio_txt}・GMGN監査すべて✅）"
+        jp = f"通過（{ratio_txt}・危険項目なし）"
     else:
         jp_bits = []
         for r in fail:
