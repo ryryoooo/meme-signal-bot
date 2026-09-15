@@ -2,8 +2,8 @@ name: refresh-wallets
 
 on:
   schedule:
-    # Daily 10:00 JST = 01:00 UTC (GitHub schedule often skips — cron-job.org also kicks)
-    - cron: "0 1 * * *"
+    # Mon/Thu 10:00 JST = 01:00 UTC (cron-job.org kicks; save Nansen/FOMO credits)
+    - cron: "0 1 * * 1,4"
   workflow_dispatch: {}
 
 permissions:
@@ -46,7 +46,7 @@ jobs:
           NANSEN_FOR_TRADES: "0"
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
-        run: python3 bot.py --refresh-wallets --pages 2
+        run: python3 bot.py --refresh-wallets --pages 1
 
       - name: Collect — FOMO 7d board
         env:

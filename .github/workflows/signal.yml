@@ -79,13 +79,13 @@ jobs:
           WATCH_MIN_TRADES_FOR_WR: "10"
           GMGN_LIMIT: "100"
           FOMO_ENABLED: "1"
-          FOMO_POLL_SECONDS: "1500"
+          FOMO_POLL_SECONDS: "3600"
           FOMO_ALERT_LIMIT: "80"
           FOMO_HOLDERS: "1"
-          FOMO_HOLDERS_INTERVAL: "14400"
+          FOMO_HOLDERS_INTERVAL: "86400"
           FOMO_WATCH_PATH: fomo-wallets/wallets_evm.jsonl
           XBTSCOUT_ENABLED: "1"
-          XBTSCOUT_SCRAPE_SECONDS: "1800"
+          XBTSCOUT_SCRAPE_SECONDS: "7200"
           XBTSCOUT_MAX_TOKENS: "1"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json

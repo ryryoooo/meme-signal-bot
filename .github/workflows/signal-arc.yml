@@ -1,9 +1,7 @@
 name: meme-signal-arc
 
 on:
-  schedule:
-    # GitHub often skips */5 (thundering herd). Explicit offset minutes.
-    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+  # schedule disabled to save API/GHA minutes — enable manually when Arc is live
   workflow_dispatch: {}
 
 concurrency:
