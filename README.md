@@ -17,7 +17,11 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 
 ## チェーン
 - 既定: `CHAIN=robinhood` + `rh-wallets/wallets.jsonl`
-- 任意: `CHAIN=arc` + `arc-wallets/wallets.jsonl`（RHを壊さない）
+- Arc: `CHAIN=arc` + `arc-wallets/wallets.jsonl`（RHを壊さない）
+  - **Arc 公開メインネット開始: 2026-09-16**（JST）
+  - 定期ジョブ `signal-arc.yml`（`meme-signal-arc`）が RH と並列で `*/5` 稼働
+  - 状態は分離: `state-arc.json` / `paper_*_arc.*`（紙 $300 も RH と混ぜない）
+  - シグナルWebhookは `DISCORD_ARC_WEBHOOK_URL` 優先（未設定時は `DISCORD_WEBHOOK_URL`）
 
 ## Nansen
 - 定期ジョブでは dex-trades を呼ばない（`NANSEN_FOR_TRADES=0`）
@@ -33,8 +37,10 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 | Secret | 用途 |
 |--------|------|
 | `GMGN_API_KEY` | 定期ジョブ必須 |
-| `DISCORD_WEBHOOK_URL` | シグナル／安全見送り必須 |
+| `DISCORD_WEBHOOK_URL` | シグナル／安全見送り必須（RH。Arc未設定時のフォールバック） |
+| `DISCORD_ARC_WEBHOOK_URL` | Arcシグナル専用（推奨。未設定時は上にフォールバック） |
 | `DISCORD_PAPER_WEBHOOK_URL` | 紙トレード専用（未設定時はシグナル側にフォールバック） |
+| `DISCORD_ARC_PAPER` | Arc紙トレード専用（任意。未設定時は紙Webhookへ） |
 | `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
 
 秘密鍵・実弾キーは Actions に置かない。
@@ -51,8 +57,9 @@ python3 bot.py --paper-summary
 ```
 
 ## ワークフロー
-- `signal.yml`: `*/5` 本ポーリング + 紙マーク更新
-- `paper-summary.yml`: 週次（Sat 00:00 UTC ≈ Sun 09:00 JST）`0 0 * * 6`
+- `signal.yml`: RH `*/5` ポーリング + 紙マーク更新
+- `signal-arc.yml`: Arc `*/5` ポーリング + 分離紙状態（メインネット 2026-09-16 開始想定）
+- `paper-summary.yml`: 週次（Sat 00:00 UTC ≈ Sun 09:00 JST）`0 0 * * 6`（RH）
 - `refresh-wallets.yml`: 週次 Nansen 財布更新 → artifact
 
 ## 注意

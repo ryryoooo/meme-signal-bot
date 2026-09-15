@@ -1,0 +1,91 @@
+name: meme-signal-arc
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
+      - name: Configure GMGN env (no echo)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
+
+      - name: Restore state cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            state-arc.json
+            paper_log_arc.jsonl
+            paper_book_arc.jsonl
+            paper_summary_arc.md
+          key: meme-signal-arc-state-v1
+          restore-keys: |
+            meme-signal-arc-state-
+
+      - name: Resolve Arc watchlist path
+        id: wl
+        run: |
+          if [ -f arc-wallets/wallets_quality.jsonl ]; then
+            echo "path=arc-wallets/wallets_quality.jsonl" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=arc-wallets/wallets.jsonl" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run once (Arc signals + paper marks)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_ARC_WEBHOOK_URL || secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_ARC_WEBHOOK_URL: ${{ secrets.DISCORD_ARC_WEBHOOK_URL }}
+          DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}
+          DISCORD_ARC_PAPER: ${{ secrets.DISCORD_ARC_PAPER }}
+          NANSEN_FOR_TRADES: "0"
+          LIVE_TRADING: "0"
+          ALLOW_GMGN_CLUSTER: "0"
+          PAPER_BANKROLL_USD: "300"
+          CHAIN: arc
+          WINDOW_SECONDS: "900"
+          MIN_WALLETS: "2"
+          MIN_TRADE_USD: "50"
+          COOLDOWN_SECONDS: "7200"
+          WATCH_MIN_REALIZED_USD: "0"
+          GMGN_LIMIT: "100"
+          WATCHLIST_PATH: ${{ steps.wl.outputs.path }}
+          STATE_PATH: state-arc.json
+          PAPER_LOG_PATH: paper_log_arc.jsonl
+          PAPER_BOOK_PATH: paper_book_arc.jsonl
+          PAPER_SUMMARY_PATH: paper_summary_arc.md
+        run: python3 bot.py --per-page 100
+
+      - name: Upload paper artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-state-arc
+          path: |
+            state-arc.json
+            paper_log_arc.jsonl
+            paper_book_arc.jsonl
+            paper_summary_arc.md
+          if-no-files-found: ignore
+          retention-days: 14

@@ -72,8 +72,8 @@ CHAIN_META = {
     "arc": {
         "dex_slug": "arc",
         "gmgn_chain": "arc",
-        "goplus_id": None,
-        "explorer": None,
+        "goplus_id": None,  # GoPlus may skip Arc for now
+        "explorer": "https://arc-scan.org/token/",
         "blockscout_hosts": [],
         "jp": "Arcチェーン",
     },
@@ -126,8 +126,17 @@ def env_bool(name: str, default: bool = False) -> bool:
     return v.strip().lower() in ("1", "true", "yes", "on")
 
 
-def resolve_paper_webhook(signal: str | None = None) -> str | None:
+def resolve_paper_webhook(signal: str | None = None, chain: str | None = None) -> str | None:
     """Paper-channel webhook; falls back to signal webhook with a warning if unset."""
+    chain = (chain or os.environ.get("CHAIN") or "robinhood").strip().lower()
+    if chain == "arc":
+        arc_paper = (
+            os.environ.get("DISCORD_ARC_PAPER")
+            or os.environ.get("DISCORD_ARC_PAPER_WEBHOOK_URL")
+            or ""
+        ).strip()
+        if arc_paper:
+            return arc_paper
     paper = (os.environ.get("DISCORD_PAPER_WEBHOOK_URL") or "").strip()
     if paper:
         return paper
@@ -141,10 +150,21 @@ def resolve_paper_webhook(signal: str | None = None) -> str | None:
     return None
 
 
+def resolve_signal_webhook(chain: str | None = None) -> str:
+    """Prefer DISCORD_ARC_WEBHOOK_URL when CHAIN=arc; else DISCORD_WEBHOOK_URL."""
+    chain = (chain or os.environ.get("CHAIN") or "robinhood").strip().lower()
+    if chain == "arc":
+        arc = (os.environ.get("DISCORD_ARC_WEBHOOK_URL") or "").strip()
+        if arc:
+            return arc
+    return env("DISCORD_WEBHOOK_URL")
+
+
 def resolve_discord_webhooks() -> tuple[str, str]:
     """Signal webhook (required) + paper webhook (optional, falls back with warning)."""
-    signal = env("DISCORD_WEBHOOK_URL")
-    paper = resolve_paper_webhook(signal)
+    chain = (os.environ.get("CHAIN") or "robinhood").strip().lower()
+    signal = resolve_signal_webhook(chain)
+    paper = resolve_paper_webhook(signal, chain)
     assert paper  # signal non-empty ⇒ fallback always yields a URL
     return signal, paper
 
@@ -1427,7 +1447,7 @@ def main() -> int:
     live_trading_blocked()
 
     if args.test_webhook:
-        url = env("DISCORD_WEBHOOK_URL")
+        url = resolve_signal_webhook()
         discord_webhook(
             url,
             content="",
