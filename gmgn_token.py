@@ -216,22 +216,24 @@ def parse_info(info: dict) -> dict:
 
 def parse_security(sec: dict) -> dict:
     burn = str(sec.get("burn_status") or "").strip().lower()
-    # Some EVM payloads expose lock as is_locked / liquidity_locked
     locked_alt = None
     for k in ("liquidity_locked", "is_locked", "lp_locked", "locked_ratio"):
         if k in sec:
             v = sec.get(k)
-            if isinstance(v, (int, float)) or (isinstance(v, str) and v.replace(".", "", 1).isdigit()):
+            if isinstance(v, (int, float)) or (isinstance(v, str) and str(v).replace(".", "", 1).isdigit()):
                 locked_alt = _num(v)
             elif _yesno(v) == "yes":
                 locked_alt = 1.0
             elif _yesno(v) == "no":
                 locked_alt = 0.0
             break
+    cts = str(sec.get("creator_token_status") or "").strip().lower()
     return {
         "honeypot": _yesno(sec.get("is_honeypot")),
         "open_source": _yesno(sec.get("open_source")) or str(sec.get("open_source") or "").strip().lower(),
         "owner_renounced": _yesno(sec.get("owner_renounced")) or str(sec.get("owner_renounced") or "").strip().lower(),
+        "renounced_mint": sec.get("renounced_mint"),
+        "renounced_freeze_account": sec.get("renounced_freeze_account"),
         "buy_tax": _tax(sec.get("buy_tax")),
         "sell_tax": _tax(sec.get("sell_tax")),
         "rug_ratio": _num(sec.get("rug_ratio")),
@@ -239,10 +241,125 @@ def parse_security(sec: dict) -> dict:
         "burn_status": burn,
         "locked_ratio": locked_alt,
         "is_wash_trading": sec.get("is_wash_trading"),
-        "creator_token_status": sec.get("creator_token_status"),
+        "creator_token_status": cts,
         "sniper_count": _num(sec.get("sniper_count")),
         "dev_team_hold_rate": _num(sec.get("dev_team_hold_rate")),
     }
+
+
+def gmgn_security_checklist(sec: dict, chain: str) -> list[dict]:
+    """GMGN Token Quick Scoring Card. status: ok | warn | danger | na | missing."""
+    is_sol = (chain or "").lower() in ("sol", "solana")
+    items: list[dict] = []
+
+    def add(key: str, label: str, status: str, detail: str = ""):
+        items.append({"key": key, "label": label, "status": status, "detail": detail})
+
+    hp = sec.get("honeypot") or ""
+    if is_sol and not hp:
+        add("honeypot", "honeypot", "na", "sol")
+    elif hp == "no":
+        add("honeypot", "honeypot", "ok", "no")
+    elif hp == "yes":
+        add("honeypot", "honeypot", "danger", "yes")
+    else:
+        add("honeypot", "honeypot", "missing", hp or "-")
+
+    osrc = sec.get("open_source") or ""
+    if osrc == "yes":
+        add("open_source", "ソース公開", "ok", "yes")
+    elif osrc == "no":
+        add("open_source", "ソース公開", "danger", "no")
+    elif osrc in ("unknown",):
+        add("open_source", "ソース公開", "warn", "unknown")
+    else:
+        add("open_source", "ソース公開", "missing", osrc or "-")
+
+    own = sec.get("owner_renounced") or ""
+    if own == "yes":
+        add("owner_renounced", "オーナー放棄", "ok", "yes")
+    elif own == "no":
+        add("owner_renounced", "オーナー放棄", "danger", "no")
+    elif own == "unknown":
+        add("owner_renounced", "オーナー放棄", "warn", "unknown")
+    else:
+        add("owner_renounced", "オーナー放棄", "missing", own or "-")
+
+    if is_sol:
+        for key, label in (("renounced_mint", "ミント放棄"), ("renounced_freeze_account", "凍結放棄")):
+            v = sec.get(key)
+            if v is True or str(v).lower() in ("true", "1", "yes"):
+                add(key, label, "ok", "true")
+            elif v is False or str(v).lower() in ("false", "0", "no"):
+                add(key, label, "danger", "false")
+            else:
+                add(key, label, "missing", str(v))
+
+    for tax_key, label in (("buy_tax", "買い税"), ("sell_tax", "売り税")):
+        tax = sec.get(tax_key)
+        if tax is None:
+            add(tax_key, label, "missing", "-")
+        elif tax == 0 or tax < 0.005:
+            add(tax_key, label, "ok", f"{tax:.0%}")
+        elif tax <= 0.05:
+            add(tax_key, label, "warn", f"{tax:.0%}")
+        else:
+            add(tax_key, label, "danger", f"{tax:.0%}")
+
+    rug = sec.get("rug_ratio")
+    if rug is None:
+        add("rug_ratio", "rug", "missing", "-")
+    elif rug < 0.10:
+        add("rug_ratio", "rug", "ok", f"{rug:.2f}")
+    elif rug <= 0.30:
+        add("rug_ratio", "rug", "warn", f"{rug:.2f}")
+    else:
+        add("rug_ratio", "rug", "danger", f"{rug:.2f}")
+
+    top10 = sec.get("top10")
+    if top10 is None:
+        add("top10", "top10", "missing", "-")
+    elif top10 < 0.20:
+        add("top10", "top10", "ok", f"{top10:.0%}")
+    elif top10 <= 0.50:
+        add("top10", "top10", "warn", f"{top10:.0%}")
+    else:
+        add("top10", "top10", "danger", f"{top10:.0%}")
+
+    cts = (sec.get("creator_token_status") or "").lower()
+    if cts in ("creator_close", "close", "sold"):
+        add("creator", "作成者保有", "ok", cts or "close")
+    elif cts in ("creator_hold", "hold"):
+        add("creator", "作成者保有", "danger", cts)
+    elif not cts:
+        add("creator", "作成者保有", "missing", "-")
+    else:
+        add("creator", "作成者保有", "warn", cts)
+
+    sn = sec.get("sniper_count")
+    if sn is None:
+        add("sniper", "スナイパー", "missing", "-")
+    elif sn < 5:
+        add("sniper", "スナイパー", "ok", str(int(sn)))
+    elif sn <= 20:
+        add("sniper", "スナイパー", "warn", str(int(sn)))
+    else:
+        add("sniper", "スナイパー", "danger", str(int(sn)))
+
+    return items
+
+
+def checklist_all_ok(items: list[dict]) -> tuple[bool, list[str]]:
+    """True only when every applicable field is ok (all checkmarks). na ignored."""
+    fails: list[str] = []
+    for it in items:
+        st = it["status"]
+        if st == "na":
+            continue
+        if st == "ok":
+            continue
+        fails.append(f"audit_{it['key']}:{st}:{it.get('detail') or ''}")
+    return (len(fails) == 0, fails)
 
 
 def market_snapshot(chain: str, ca: str) -> dict:
@@ -319,17 +436,22 @@ def evaluate(
     elif info and (ratio is None or ratio < liq_mcap_min):
         fail.append(f"liq_ratio={ratio:.2f}" if ratio is not None else "liq_ratio=na")
 
+    # Fill top10 from info if security omitted it
+    if parsed_sec.get("top10") is None and parsed_info.get("top10") is not None:
+        parsed_sec["top10"] = parsed_info.get("top10")
+
+    checklist: list[dict] = []
+    if sec:
+        checklist = gmgn_security_checklist(parsed_sec, chain)
+        all_ok, audit_fails = checklist_all_ok(checklist)
+        if not all_ok:
+            fail.extend(audit_fails)
+
     hp = parsed_sec.get("honeypot") or ""
-    if hp == "yes":
-        fail.append("honeypot")
     bt = parsed_sec.get("buy_tax")
     st = parsed_sec.get("sell_tax")
-    if (bt is not None and bt >= tax_max) or (st is not None and st >= tax_max):
-        fail.append(f"high_tax(b={bt or 0:.0%}/s={st or 0:.0%})")
-
     rug = parsed_sec.get("rug_ratio")
-    if rug is not None and rug > rug_max:
-        fail.append(f"rug={rug:.2f}")
+    top10 = parsed_sec.get("top10")
 
     burn = parsed_sec.get("burn_status") or ""
     locked = parsed_info.get("locked_ratio")
@@ -337,6 +459,7 @@ def evaluate(
         locked = parsed_sec.get("locked_ratio")
     burn_ok = burn in ("burn", "burned", "yes", "1", "true")
     lock_ok = locked is not None and locked >= lp_lock_min
+    # LP is display-only unless LP_LOCK_REQUIRED=1
     require_lp = str(os.environ.get("LP_LOCK_REQUIRED", "0")).strip().lower() in ("1", "true", "yes")
     if sec and info:
         if burn_ok or lock_ok:
@@ -358,15 +481,11 @@ def evaluate(
         if require_lp:
             fail.append("gmgn_lp_unavailable")
 
-    top10 = parsed_sec.get("top10")
-    if top10 is None:
-        top10 = parsed_info.get("top10")
-
     ok = len(fail) == 0
-    audit = _audit_jp(parsed_sec, parsed_info, top10)
+    audit = _audit_checklist_jp(checklist, parsed_info)
     if ok:
         ratio_txt = f"流動性/時価≈{ratio:.0%}" if ratio is not None else "流動性OK"
-        jp = f"通過（{ratio_txt}・GMGN監査OK）"
+        jp = f"通過（{ratio_txt}・GMGN監査すべて✅）"
     else:
         jp_bits = []
         for r in fail:
@@ -374,21 +493,36 @@ def evaluate(
                 jp_bits.append("時価総額なし")
             elif r.startswith("liq_ratio"):
                 jp_bits.append("流動性が薄い")
-            elif "honeypot" in r:
-                jp_bits.append("売れない疑い")
-            elif "high_tax" in r:
-                jp_bits.append("手数料が高い")
-            elif r.startswith("rug"):
-                jp_bits.append("ラグリスク高")
-            elif "lp_unlocked" in r:
-                jp_bits.append("流動性がロックされていない")
-            elif "lp_unknown" in r:
-                jp_bits.append("LPロック不明")
+            elif r.startswith("audit_honeypot"):
+                jp_bits.append("honeypot")
+            elif r.startswith("audit_open_source"):
+                jp_bits.append("ソース未公開")
+            elif r.startswith("audit_owner"):
+                jp_bits.append("オーナー未放棄")
+            elif r.startswith("audit_buy_tax") or r.startswith("audit_sell_tax"):
+                jp_bits.append("手数料")
+            elif r.startswith("audit_rug"):
+                jp_bits.append("rug")
+            elif r.startswith("audit_top10"):
+                jp_bits.append("上位集中")
+            elif r.startswith("audit_creator"):
+                jp_bits.append("作成者保有")
+            elif r.startswith("audit_sniper"):
+                jp_bits.append("スナイパー多")
+            elif r.startswith("audit_"):
+                jp_bits.append("監査未達")
             elif r.startswith("gmgn_"):
                 jp_bits.append("GMGN取得失敗")
             else:
                 jp_bits.append("検査NG")
-        jp = "見送り（" + "・".join(jp_bits) + "）"
+        # unique preserve order
+        seen_b = set()
+        uniq = []
+        for b in jp_bits:
+            if b not in seen_b:
+                seen_b.add(b)
+                uniq.append(b)
+        jp = "見送り（" + "・".join(uniq) + "）"
 
     gmgn_url = token_app_url(chain, ca, parsed_info.get("gmgn_url"))
     print(
@@ -425,35 +559,15 @@ def evaluate(
         "info_err": info_err,
         "sec_err": sec_err,
         "fetch_failed": fetch_failed,
+        "checklist": checklist,
     }
 
 
-def _audit_jp(sec: dict, info: dict, top10: float | None) -> str:
-    bits: list[str] = []
-    hp = sec.get("honeypot") or ""
-    if hp == "yes":
-        bits.append("honeypot")
-    elif hp == "no":
-        bits.append("honeypotなし")
-    bt = sec.get("buy_tax")
-    st = sec.get("sell_tax")
-    if bt is not None or st is not None:
-        bits.append(f"税{_pct(bt or 0)}/{_pct(st or 0)}")
-    rug = sec.get("rug_ratio")
-    if rug is not None:
-        bits.append(f"rug {rug:.2f}")
-    burn = sec.get("burn_status") or ""
-    locked = info.get("locked_ratio")
-    if locked is None:
-        locked = sec.get("locked_ratio")
-    if burn in ("burn", "burned", "yes", "1", "true"):
-        bits.append("LPバーン")
-    elif locked is not None and locked > 0:
-        bits.append(f"ロック{_pct(locked)}")
-    elif sec:
-        bits.append("LP未ロック")
-    if top10 is not None:
-        bits.append(f"top10 {_pct(top10)}")
+def _audit_checklist_jp(checklist: list[dict], info: dict) -> str:
+    mark = {"ok": "✅", "warn": "⚠️", "danger": "🚫", "missing": "？", "na": "—"}
+    bits = []
+    for it in checklist:
+        bits.append(f"{mark.get(it['status'], '?')}{it['label']}")
     holders = info.get("holder_count")
     if holders is not None:
         bits.append(f"保有{int(holders)}人")
