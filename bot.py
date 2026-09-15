@@ -88,7 +88,8 @@ CHAIN_META = {
     },
 }
 
-LIQ_MCAP_MIN = 0.20
+LIQ_MCAP_MIN = 0.10
+MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "1800"))  # skip if younger than 30m
 LP_LOCK_MIN = 0.01  # locked+burned share of LP
 # LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
 # Set LP_LOCK_REQUIRED=1 to hard-fail unlocked LP again.
@@ -1437,6 +1438,7 @@ def safety_check(ca: str, chain: str) -> dict:
         gmgn_chain,
         ca,
         liq_mcap_min=LIQ_MCAP_MIN,
+        min_age_sec=float(MIN_TOKEN_AGE_SEC),
         lp_lock_min=float(os.environ.get("LP_LOCK_MIN", str(LP_LOCK_MIN))),
     )
 
@@ -1600,6 +1602,8 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("時価なし")
         elif rs == "no_pair":
             bits.append("ペアなし")
+        elif rs.startswith("launch_age"):
+            bits.append("ローンチ直後")
         elif rs.startswith("liq_ratio"):
             bits.append("薄い板")
         elif "honeypot" in rs:

@@ -197,6 +197,29 @@ def parse_info(info: dict) -> dict:
     gmgn_url = (link.get("gmgn") or "").strip() or None
     stat = info.get("stat") if isinstance(info.get("stat"), dict) else {}
     tags = info.get("wallet_tags_stat") if isinstance(info.get("wallet_tags_stat"), dict) else {}
+    created = None
+    for src in (
+        info.get("creation_timestamp"),
+        info.get("open_timestamp"),
+        info.get("created_at"),
+        info.get("create_at"),
+        info.get("open_time"),
+        pool.get("creation_timestamp"),
+        pool.get("open_timestamp"),
+        pool.get("created_at"),
+        pool.get("pool_open_time"),
+        pool.get("open_time"),
+    ):
+        n = _num(src)
+        if n is None:
+            continue
+        # ms vs sec
+        if n > 1e12:
+            n = n / 1000.0
+        if n > 1e9:  # plausible unix
+            created = n
+            break
+
     return {
         "symbol": (info.get("symbol") or "").strip() or None,
         "name": (info.get("name") or "").strip() or None,
@@ -211,6 +234,7 @@ def parse_info(info: dict) -> dict:
         "exchange": pool.get("exchange"),
         "smart_wallets": tags.get("smart_wallets"),
         "renowned_wallets": tags.get("renowned_wallets"),
+        "created_ts": created,
     }
 
 
@@ -406,11 +430,41 @@ def market_snapshot(chain: str, ca: str) -> dict:
     }
 
 
+
+def _dex_pair_created_ts(ca: str, chain: str) -> float | None:
+    """Best-effort pairCreatedAt from DexScreener (ms→sec). Free; may miss RH."""
+    import urllib.request
+    try:
+        url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
+        req = urllib.request.Request(url, headers={"User-Agent": "meme-signal-bot/age"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception:
+        return None
+    pairs = (data or {}).get("pairs") or []
+    if not pairs:
+        return None
+    slug = (chain or "").lower()
+    preferred = [p for p in pairs if (p.get("chainId") or "").lower() == slug]
+    pool = preferred or pairs
+    best = None
+    for p in pool:
+        n = _num(p.get("pairCreatedAt"))
+        if n is None:
+            continue
+        if n > 1e12:
+            n = n / 1000.0
+        if best is None or n < best:
+            best = n
+    return best
+
+
 def evaluate(
     chain: str,
     ca: str,
     *,
-    liq_mcap_min: float = 0.20,
+    liq_mcap_min: float = 0.10,
+    min_age_sec: float | None = None,
     lp_lock_min: float = 0.01,
     tax_max: float = 0.10,
     rug_max: float = 0.30,
@@ -444,6 +498,21 @@ def evaluate(
         fail.append("no_mcap")
     elif info and (ratio is None or ratio < liq_mcap_min):
         fail.append(f"liq_ratio={ratio:.2f}" if ratio is not None else "liq_ratio=na")
+
+
+    if min_age_sec is None:
+        try:
+            min_age_sec = float(os.environ.get("MIN_TOKEN_AGE_SEC", "1800"))
+        except (TypeError, ValueError):
+            min_age_sec = 1800.0
+    created_ts = parsed_info.get("created_ts")
+    if created_ts is None:
+        created_ts = _dex_pair_created_ts(ca, chain)
+    age_sec = None
+    if created_ts is not None:
+        age_sec = max(0.0, time.time() - float(created_ts))
+        if min_age_sec and age_sec < float(min_age_sec):
+            fail.append(f"launch_age={int(age_sec)}s<{int(min_age_sec)}s")
 
     # Fill top10 from info if security omitted it
     if parsed_sec.get("top10") is None and parsed_info.get("top10") is not None:
@@ -502,6 +571,8 @@ def evaluate(
                 jp_bits.append("時価総額なし")
             elif r.startswith("liq_ratio"):
                 jp_bits.append("流動性が薄い")
+            elif r.startswith("launch_age"):
+                jp_bits.append("ローンチ直後")
             elif r.startswith("audit_honeypot"):
                 jp_bits.append("honeypot")
             elif r.startswith("audit_open_source"):
@@ -535,7 +606,7 @@ def evaluate(
 
     gmgn_url = token_app_url(chain, ca, parsed_info.get("gmgn_url"))
     print(
-        f"safety ca={ca[:10]}… ok={ok} src=gmgn ratio={ratio} "
+        f"safety ca={ca[:10]}… ok={ok} src=gmgn ratio={ratio} age={age_sec} "
         f"lp={lp_status}:{lp_reason} locked={locked} burn={burn or '-'} "
         f"mcap={mcap} liq={liq} fetch_failed={fetch_failed} "
         f"reasons={fail or ['ok']}",
