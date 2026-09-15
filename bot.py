@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Standalone RH/Arc meme overlap signal → Discord webhook. Paper only.
 
-Primary trade source: GMGN smartmoney (gmgn-cli).
+Primary trade source: GMGN smartmoney (gmgn-cli) + FOMO leaderboard buys (throttled).
 Watchlist-strict by default (ALLOW_GMGN_CLUSTER=0).
 Nansen: optional wallet-list refresh only (--refresh-wallets), NOT dex-trades polling.
 LIVE_TRADING is blocked (stub only) until paper gate.
@@ -612,6 +612,141 @@ def fetch_onchain_fallback(watch: set[str], chain: str, min_usd: float) -> list[
     return trades
 
 
+
+def load_fomo_index(path: Path | None = None) -> dict[str, dict]:
+    """handle_lower -> {handle, evm, solana, pnlUsd}. Empty if file missing."""
+    path = path or Path(os.environ.get("FOMO_WATCH_PATH", str(ROOT / "fomo-wallets" / "wallets_evm.jsonl")))
+    if not path.exists():
+        alt = ROOT / "fomo-wallets" / "leaderboard.jsonl"
+        path = alt if alt.exists() else path
+    out: dict[str, dict] = {}
+    if not path.exists():
+        return out
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        o = json.loads(line)
+        handle = (o.get("handle") or "").strip()
+        evm = (o.get("evm") or o.get("address") or "").lower()
+        if not handle:
+            continue
+        rec = {
+            "handle": handle,
+            "evm": evm if evm.startswith("0x") and len(evm) == 42 else "",
+            "solana": o.get("solana") or "",
+            "pnlUsd": _num(o.get("pnlUsd") or o.get("realized_pnl_usd")) or 0.0,
+        }
+        out[handle.lower()] = rec
+        if rec["evm"]:
+            out[rec["evm"]] = rec  # also index by address
+    return out
+
+
+def fomo_watch_addresses(index: dict[str, dict]) -> dict[str, dict]:
+    """EVM addresses from FOMO leaderboard for watchlist merge."""
+    addrs: dict[str, dict] = {}
+    for rec in index.values():
+        evm = rec.get("evm") or ""
+        if evm.startswith("0x") and len(evm) == 42:
+            addrs[evm] = rec
+    return addrs
+
+
+def fetch_fomo_buys(chain: str, index: dict[str, dict], min_usd: float, limit: int = 80) -> tuple[list[dict], str | None]:
+    """REST /v2/alerts buys for one chain. Watchlist-strict on FOMO handles. Never prints the key."""
+    load_box_secrets(["FOMO_API_KEY"])
+    key = (os.environ.get("FOMO_API_KEY") or "").strip()
+    if not key or key.lower().startswith("install"):
+        return [], "nokey"
+    fomo_chain = {
+        "robinhood": "robinhood",
+        "solana": "solana",
+        "base": "base",
+        "eth": "eth",
+        "ethereum": "eth",
+        "bsc": "bsc",
+    }.get(chain)
+    if not fomo_chain:
+        print(f"fomo skip: chain={chain} not on FOMO")
+        return [], None
+    if not index:
+        print("fomo skip: empty leaderboard index")
+        return [], None
+    url = f"https://api.fomoapi.io/v2/alerts?type=buy&chain={urllib.parse.quote(fomo_chain)}&limit={max(1, min(150, limit))}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Accept": "application/json",
+            "User-Agent": "meme-discord-bot/2.0",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode() or "{}")
+            cost = resp.headers.get("x-credits-cost")
+            remain = resp.headers.get("x-credits-remaining")
+    except urllib.error.HTTPError as e:
+        code = e.code
+        print(f"fomo alerts HTTP {code}", file=sys.stderr)
+        if code == 401:
+            return [], "auth"
+        if code == 402:
+            return [], "credits"
+        return [], "other"
+    except Exception as e:
+        print(f"fomo alerts fail: {type(e).__name__}", file=sys.stderr)
+        return [], "other"
+
+    alerts = body.get("alerts") if isinstance(body, dict) else None
+    if not isinstance(alerts, list):
+        print("fomo alerts unexpected shape", file=sys.stderr)
+        return [], "other"
+
+    handles = {k for k in index if not str(k).startswith("0x")}
+    trades: list[dict] = []
+    skipped_unknown = 0
+    for a in alerts:
+        if not isinstance(a, dict):
+            continue
+        if (a.get("type") or "").lower() != "buy":
+            continue
+        handle = (a.get("trader") or "").strip()
+        if not handle or handle.lower() not in handles:
+            skipped_unknown += 1
+            continue
+        rec = index[handle.lower()]
+        evm = rec.get("evm") or ""
+        ca = (a.get("tokenAddress") or "").lower()
+        if not evm.startswith("0x") or not ca.startswith("0x") or ca in SKIP_CA:
+            continue
+        sym = (a.get("token") or "").strip()
+        if sym.upper() in SKIP_SYMBOLS:
+            continue
+        usd = _num(a.get("usdValue")) or 0.0
+        if min_usd > 0 and usd < min_usd:
+            continue
+        trades.append(
+            {
+                "trader_address": evm,
+                "trader_address_label": handle,
+                "trader_handle": handle,
+                "token_bought_address": ca,
+                "token_bought_symbol": sym,
+                "trade_value_usd": usd,
+                "block_timestamp": a.get("ts"),
+                "source": "fomo",
+                "tx": a.get("eventId") or a.get("id"),
+            }
+        )
+    print(
+        f"fomo buys={len(trades)} alerts={len(alerts)} unknown_skip={skipped_unknown} "
+        f"chain={fomo_chain} cost={cost} remain={remain}"
+    )
+    return trades, None
+
+
 def fetch_nansen_dex_trades(api_key: str, chain: str, page: int, per_page: int, min_usd: float) -> list[dict]:
     """Legacy Nansen dex-trades — ONLY when NANSEN_FOR_TRADES=1 (not default)."""
     body = {
@@ -772,6 +907,7 @@ def detect_signals(
                                 "usd": float(wallets[w].get("trade_value_usd") or 0),
                                 "symbol": wallets[w].get("token_bought_symbol"),
                                 "ts": wallets[w].get("block_timestamp"),
+                                "source": wallets[w].get("source") or "",
                             }
                             for w in sorted(wallets.keys())
                         ],
@@ -970,12 +1106,21 @@ def build_embed(s: dict, chain: str, safety: dict, source_mode: str) -> dict:
     else:
         when = f"約{elapsed // 60}分{elapsed % 60}秒のあいだ"
 
+    srcs = {(w.get("source") or "") for w in s.get("wallets") or []}
+    has_fomo = "fomo" in srcs
+    has_gmgn = "gmgn" in srcs or source_mode in ("watchlist", "gmgn_cluster")
     if source_mode == "gmgn_cluster":
         who_jp = "GMGNスマートマネー（監視リスト外含む）"
         desc_extra = f"出典: {who_jp}\n"
     elif source_mode == "onchain":
         who_jp = "オンチェーン（探索・限定）"
         desc_extra = f"出典: {who_jp}\n"
+    elif has_fomo and has_gmgn:
+        who_jp = "監視中の勝ち財布（GMGN + FOMO）"
+        desc_extra = "出典: 監視リスト ∩ GMGNスマートマネー + FOMOリーダー\n"
+    elif has_fomo:
+        who_jp = "FOMOリーダーの勝ち財布"
+        desc_extra = "出典: FOMOリーダーボード（検証PnL+）\n"
     else:
         who_jp = "監視中の勝ち財布"
         desc_extra = "出典: 監視リスト ∩ GMGNスマートマネー\n"
@@ -1146,11 +1291,20 @@ def process_multiplier_followups(state: dict, webhook: str, chain: str, paper_pa
 # ---------------------------------------------------------------------------
 
 
-def collect_trades(args: argparse.Namespace, chain: str, min_usd: float, watch_set: set[str]) -> tuple[list[dict], str, str | None]:
-    """Returns (trades, source_name, gmgn_error_kind)."""
+def collect_trades(
+    args: argparse.Namespace,
+    chain: str,
+    min_usd: float,
+    watch_set: set[str],
+    state: dict | None = None,
+    fomo_index: dict[str, dict] | None = None,
+) -> tuple[list[dict], str, str | None]:
+    """Returns (trades, source_name, gmgn_error_kind). FOMO buys merge when due."""
     nansen_for_trades = env_bool("NANSEN_FOR_TRADES", False)
     trades: list[dict] = []
     gmgn_err: str | None = None
+    source_name = "none"
+    state = state if isinstance(state, dict) else {}
 
     if nansen_for_trades:
         print("WARNING: NANSEN_FOR_TRADES=1 — using Nansen dex-trades (credit cost)", file=sys.stderr)
@@ -1163,19 +1317,52 @@ def collect_trades(args: argparse.Namespace, chain: str, min_usd: float, watch_s
             trades.extend(batch)
             if page < args.pages:
                 time.sleep(NANSEN_SLEEP)
-        return trades, "nansen", None
+        source_name = "nansen"
+    else:
+        limit = int(os.environ.get("GMGN_LIMIT", str(args.per_page or 100)))
+        trades, gmgn_err = fetch_gmgn_smartmoney(chain, limit=limit, side="buy")
+        if trades:
+            source_name = "gmgn"
+        else:
+            print(f"GMGN unavailable (err={gmgn_err}); trying on-chain fallback", file=sys.stderr)
+            oc = fetch_onchain_fallback(watch_set, chain, min_usd=0)
+            if oc:
+                trades = oc
+                source_name = "onchain"
 
-    limit = int(os.environ.get("GMGN_LIMIT", str(args.per_page or 100)))
-    trades, gmgn_err = fetch_gmgn_smartmoney(chain, limit=limit, side="buy")
-    if trades:
-        return trades, "gmgn", None
-
-    # GMGN failed → on-chain best-effort
-    print(f"GMGN unavailable (err={gmgn_err}); trying on-chain fallback", file=sys.stderr)
-    oc = fetch_onchain_fallback(watch_set, chain, min_usd=0)  # USD often missing
-    if oc:
-        return oc, "onchain", gmgn_err
-    return [], "none", gmgn_err
+    # FOMO: 125 credits/call. Default ≥25 min so free 250k/mo lasts (~216k + leaderboard).
+    fomo_on = env_bool("FOMO_ENABLED", True)
+    interval = int(os.environ.get("FOMO_POLL_SECONDS", "1500"))
+    now = time.time()
+    last = state.get("last_fomo_poll_ts")
+    due = True
+    try:
+        last_f = float(last) if last is not None else 0.0
+        if last_f > 1e12:
+            last_f = last_f / 1000.0
+        if last_f > 0 and (now - last_f) < interval:
+            due = False
+            print(f"fomo skip: interval {int(now - last_f)}s < {interval}s")
+    except (TypeError, ValueError):
+        due = True
+    if fomo_on and due and fomo_index:
+        fomo_trades, fomo_err = fetch_fomo_buys(
+            chain,
+            fomo_index,
+            min_usd=min_usd,
+            limit=int(os.environ.get("FOMO_ALERT_LIMIT", "80")),
+        )
+        state["last_fomo_poll_ts"] = now
+        state["last_fomo_err"] = fomo_err
+        if fomo_trades:
+            trades.extend(fomo_trades)
+            if source_name in ("none", ""):
+                source_name = "fomo"
+            elif "fomo" not in source_name:
+                source_name = f"{source_name}+fomo"
+        elif fomo_err:
+            print(f"fomo err={fomo_err}", file=sys.stderr)
+    return trades, source_name, gmgn_err
 
 
 def run_once(args: argparse.Namespace) -> int:
@@ -1203,9 +1390,25 @@ def run_once(args: argparse.Namespace) -> int:
     book_path = Path(os.environ.get("PAPER_BOOK_PATH", str(ROOT / "paper_book.jsonl"))).resolve()
 
     watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
+    fomo_index = load_fomo_index()
+    fomo_addrs = fomo_watch_addresses(fomo_index)
+    fomo_merged = 0
+    for addr, rec in fomo_addrs.items():
+        if addr not in watch:
+            watch[addr] = {
+                "address": addr,
+                "address_label": rec.get("handle") or "",
+                "fomo_handle": rec.get("handle") or "",
+                "realized_pnl_usd": rec.get("pnlUsd") or 0,
+                "pass_pnl": True,
+                "source_endpoints": ["fomo_leaderboard"],
+            }
+            fomo_merged += 1
     watch_set = set(watch.keys())
     print(
         f"watchlist raw={raw_count} filtered={len(watch_set)} "
+        f"fomo_handles={sum(1 for k in fomo_index if not str(k).startswith('0x'))} "
+        f"fomo_merged_runtime={fomo_merged} "
         f"min_realized={min_realized} fallback={fallback} "
         f"NANSEN_FOR_TRADES={int(env_bool('NANSEN_FOR_TRADES', False))} "
         f"ALLOW_GMGN_CLUSTER={int(allow_cluster)} chain={chain} "
@@ -1228,7 +1431,7 @@ def run_once(args: argparse.Namespace) -> int:
     if fu or paper_stats.get("marked") or paper_stats.get("half") or paper_stats.get("stop"):
         save_state(state_path, state)
 
-    trades, source_name, gmgn_err = collect_trades(args, chain, min_usd, watch_set)
+    trades, source_name, gmgn_err = collect_trades(args, chain, min_usd, watch_set, state=state, fomo_index=fomo_index)
 
     if gmgn_err == "auth":
         print(

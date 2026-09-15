@@ -46,6 +46,7 @@ jobs:
       - name: Run once (signals + paper marks)
         env:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          FOMO_API_KEY: ${{ secrets.FOMO_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}
           NANSEN_FOR_TRADES: "0"
@@ -59,6 +60,10 @@ jobs:
           COOLDOWN_SECONDS: "7200"
           WATCH_MIN_REALIZED_USD: "0"
           GMGN_LIMIT: "100"
+          FOMO_ENABLED: "1"
+          FOMO_POLL_SECONDS: "1500"
+          FOMO_ALERT_LIMIT: "80"
+          FOMO_WATCH_PATH: fomo-wallets/wallets_evm.jsonl
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
           PAPER_LOG_PATH: paper_log.jsonl

@@ -4,7 +4,7 @@
 Grok Bot のルーチンには載せない（載せると容量を食う）。紙トレード更新も **Actions のみ**。
 
 ## 何をするか
-- **主ソース**: GMGN `track smartmoney`（`gmgn-cli track smartmoney --chain robinhood --side buy --limit … --raw`）
+- **主ソース**: GMGN `track smartmoney` ＋ **FOMOリーダーの買い**（同じ15分クラスタ）
 - **監視リスト厳格**: フィルタ済み監視財布が **同一CAを15分以内に2本以上** 買ったときだけ投稿（既定）
 - `ALLOW_GMGN_CLUSTER=0`（既定）で監視リスト外クラスタ投稿は無効。必要なら `1` で再有効化
 - GMGN失敗時はオンチェーン探索を best-effort（偽取引は作らない）
@@ -42,6 +42,7 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 | `DISCORD_PAPER_WEBHOOK_URL` | 紙トレード専用（未設定時はシグナル側にフォールバック） |
 | `DISCORD_ARC_PAPER` | Arc紙トレード専用（任意。未設定時は紙Webhookへ） |
 | `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
+| `FOMO_API_KEY` | RHジョブ。`/v2/alerts` を25分以上間隔。未設定ならGMGNのみ |
 
 秘密鍵・実弾キーは Actions に置かない。
 
@@ -61,6 +62,13 @@ python3 bot.py --paper-summary
 - `signal-arc.yml`: Arc `*/5` ポーリング + 分離紙状態（メインネット 2026-09-16 開始想定）
 - `paper-summary.yml`: 週次（Sat 00:00 UTC ≈ Sun 09:00 JST）`0 0 * * 6`（RH）
 - `refresh-wallets.yml`: 週次 Nansen 財布更新 → artifact
+
+## FOMO
+- リーダー（PnL+）のEVMを RH 監視リストに合流（同一アドレスは二重計上しない）
+- 買いフィード `GET /v2/alerts?type=buy&chain=robinhood` を **25分以上** 間隔（1回125クレジット。無料枠 250,000/月）
+- ハンドルがリーダーに無い買い（フォロワーのノイズ）は捨てる
+- Arc は FOMO 対象外（チェーン非対応）
+- WebSocket は GitHub Actions では張れないので REST のみ
 
 ## 注意
 - シークレットをログに出さない
