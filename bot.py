@@ -48,6 +48,7 @@ except ImportError:  # Actions / VPS without load_secrets helper
 
 
 import paper_trade as paper_mod
+import gmgn_token as gmgn_tok
 
 SKIP_CA = {
     "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
@@ -1366,80 +1367,15 @@ def fetch_goplus(ca: str, chain: str) -> dict:
 
 
 def safety_check(ca: str, chain: str) -> dict:
-    dex = fetch_dexscreener(ca, chain)
-    go = fetch_goplus(ca, chain)
-
-    liq = dex.get("liq_usd")
-    mcap = dex.get("mcap_usd")
-    fdv = dex.get("fdv")
-    price = dex.get("price_usd")
-    denom = mcap if mcap and mcap > 0 else (fdv if fdv and fdv > 0 else None)
-    ratio = None
-    if liq is not None and denom:
-        ratio = liq / denom
-
-    fail_reasons: list[str] = []
-    if not dex.get("ok"):
-        fail_reasons.append(dex.get("reason") or "no_pair")
-    elif denom is None:
-        fail_reasons.append("no_mcap")
-    elif ratio is None or ratio < LIQ_MCAP_MIN:
-        fail_reasons.append(f"liq_ratio={ratio:.2f}" if ratio is not None else "liq_ratio=na")
-
-    if go.get("status") == "fail":
-        fail_reasons.append(f"goplus:{go.get('reason')}")
-
-    ok = len(fail_reasons) == 0
-    go_note = "goplus=skip" if go.get("status") == "skip" else f"goplus={go.get('status')}"
-    lp = (go.get("lp") or {})
-    print(f"safety ca={ca[:10]}… ok={ok} ratio={ratio} {go_note} lp={lp.get('status')}:{lp.get('reason')} locked={lp.get('locked_pct')} reasons={fail_reasons or ['ok']}")
-
-    if ok:
-        ratio_txt = f"流動性/時価≈{ratio:.0%}" if ratio is not None else "流動性OK"
-        jp = f"通過（{ratio_txt}"
-        if go.get("status") == "skip":
-            jp += "・契約検査は未対応のためスキップ"
-        else:
-            jp += "・契約検査OK"
-        jp += "）"
-    else:
-        jp_bits = []
-        for r in fail_reasons:
-            if r == "no_mcap":
-                jp_bits.append("時価総額なし")
-            elif r == "no_pair":
-                jp_bits.append("取引ペアなし")
-            elif r.startswith("liq_ratio"):
-                jp_bits.append("流動性が薄い")
-            elif "honeypot" in r:
-                jp_bits.append("売れない疑い")
-            elif "cannot_sell" in r:
-                jp_bits.append("売却制限")
-            elif "high_tax" in r:
-                jp_bits.append("手数料が高い")
-            elif "lp_unlocked" in r:
-                jp_bits.append("流動性がロックされていない")
-            elif "lp_dominate" in r:
-                jp_bits.append("LPが一部に偏っている")
-            elif "lp_unknown" in r:
-                jp_bits.append("LPロック不明")
-            else:
-                jp_bits.append("検査NG")
-        jp = "見送り（" + "・".join(jp_bits) + "）"
-
-    return {
-        "ok": ok,
-        "reasons": fail_reasons,
-        "ratio": ratio,
-        "liq_usd": liq,
-        "mcap_usd": mcap,
-        "fdv": fdv,
-        "price_usd": price,
-        "dex_url": dex.get("url"),
-        "goplus": go.get("status"),
-        "jp": jp,
-        "symbol_hint": dex.get("symbol"),
-    }
+    """GMGN info + security. DexScreener/GoPlus are not the source of truth."""
+    meta = CHAIN_META.get(chain, {})
+    gmgn_chain = meta.get("gmgn_chain") or chain
+    return gmgn_tok.evaluate(
+        gmgn_chain,
+        ca,
+        liq_mcap_min=LIQ_MCAP_MIN,
+        lp_lock_min=float(os.environ.get("LP_LOCK_MIN", str(LP_LOCK_MIN))),
+    )
 
 
 def strength_label(n: int, total_usd: float) -> tuple[str, int]:
@@ -1515,6 +1451,7 @@ def build_embed(
         f"FOMO **{n_fomo}** · スマートウォレット **{n_sm}**"
         + (f" · 両方 **{n_both}**" if n_both else "")
         + f"\n安全: {safety.get('jp') or '未実施'}"
+        + (f"\n監査: {safety.get('audit_jp')}" if safety.get("audit_jp") else "")
     )
 
     fields = [
@@ -1525,9 +1462,9 @@ def build_embed(
         {"name": "コントラクト", "value": f"`{s['ca']}`", "inline": False},
     ]
 
-    dex_slug = meta.get("dex_slug") or chain
-    dex_url = safety.get("dex_url") or f"https://dexscreener.com/{dex_slug}/{s['ca']}"
-    link_lines = [f"[DexScreener]({dex_url})"]
+    gmgn_chain = meta.get("gmgn_chain") or chain
+    gmgn_url = safety.get("gmgn_url") or f"https://gmgn.ai/{gmgn_chain}/token/{s['ca']}"
+    link_lines = [f"[GMGN]({gmgn_url})"]
     explorer_base = meta.get("explorer")
     if explorer_base:
         link_lines.append(f"[エクスプローラー]({explorer_base}{s['ca']})")
@@ -1557,7 +1494,7 @@ def build_embed(
         "description": description[:4000],
         "color": color,
         "fields": fields,
-        "footer": {"text": "お知らせのみ・自動では買いません"},
+        "footer": {"text": "数値はGMGN · お知らせのみ・自動では買いません"},
     }
 
 
@@ -1569,21 +1506,21 @@ def build_multiplier_embed(alert: dict, mult: float, dex: dict, milestone: float
     title = f"さっきの通知から {mult:.1f}倍 · ${sym}"
     if milestone:
         title = f"さっきの通知から {milestone:g}倍到達 · ${sym}"
-    dex_url = dex.get("url") or f"https://dexscreener.com/robinhood/{ca}"
+    gmgn_url = dex.get("url") or f"https://gmgn.ai/robinhood/token/{ca}"
     return {
         "title": title[:256],
         "description": (
             f"通知時の価格から約 **{mult:.2f}倍** です。\n"
-            f"現在 時価総額 {fmt_usd(mcap)} / 流動性 {fmt_usd(liq)}"
+            f"現在 時価総額 {fmt_usd(mcap)} / 流動性 {fmt_usd(liq)}（GMGN）"
         )[:4000],
         "color": 0x9B59B6,
         "fields": [
             {"name": "コントラクト", "value": f"`{ca}`", "inline": False},
             {"name": "時価総額", "value": fmt_usd(mcap), "inline": True},
             {"name": "流動性", "value": fmt_usd(liq), "inline": True},
-            {"name": "リンク", "value": f"[DexScreener]({dex_url})", "inline": False},
+            {"name": "リンク", "value": f"[GMGN]({gmgn_url})", "inline": False},
         ],
-        "footer": {"text": "倍率フォローアップ・自動売買なし"},
+        "footer": {"text": "数値はGMGN · 倍率フォローアップ・自動売買なし"},
     }
 
 
@@ -1619,14 +1556,22 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
         "title": f"見送り · ${sym}"[:256],
         "description": (
             f"{reason_jp}\n"
-            f"監視交差 {s.get('n', '?')}人 · 自動では買いません"
+            + (f"監査: {safety.get('audit_jp')}\n" if safety.get("audit_jp") else "")
+            + f"監視交差 {s.get('n', '?')}人 · 自動では買いません"
         )[:4000],
         "color": 0x95A5A6,
         "fields": [
             {"name": "コントラクト", "value": f"`{s.get('ca')}`", "inline": False},
             {"name": "理由", "value": (safety.get("jp") or reason_jp)[:500], "inline": False},
+            {"name": "時価総額", "value": fmt_usd(safety.get("mcap_usd") or safety.get("fdv")), "inline": True},
+            {"name": "流動性", "value": fmt_usd(safety.get("liq_usd")), "inline": True},
+            {
+                "name": "リンク",
+                "value": f"[GMGN]({safety.get('gmgn_url') or ('https://gmgn.ai/' + (meta.get('gmgn_chain') or chain) + '/token/' + str(s.get('ca') or ''))})",
+                "inline": False,
+            },
         ],
-        "footer": {"text": f"スキップ通知 · {meta.get('jp') or chain}"},
+        "footer": {"text": f"数値はGMGN · スキップ通知 · {meta.get('jp') or chain}"},
     }
 
 
@@ -1647,7 +1592,7 @@ def process_multiplier_followups(state: dict, webhook: str, chain: str, paper_pa
         ca = alert.get("ca")
         if not ca:
             continue
-        dex = fetch_dexscreener(ca, chain)
+        dex = gmgn_tok.market_snapshot(CHAIN_META.get(chain, {}).get("gmgn_chain") or chain, ca)
         price_now = _num(dex.get("price_usd"))
         if not price_now or price_now <= 0:
             continue
@@ -1863,7 +1808,7 @@ def run_once(args: argparse.Namespace) -> int:
         state,
         book_path,
         chain,
-        fetch_dexscreener,
+        lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
         webhook=paper_webhook,
         discord_post=discord_webhook,
     )

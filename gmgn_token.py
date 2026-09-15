@@ -1,0 +1,364 @@
+"""GMGN token info + security via gmgn-cli. Numbers come only from GMGN."""
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import time
+from typing import Any
+
+try:
+    from load_secrets import write_gmgn_dotenv
+except ImportError:
+    def write_gmgn_dotenv(path=None):  # type: ignore
+        return bool((os.environ.get("GMGN_API_KEY") or "").strip())
+
+
+_CACHE: dict[str, tuple[float, dict | None, str | None]] = {}
+_CACHE_TTL = 90.0
+
+
+def _num(x) -> float | None:
+    if x is None or x == "":
+        return None
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
+def _yesno(v) -> str:
+    s = str(v if v is not None else "").strip().lower()
+    if s in ("yes", "true", "1"):
+        return "yes"
+    if s in ("no", "false", "0"):
+        return "no"
+    return ""
+
+
+def _tax(v) -> float | None:
+    n = _num(v)
+    if n is None:
+        return None
+    if n > 1:
+        n = n / 100.0
+    if n < 0:
+        n = 0.0
+    return n
+
+
+def gmgn_cli_json(args: list[str], timeout: float = 40) -> tuple[dict | None, str | None]:
+    """Run gmgn-cli ... --raw. Returns (data, err_kind). err: auth|rate|other."""
+    write_gmgn_dotenv()
+    key = (os.environ.get("GMGN_API_KEY") or "").strip()
+    if not key or len(key) < 16:
+        return None, "auth"
+    cli = shutil.which("gmgn-cli")
+    if not cli:
+        print("gmgn-cli not found on PATH", flush=True)
+        return None, "other"
+    cmd = [cli, *args, "--raw"]
+    cache_key = " ".join(args)
+    hit = _CACHE.get(cache_key)
+    if hit and (time.time() - hit[0]) < _CACHE_TTL:
+        return hit[1], hit[2]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**os.environ})
+    except subprocess.TimeoutExpired:
+        print("gmgn-cli token timeout", flush=True)
+        return None, "other"
+    except Exception as e:
+        print(f"gmgn-cli token spawn fail: {type(e).__name__}", flush=True)
+        return None, "other"
+    err = (proc.stderr or "") + "\n" + (proc.stdout or "")
+    err_u = err.upper()
+    kind: str | None = None
+    if "AUTH_KEY_INVALID" in err_u or "API KEY INVALID" in err_u or " 401 " in err or err_u.startswith("401"):
+        kind = "auth"
+    elif "RATE_LIMIT" in err_u or "429" in err:
+        kind = "rate"
+    elif proc.returncode != 0:
+        kind = "other"
+        safe = re.sub(r"(GMGN_API_KEY|apikey|api[_-]?key)[=:\s]+\S+", r"\1=***", err, flags=re.I)
+        print(f"gmgn-cli token fail: {safe.strip()[:300]}", flush=True)
+    data = None
+    if kind is None:
+        out = (proc.stdout or "").strip()
+        if not out:
+            kind = "other"
+        else:
+            try:
+                parsed = json.loads(out)
+            except json.JSONDecodeError:
+                kind = "other"
+                parsed = None
+            if isinstance(parsed, dict):
+                data = parsed
+            else:
+                kind = "other"
+    _CACHE[cache_key] = (time.time(), data, kind)
+    return data, kind
+
+
+def fetch_token_info(chain: str, ca: str) -> tuple[dict | None, str | None]:
+    return gmgn_cli_json(["token", "info", "--chain", chain, "--address", ca])
+
+
+def fetch_token_security(chain: str, ca: str) -> tuple[dict | None, str | None]:
+    return gmgn_cli_json(["token", "security", "--chain", chain, "--address", ca])
+
+
+def parse_info(info: dict) -> dict:
+    price_obj = info.get("price")
+    if isinstance(price_obj, dict):
+        price = _num(price_obj.get("price"))
+    else:
+        price = _num(price_obj)
+    circ = _num(info.get("circulating_supply"))
+    if circ is None:
+        circ = _num(info.get("total_supply"))
+    mcap = None
+    if price is not None and circ is not None and circ > 0:
+        mcap = price * circ
+    liq = _num(info.get("liquidity"))
+    pool = info.get("pool") if isinstance(info.get("pool"), dict) else {}
+    if liq is None:
+        liq = _num(pool.get("liquidity"))
+    link = info.get("link") if isinstance(info.get("link"), dict) else {}
+    gmgn_url = (link.get("gmgn") or "").strip() or None
+    stat = info.get("stat") if isinstance(info.get("stat"), dict) else {}
+    tags = info.get("wallet_tags_stat") if isinstance(info.get("wallet_tags_stat"), dict) else {}
+    return {
+        "symbol": (info.get("symbol") or "").strip() or None,
+        "name": (info.get("name") or "").strip() or None,
+        "price_usd": price,
+        "mcap_usd": mcap,
+        "liq_usd": liq,
+        "holder_count": _num(info.get("holder_count") or stat.get("holder_count")),
+        "locked_ratio": _num(info.get("locked_ratio")),
+        "top10": _num(stat.get("top_10_holder_rate") or info.get("top_10_holder_rate")),
+        "gmgn_url": gmgn_url,
+        "exchange": pool.get("exchange"),
+        "smart_wallets": tags.get("smart_wallets"),
+        "renowned_wallets": tags.get("renowned_wallets"),
+    }
+
+
+def parse_security(sec: dict) -> dict:
+    burn = str(sec.get("burn_status") or "").strip().lower()
+    return {
+        "honeypot": _yesno(sec.get("is_honeypot")),
+        "open_source": _yesno(sec.get("open_source")) or str(sec.get("open_source") or "").strip().lower(),
+        "owner_renounced": _yesno(sec.get("owner_renounced")) or str(sec.get("owner_renounced") or "").strip().lower(),
+        "buy_tax": _tax(sec.get("buy_tax")),
+        "sell_tax": _tax(sec.get("sell_tax")),
+        "rug_ratio": _num(sec.get("rug_ratio")),
+        "top10": _num(sec.get("top_10_holder_rate")),
+        "burn_status": burn,
+        "is_wash_trading": sec.get("is_wash_trading"),
+        "creator_token_status": sec.get("creator_token_status"),
+        "sniper_count": _num(sec.get("sniper_count")),
+        "dev_team_hold_rate": _num(sec.get("dev_team_hold_rate")),
+    }
+
+
+def market_snapshot(chain: str, ca: str) -> dict:
+    """DexScreener-shaped market dict sourced only from GMGN token info."""
+    info, err = fetch_token_info(chain, ca)
+    if not info:
+        return {
+            "ok": False,
+            "reason": f"gmgn_{err or 'fail'}",
+            "liq_usd": None,
+            "mcap_usd": None,
+            "fdv": None,
+            "price_usd": None,
+            "url": None,
+            "pair": None,
+            "source": "gmgn",
+        }
+    p = parse_info(info)
+    url = p.get("gmgn_url") or f"https://gmgn.ai/{chain}/token/{ca}"
+    ok = p.get("price_usd") is not None or p.get("liq_usd") is not None
+    return {
+        "ok": bool(ok),
+        "reason": None if ok else "gmgn_empty",
+        "liq_usd": p.get("liq_usd"),
+        "mcap_usd": p.get("mcap_usd"),
+        "fdv": p.get("mcap_usd"),
+        "price_usd": p.get("price_usd"),
+        "url": url,
+        "pair": None,
+        "chainId": chain,
+        "symbol": p.get("symbol"),
+        "source": "gmgn",
+    }
+
+
+def evaluate(
+    chain: str,
+    ca: str,
+    *,
+    liq_mcap_min: float = 0.30,
+    lp_lock_min: float = 0.01,
+    tax_max: float = 0.10,
+    rug_max: float = 0.30,
+) -> dict[str, Any]:
+    """Safety + numbers. GMGN only. Never invent."""
+    info, info_err = fetch_token_info(chain, ca)
+    sec, sec_err = fetch_token_security(chain, ca)
+    fail: list[str] = []
+    parsed_info = parse_info(info) if info else {}
+    parsed_sec = parse_security(sec) if sec else {}
+
+    if not info:
+        fail.append(f"gmgn_info:{info_err or 'fail'}")
+    if not sec:
+        fail.append(f"gmgn_security:{sec_err or 'fail'}")
+
+    price = parsed_info.get("price_usd")
+    mcap = parsed_info.get("mcap_usd")
+    liq = parsed_info.get("liq_usd")
+    ratio = None
+    if liq is not None and mcap and mcap > 0:
+        ratio = liq / mcap
+
+    if info and mcap is None:
+        fail.append("no_mcap")
+    elif info and (ratio is None or ratio < liq_mcap_min):
+        fail.append(f"liq_ratio={ratio:.2f}" if ratio is not None else "liq_ratio=na")
+
+    hp = parsed_sec.get("honeypot") or ""
+    if hp == "yes":
+        fail.append("honeypot")
+    bt = parsed_sec.get("buy_tax")
+    st = parsed_sec.get("sell_tax")
+    if (bt is not None and bt >= tax_max) or (st is not None and st >= tax_max):
+        fail.append(f"high_tax(b={bt or 0:.0%}/s={st or 0:.0%})")
+
+    rug = parsed_sec.get("rug_ratio")
+    if rug is not None and rug > rug_max:
+        fail.append(f"rug={rug:.2f}")
+
+    burn = parsed_sec.get("burn_status") or ""
+    locked = parsed_info.get("locked_ratio")
+    burn_ok = burn in ("burn", "burned", "yes", "1", "true")
+    lock_ok = locked is not None and locked >= lp_lock_min
+    if sec and info:
+        if burn_ok or lock_ok:
+            lp_status = "pass"
+            lp_reason = "burn" if burn_ok else "locked"
+        elif locked is None and not burn:
+            lp_status = "fail"
+            lp_reason = "lp_unknown"
+            fail.append("lp_unknown")
+        else:
+            lp_status = "fail"
+            lp_reason = "lp_unlocked"
+            fail.append("lp_unlocked")
+    else:
+        lp_status = "fail"
+        lp_reason = "gmgn_lp_unavailable"
+
+    top10 = parsed_sec.get("top10")
+    if top10 is None:
+        top10 = parsed_info.get("top10")
+
+    ok = len(fail) == 0
+    audit = _audit_jp(parsed_sec, parsed_info, top10)
+    if ok:
+        ratio_txt = f"流動性/時価≈{ratio:.0%}" if ratio is not None else "流動性OK"
+        jp = f"通過（{ratio_txt}・GMGN監査OK）"
+    else:
+        jp_bits = []
+        for r in fail:
+            if r == "no_mcap":
+                jp_bits.append("時価総額なし")
+            elif r.startswith("liq_ratio"):
+                jp_bits.append("流動性が薄い")
+            elif "honeypot" in r:
+                jp_bits.append("売れない疑い")
+            elif "high_tax" in r:
+                jp_bits.append("手数料が高い")
+            elif r.startswith("rug"):
+                jp_bits.append("ラグリスク高")
+            elif "lp_unlocked" in r:
+                jp_bits.append("流動性がロックされていない")
+            elif "lp_unknown" in r:
+                jp_bits.append("LPロック不明")
+            elif r.startswith("gmgn_"):
+                jp_bits.append("GMGN取得失敗")
+            else:
+                jp_bits.append("検査NG")
+        jp = "見送り（" + "・".join(jp_bits) + "）"
+
+    gmgn_url = parsed_info.get("gmgn_url") or f"https://gmgn.ai/{chain}/token/{ca}"
+    print(
+        f"safety ca={ca[:10]}… ok={ok} src=gmgn ratio={ratio} "
+        f"lp={lp_status}:{lp_reason} locked={locked} burn={burn or '-'} "
+        f"reasons={fail or ['ok']}",
+        flush=True,
+    )
+    return {
+        "ok": ok,
+        "reasons": fail,
+        "ratio": ratio,
+        "liq_usd": liq,
+        "mcap_usd": mcap,
+        "fdv": mcap,
+        "price_usd": price,
+        "dex_url": gmgn_url,
+        "gmgn_url": gmgn_url,
+        "goplus": "unused",
+        "jp": jp,
+        "audit_jp": audit,
+        "symbol_hint": parsed_info.get("symbol"),
+        "source": "gmgn",
+        "honeypot": hp,
+        "buy_tax": bt,
+        "sell_tax": st,
+        "rug_ratio": rug,
+        "burn_status": burn,
+        "locked_ratio": locked,
+        "top10": top10,
+        "holder_count": parsed_info.get("holder_count"),
+        "lp_status": lp_status,
+        "info_err": info_err,
+        "sec_err": sec_err,
+    }
+
+
+def _audit_jp(sec: dict, info: dict, top10: float | None) -> str:
+    bits: list[str] = []
+    hp = sec.get("honeypot") or ""
+    if hp == "yes":
+        bits.append("honeypot")
+    elif hp == "no":
+        bits.append("honeypotなし")
+    bt = sec.get("buy_tax")
+    st = sec.get("sell_tax")
+    if bt is not None or st is not None:
+        bits.append(f"税{_pct(bt or 0)}/{_pct(st or 0)}")
+    rug = sec.get("rug_ratio")
+    if rug is not None:
+        bits.append(f"rug {rug:.2f}")
+    burn = sec.get("burn_status") or ""
+    locked = info.get("locked_ratio")
+    if burn in ("burn", "burned", "yes", "1", "true"):
+        bits.append("LPバーン")
+    elif locked is not None and locked > 0:
+        bits.append(f"ロック{_pct(locked)}")
+    elif sec:
+        bits.append("LP未ロック")
+    if top10 is not None:
+        bits.append(f"top10 {_pct(top10)}")
+    holders = info.get("holder_count")
+    if holders is not None:
+        bits.append(f"保有{int(holders)}人")
+    return " · ".join(bits) if bits else "GMGN監査なし"
+
+
+def _pct(x: float) -> str:
+    return f"{x*100:.0f}%"
