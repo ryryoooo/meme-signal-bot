@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Standalone RH meme overlap signal → Discord webhook. No trading.
+"""Standalone RH/Arc meme overlap signal → Discord webhook. Paper only.
 
 Primary trade source: GMGN smartmoney (gmgn-cli).
+Watchlist-strict by default (ALLOW_GMGN_CLUSTER=0).
 Nansen: optional wallet-list refresh only (--refresh-wallets), NOT dex-trades polling.
+LIVE_TRADING is blocked (stub only) until paper gate.
 """
 from __future__ import annotations
 
@@ -44,6 +46,8 @@ except ImportError:  # Actions / VPS without load_secrets helper
             pass
         return True
 
+
+import paper_trade as paper_mod
 
 SKIP_CA = {
     "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
@@ -88,6 +92,11 @@ MULTIPLIER_MILESTONES = (1.5, 2.0, 3.0, 5.0)
 ALERT_MAX_AGE_SEC = 24 * 3600
 FOLLOWUP_COOLDOWN_SEC = 30 * 60
 NANSEN_SLEEP = 0.8
+DEFAULT_COOLDOWN_SECONDS = 7200  # 2h
+MAX_SKIP_NOTICES_PER_RUN = 3
+# Paper: $300 bankroll, FOUNDATION risk (1 pos, 20/30%, +100% half, -40% stop, max5/week, 3-loss week stop)
+# LIVE_TRADING: never place real orders. Env LIVE_TRADING must stay 0 until paper gate.
+
 
 
 def load_dotenv(path: Path) -> None:
@@ -236,6 +245,8 @@ def load_state(path: Path) -> dict:
         "seen_signal_keys": [],
         "ca_last_posted": {},
         "open_alerts": [],
+        "paper_positions": [],
+        "paper": {},
         "last_poll_ts": None,
     }
 
@@ -258,6 +269,21 @@ def save_state(path: Path, state: dict) -> None:
         if age <= ALERT_MAX_AGE_SEC + 3600:
             pruned.append(a)
     state["open_alerts"] = pruned[-200:]
+    positions = state.get("paper_positions") or []
+    kept_pos = []
+    for p in positions:
+        st = (p.get("status") or "open")
+        if st in ("open", "half_taken"):
+            kept_pos.append(p)
+        else:
+            # keep recent closed briefly
+            try:
+                closed_at = float(p.get("closed_at") or p.get("opened_at") or 0)
+            except (TypeError, ValueError):
+                continue
+            if now - closed_at < 7 * 86400:
+                kept_pos.append(p)
+    state["paper_positions"] = kept_pos[-100:]
     path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
@@ -267,6 +293,34 @@ def append_paper_log(path: Path, row: dict) -> None:
     row.setdefault("ts", datetime.now(timezone.utc).isoformat())
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def append_paper_book(path: Path, row: dict) -> None:
+    """Append virtual paper-trade event. Never places real orders."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    row = dict(row)
+    row.setdefault("ts", datetime.now(timezone.utc).isoformat())
+    row.setdefault("paper", True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def default_watchlist_path(chain: str) -> Path:
+    if chain == "arc":
+        p = ROOT / "arc-wallets" / "wallets.jsonl"
+        if p.exists():
+            return p
+    return ROOT / "rh-wallets" / "wallets.jsonl"
+
+
+def live_trading_blocked() -> None:
+    """Hard stub: refuse live trading regardless of env typo."""
+    if env_bool("LIVE_TRADING", False):
+        print(
+            "LIVE_TRADING=1 ignored — live trading blocked until paper gate. "
+            "Forcing paper-only mode.",
+            file=sys.stderr,
+        )
 
 
 def parse_ts(s) -> float:
@@ -951,6 +1005,43 @@ def build_multiplier_embed(alert: dict, mult: float, dex: dict, milestone: float
     }
 
 
+def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
+    sym = s.get("symbol") or safety.get("symbol_hint") or "不明"
+    reasons = safety.get("reasons") or []
+    bits: list[str] = []
+    for r in reasons:
+        rs = str(r)
+        if rs == "no_mcap":
+            bits.append("時価なし")
+        elif rs == "no_pair":
+            bits.append("ペアなし")
+        elif rs.startswith("liq_ratio"):
+            bits.append("薄い板")
+        elif "honeypot" in rs:
+            bits.append("honeypot")
+        elif "cannot_sell" in rs:
+            bits.append("売却制限")
+        elif "high_tax" in rs:
+            bits.append("手数料高")
+        else:
+            bits.append("検査NG")
+    reason_jp = "・".join(bits) if bits else (safety.get("jp") or "見送り")
+    meta = CHAIN_META.get(chain, {})
+    return {
+        "title": f"見送り · ${sym}"[:256],
+        "description": (
+            f"{reason_jp}\n"
+            f"監視交差 {s.get('n', '?')}人 · 自動では買いません"
+        )[:4000],
+        "color": 0x95A5A6,
+        "fields": [
+            {"name": "コントラクト", "value": f"`{s.get('ca')}`", "inline": False},
+            {"name": "理由", "value": (safety.get("jp") or reason_jp)[:500], "inline": False},
+        ],
+        "footer": {"text": f"スキップ通知 · {meta.get('jp') or chain}"},
+    }
+
+
 def process_multiplier_followups(state: dict, webhook: str, chain: str, paper_path: Path) -> int:
     now = time.time()
     alerts = state.get("open_alerts") or []
@@ -979,21 +1070,10 @@ def process_multiplier_followups(state: dict, webhook: str, chain: str, paper_pa
             if mult >= ms and ms not in hit:
                 next_ms = ms
                 break
-        last_fu = float(alert.get("last_followup_at") or 0)
-        cooldown_ok = (now - last_fu) >= FOLLOWUP_COOLDOWN_SEC
-        # Milestone crossing preferred; else any >=1.5 change with cooldown
-        should = False
-        milestone = None
-        if next_ms is not None:
-            should = True
-            milestone = next_ms
-        elif mult >= 1.5 and cooldown_ok:
-            # only if meaningful move since last followup (>5%)
-            last_mult = _num(alert.get("last_followup_mult")) or 1.0
-            if abs(mult - last_mult) / max(last_mult, 1e-9) >= 0.05:
-                should = True
-        if not should:
+        # Milestone crossings only (each once): 1.5x / 2x / 3x / 5x
+        if next_ms is None:
             continue
+        milestone = next_ms
         embed = build_multiplier_embed(alert, mult, dex, milestone)
         discord_webhook(webhook, embeds=[embed])
         if milestone is not None:
@@ -1059,40 +1139,57 @@ def run_once(args: argparse.Namespace) -> int:
     load_dotenv(ROOT / ".env")
     load_box_secrets()
     write_gmgn_dotenv()
+    live_trading_blocked()
 
     webhook = env("DISCORD_WEBHOOK_URL")
     chain = os.environ.get("CHAIN", "robinhood").strip().lower()
     window = int(os.environ.get("WINDOW_SECONDS", "900"))
     min_wallets = int(os.environ.get("MIN_WALLETS", "2"))
     min_usd = float(os.environ.get("MIN_TRADE_USD", "50"))
-    cooldown = int(os.environ.get("COOLDOWN_SECONDS", "21600"))
+    cooldown = int(os.environ.get("COOLDOWN_SECONDS", str(DEFAULT_COOLDOWN_SECONDS)))
     min_realized = float(os.environ.get("WATCH_MIN_REALIZED_USD", "0"))
-    watch_path = Path(os.environ.get("WATCHLIST_PATH", str(ROOT / "rh-wallets/wallets.jsonl"))).resolve()
+    allow_cluster = env_bool("ALLOW_GMGN_CLUSTER", False)
+    default_wl = default_watchlist_path(chain)
+    watch_path = Path(os.environ.get("WATCHLIST_PATH", str(default_wl))).resolve()
     if not watch_path.exists():
         alt = (ROOT / "../rh-wallets/wallets.jsonl").resolve()
-        if alt.exists():
+        if alt.exists() and chain != "arc":
             watch_path = alt
     state_path = Path(os.environ.get("STATE_PATH", str(ROOT / "state.json"))).resolve()
     paper_path = Path(os.environ.get("PAPER_LOG_PATH", str(ROOT / "paper_log.jsonl"))).resolve()
+    book_path = Path(os.environ.get("PAPER_BOOK_PATH", str(ROOT / "paper_book.jsonl"))).resolve()
 
     watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
     watch_set = set(watch.keys())
     print(
         f"watchlist raw={raw_count} filtered={len(watch_set)} "
-        f"min_realized={min_realized} fallback={fallback} NANSEN_FOR_TRADES={int(env_bool('NANSEN_FOR_TRADES', False))}"
+        f"min_realized={min_realized} fallback={fallback} "
+        f"NANSEN_FOR_TRADES={int(env_bool('NANSEN_FOR_TRADES', False))} "
+        f"ALLOW_GMGN_CLUSTER={int(allow_cluster)} chain={chain} "
+        f"PAPER_BANKROLL_USD={paper_mod.bankroll_usd()}"
     )
 
     state = load_state(state_path)
-    # Always try multiplier updates first (works even if GMGN auth fails)
+    paper_mod.ensure_paper_state(state)
+
+    # Multiplier milestones + paper marks (works even if GMGN auth fails)
     fu = process_multiplier_followups(state, webhook, chain, paper_path)
-    if fu:
+    paper_stats = paper_mod.process_paper_positions(
+        state,
+        book_path,
+        chain,
+        fetch_dexscreener,
+        webhook=webhook,
+        discord_post=discord_webhook,
+    )
+    if fu or paper_stats.get("marked") or paper_stats.get("half") or paper_stats.get("stop"):
         save_state(state_path, state)
 
     trades, source_name, gmgn_err = collect_trades(args, chain, min_usd, watch_set)
 
     if gmgn_err == "auth":
         print(
-            "AUTH_KEY_INVALID / GMGN key bad — soft exit after multiplier updates. "
+            "AUTH_KEY_INVALID / GMGN key bad — soft exit after multiplier/paper updates. "
             "Set a real GMGN_API_KEY (box-secrets desktop + GitHub secret).",
             file=sys.stderr,
         )
@@ -1102,30 +1199,47 @@ def run_once(args: argparse.Namespace) -> int:
         )
 
     if not trades:
-        print(f"no trades source={source_name} gmgn_err={gmgn_err}; done (followups={fu})")
+        print(
+            f"no trades source={source_name} gmgn_err={gmgn_err}; "
+            f"done (followups={fu} paper={paper_stats})"
+        )
         state["last_poll_ts"] = datetime.now(timezone.utc).isoformat()
         state["watch_size"] = len(watch_set)
         state["trade_source"] = source_name
         state["gmgn_err"] = gmgn_err
         save_state(state_path, state)
-        # soft exit 0 even on auth failure
+        summary_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
+        try:
+            paper_mod.write_paper_summary(
+                paper_path, state_path, book_path, summary_path, load_state, milestones=MULTIPLIER_MILESTONES
+            )
+        except Exception as e:
+            print(f"paper_summary fail: {type(e).__name__}", file=sys.stderr)
         return 0
 
-    # Prefer watchlist intersection; if too few signals, allow GMGN cluster alone
+    # Watchlist-strict: only post when ≥2 makers in filtered watchlist
     signals_wl = detect_signals(trades, watch_set, window, min_wallets, min_usd)
     source_mode = "watchlist"
-    if len(signals_wl) >= 1:
+    if signals_wl:
         signals = signals_wl
         source_mode = "watchlist"
-    else:
-        # GMGN platform cluster (all makers in feed)
+    elif allow_cluster:
         all_makers = {(t.get("trader_address") or "").lower() for t in trades}
         all_makers.discard("")
         signals = detect_signals(trades, all_makers, window, min_wallets, min_usd)
-        source_mode = "gmgn_cluster" if source_name == "gmgn" else ("onchain" if source_name == "onchain" else "gmgn_cluster")
-        print(
-            f"watchlist signals=0; using {source_mode} cluster makers={len(all_makers)} signals={len(signals)}"
+        source_mode = (
+            "gmgn_cluster"
+            if source_name == "gmgn"
+            else ("onchain" if source_name == "onchain" else "gmgn_cluster")
         )
+        print(
+            f"ALLOW_GMGN_CLUSTER=1; watchlist=0 using {source_mode} "
+            f"makers={len(all_makers)} signals={len(signals)}"
+        )
+    else:
+        signals = []
+        source_mode = "watchlist"
+        print("watchlist-strict: no watchlist overlap signals (cluster disabled)")
 
     seen = set(state.get("seen_signal_keys") or [])
     ca_last: dict = dict(state.get("ca_last_posted") or {})
@@ -1133,6 +1247,7 @@ def run_once(args: argparse.Namespace) -> int:
     now = time.time()
     posted = 0
     skipped = 0
+    skip_notices = 0
 
     for s in signals:
         ca = s["ca"]
@@ -1181,6 +1296,12 @@ def run_once(args: argparse.Namespace) -> int:
                     "goplus": safety.get("goplus"),
                 },
             )
+            if skip_notices < MAX_SKIP_NOTICES_PER_RUN:
+                try:
+                    discord_webhook(webhook, embeds=[build_skip_embed(s, safety, chain)])
+                    skip_notices += 1
+                except Exception as e:
+                    print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)
             seen.add(s["key"])
             skipped += 1
             continue
@@ -1203,7 +1324,6 @@ def run_once(args: argparse.Namespace) -> int:
             "milestones_hit": [],
             "source_mode": source_mode,
         }
-        # drop older same CA
         open_alerts = [a for a in open_alerts if (a.get("ca") or "").lower() != ca]
         open_alerts.append(alert)
         posted += 1
@@ -1225,6 +1345,19 @@ def run_once(args: argparse.Namespace) -> int:
                 "message_id": msg_id,
             },
         )
+        # Virtual paper entry (FOUNDATION: 1 pos, 20/30%, week caps)
+        if safety.get("price_usd"):
+            paper_mod.open_paper_position(
+                state,
+                book_path,
+                ca=ca,
+                symbol=s.get("symbol") or safety.get("symbol_hint"),
+                entry_price=float(safety["price_usd"]),
+                n=int(s["n"]),
+                chain=chain,
+                mcap=safety.get("mcap_usd") or safety.get("fdv"),
+                liq=safety.get("liq_usd"),
+            )
         time.sleep(0.5)
 
     state["seen_signal_keys"] = list(seen)
@@ -1239,9 +1372,17 @@ def run_once(args: argparse.Namespace) -> int:
     state["source_mode"] = source_mode
     state["gmgn_err"] = gmgn_err
     save_state(state_path, state)
+    summary_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
+    try:
+        paper_mod.write_paper_summary(
+            paper_path, state_path, book_path, summary_path, load_state, milestones=MULTIPLIER_MILESTONES
+        )
+    except Exception as e:
+        print(f"paper_summary fail: {type(e).__name__}", file=sys.stderr)
     print(
         f"done source={source_name}/{source_mode} trades={len(trades)} signals={len(signals)} "
-        f"posted={posted} skipped={skipped} followups={fu} watch={len(watch_set)}"
+        f"posted={posted} skipped={skipped} skip_notices={skip_notices} "
+        f"followups={fu} paper={paper_stats} watch={len(watch_set)}"
     )
     return 0
 
@@ -1251,12 +1392,14 @@ def main() -> int:
     p.add_argument("--loop", action="store_true", help="poll forever")
     p.add_argument("--test-webhook", action="store_true")
     p.add_argument("--refresh-wallets", action="store_true", help="Nansen pnl-leaderboard → wallets.jsonl (infrequent)")
+    p.add_argument("--paper-summary", action="store_true", help="Write paper_summary.md from logs/state")
     p.add_argument("--pages", type=int, default=2, help="legacy Nansen pages if NANSEN_FOR_TRADES=1")
     p.add_argument("--per-page", type=int, default=100, help="GMGN --limit / Nansen per_page")
     args = p.parse_args()
 
     load_dotenv(ROOT / ".env")
     load_box_secrets()
+    live_trading_blocked()
 
     if args.test_webhook:
         url = env("DISCORD_WEBHOOK_URL")
@@ -1266,7 +1409,10 @@ def main() -> int:
             embeds=[
                 {
                     "title": "接続OK",
-                    "description": "通知のみ・自動売買なし（GMGN主・Nansenは財布更新のみ）",
+                    "description": (
+                        "通知のみ・紙トレード仮想$300・実注文なし"
+                        "（GMGN主・Nansenは財布更新のみ）"
+                    ),
                     "color": 0x2ECC71,
                 }
             ],
@@ -1274,8 +1420,26 @@ def main() -> int:
         print("test ok")
         return 0
 
+    if args.paper_summary:
+        state_path = Path(os.environ.get("STATE_PATH", str(ROOT / "state.json"))).resolve()
+        paper_path = Path(os.environ.get("PAPER_LOG_PATH", str(ROOT / "paper_log.jsonl"))).resolve()
+        book_path = Path(os.environ.get("PAPER_BOOK_PATH", str(ROOT / "paper_book.jsonl"))).resolve()
+        out_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
+        paper_mod.write_paper_summary(
+            paper_path,
+            state_path,
+            book_path,
+            out_path,
+            load_state,
+            milestones=MULTIPLIER_MILESTONES,
+        )
+        return 0
+
     if args.refresh_wallets:
-        watch_path = Path(os.environ.get("WATCHLIST_PATH", str(ROOT / "rh-wallets/wallets.jsonl"))).resolve()
+        chain = os.environ.get("CHAIN", "robinhood").strip().lower()
+        watch_path = Path(
+            os.environ.get("WATCHLIST_PATH", str(default_watchlist_path(chain)))
+        ).resolve()
         return refresh_wallets_nansen(watch_path, pages=max(1, args.pages))
 
     if args.loop:
@@ -1287,6 +1451,7 @@ def main() -> int:
                 print(f"error: {e}", file=sys.stderr)
             time.sleep(poll)
     return run_once(args)
+
 
 
 if __name__ == "__main__":

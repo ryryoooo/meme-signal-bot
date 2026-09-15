@@ -1,0 +1,35 @@
+name: refresh-wallets
+
+on:
+  schedule:
+    # Weekly Sun 10:00 JST ≈ Sat 01:00 UTC
+    - cron: "0 1 * * 6"
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Refresh RH wallets via Nansen
+        env:
+          NANSEN_API_KEY: ${{ secrets.NANSEN_API_KEY }}
+          NANSEN_FOR_TRADES: "0"
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+        run: python3 bot.py --refresh-wallets --pages 2
+
+      - name: Upload wallets artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rh-wallets-jsonl
+          path: rh-wallets/wallets.jsonl
+          retention-days: 30
+
+      # Prefer artifact over noisy commits; optional commit if small delta desired later.

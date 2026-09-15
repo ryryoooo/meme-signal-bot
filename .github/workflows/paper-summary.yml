@@ -1,0 +1,52 @@
+# Sun 09:00 JST = Sat 00:00 UTC → cron 0 0 * * 6
+name: paper-summary
+
+on:
+  schedule:
+    - cron: "0 0 * * 6"
+  workflow_dispatch: {}
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore state cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            state.json
+            paper_log.jsonl
+            paper_book.jsonl
+            paper_summary.md
+          key: meme-signal-state-v4
+          restore-keys: |
+            meme-signal-state-
+
+      - name: Write paper_summary.md
+        env:
+          PAPER_BANKROLL_USD: "300"
+          LIVE_TRADING: "0"
+          STATE_PATH: state.json
+          PAPER_LOG_PATH: paper_log.jsonl
+          PAPER_BOOK_PATH: paper_book.jsonl
+          PAPER_SUMMARY_PATH: paper_summary.md
+        run: python3 bot.py --paper-summary
+
+      - name: Upload summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-summary-weekly
+          path: |
+            paper_summary.md
+            paper_book.jsonl
+            paper_log.jsonl
+            state.json
+          if-no-files-found: warn
+          retention-days: 30

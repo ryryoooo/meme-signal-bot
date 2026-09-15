@@ -29,7 +29,6 @@ jobs:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
         run: |
           mkdir -p "$HOME/.config/gmgn"
-          # write without printing
           python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
 
       - name: Restore state cache
@@ -38,23 +37,43 @@ jobs:
           path: |
             state.json
             paper_log.jsonl
-          key: meme-signal-state-v3
+            paper_book.jsonl
+            paper_summary.md
+          key: meme-signal-state-v4
           restore-keys: |
             meme-signal-state-
 
-      - name: Run once
+      - name: Run once (signals + paper marks)
         env:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           NANSEN_FOR_TRADES: "0"
+          LIVE_TRADING: "0"
+          ALLOW_GMGN_CLUSTER: "0"
+          PAPER_BANKROLL_USD: "300"
           CHAIN: robinhood
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
           MIN_TRADE_USD: "50"
-          COOLDOWN_SECONDS: "21600"
+          COOLDOWN_SECONDS: "7200"
           WATCH_MIN_REALIZED_USD: "0"
           GMGN_LIMIT: "100"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
           PAPER_LOG_PATH: paper_log.jsonl
+          PAPER_BOOK_PATH: paper_book.jsonl
+          PAPER_SUMMARY_PATH: paper_summary.md
         run: python3 bot.py --per-page 100
+
+      - name: Upload paper artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-state
+          path: |
+            state.json
+            paper_log.jsonl
+            paper_book.jsonl
+            paper_summary.md
+          if-no-files-found: ignore
+          retention-days: 14

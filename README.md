@@ -1,60 +1,59 @@
 # 独立 Discord シグナルBot（super容量ゼロ）
 
 このフォルダを **VPS / 自宅常時PC / GitHub Actions** などに置き、そこで定期実行する。
-Grok Bot のルーチンには載せない（載せると容量を食う）。
+Grok Bot のルーチンには載せない（載せると容量を食う）。紙トレード更新も **Actions のみ**。
 
 ## 何をするか
 - **主ソース**: GMGN `track smartmoney`（`gmgn-cli track smartmoney --chain robinhood --side buy --limit … --raw`）
-- 監視リスト（`rh-wallets/wallets.jsonl` の `pass_pnl` / 実現損益>0）と交差した買いが **同一コントラクトを15分以内に2本以上** なら Discord に投稿
-- 監視リスト交差が少なすぎる場合は、GMGNスマートマネークラスタ単体も許可（埋め込みに **「GMGNスマートマネー（監視リスト外含む）」** と明記）
-- GMGN が失敗（`AUTH_KEY_INVALID` / 401 / レート制限）したらオンチェーン探索を best-effort で試す（DexScreenerは財布取引を列挙できない。RH Blockscout は Cloudflare / Pro API 鍵が必要なことが多く、取れなければ新シグナルは出さない）。**偽の取引は作らない**
-- **倍率フォローアップ**: 投稿時に `state.json` へ価格・時価・流動性を保存。24時間以内のアラートを DexScreener で再取得し、1.5x/2x/3x/5x 到達（または30分クールダウン付きの変動）で「さっきの通知から ○.○倍」を追記
-- **売買しない**（通知のみ）
+- **監視リスト厳格**: フィルタ済み監視財布が **同一CAを15分以内に2本以上** 買ったときだけ投稿（既定）
+- `ALLOW_GMGN_CLUSTER=0`（既定）で監視リスト外クラスタ投稿は無効。必要なら `1` で再有効化
+- GMGN失敗時はオンチェーン探索を best-effort（偽取引は作らない）
+- **倍率フォローアップ**: 1.5x / 2x / 3x / 5x 到達を各1回（プレーン日本語）
+- **紙トレード**（仮想 **$300**）: 投稿時に仮想ポジション。FOUNDATION準拠
+  - 同時1本 / サイズ20%（n≥3は30%）/ +100%半分 / −40%ストップ / 週最大5 / 連敗3で週終了
+  - `paper_book.jsonl` + `paper_summary.md`（エクイティ曲線）を Actions cache / artifact で永続
+- **実弾禁止**: `LIVE_TRADING=0`（有効化してもブロック）
+- **ATH追いフィルタは未実装**（意図的）
 
-## Nansen の使い方（クレジット節約）
-- **定期ジョブでは Nansen dex-trades を呼ばない**（既定 `NANSEN_FOR_TRADES=0`）
-- 財布リストのまれな更新だけ: `python3 bot.py --refresh-wallets`（または手元の `rh-wallets/collect_*.py`）
-- Actions cron は引き続き **20分ごと**（`*/20 * * * *`）。Nansenページ数の概念は定期実行では不要
+## チェーン
+- 既定: `CHAIN=robinhood` + `rh-wallets/wallets.jsonl`
+- 任意: `CHAIN=arc` + `arc-wallets/wallets.jsonl`（RHを壊さない）
+
+## Nansen
+- 定期ジョブでは dex-trades を呼ばない（`NANSEN_FOR_TRADES=0`）
+- 週次: `refresh-wallets.yml` → `python3 bot.py --refresh-wallets`（artifact）
 
 ## 投稿前ゲート
-- **監視財布**: `pass_pnl` または実現損益>0（`WATCH_MIN_REALIZED_USD`、既定0）
-- **安全チェック**: DexScreener で **流動性/時価 ≥30%**（なければFDV）。時価が取れなければ投稿しない。GoPlus は未対応チェーンならスキップ
-- 埋め込みに **時価総額 / 流動性 / liq/mcap / DexScreener リンク** を出す
-- **同一コントラクト冷却**: 既定6時間（`COOLDOWN_SECONDS=21600`）は新規シグナルを再投稿しない
-- **ATH追いフィルタは未実装**（意図的）
+- 監視財布: `pass_pnl` または実現損益>0
+- 安全: DexScreener **流動性/時価 ≥30%**。時価なしは見送り。GoPlus未対応はスキップ
+- 安全見送りは Discord に短い通知（1実行あたり最大3件）
+- 冷却: 既定 **2時間**（`COOLDOWN_SECONDS=7200`）
 
 ## GitHub Secrets
 | Secret | 用途 |
 |--------|------|
-| `GMGN_API_KEY` | 定期ジョブ必須。`gh secret set GMGN_API_KEY`（値はログに出さない） |
+| `GMGN_API_KEY` | 定期ジョブ必須 |
 | `DISCORD_WEBHOOK_URL` | 必須 |
-| `NANSEN_API_KEY` | `--refresh-wallets` 用に残してよい。定期ジョブの env からは外す |
+| `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
 
-ローカル / box では `load_secrets.py` が `box-secrets.json` の `desktop.GMGN_API_KEY` を読み、`~/.config/gmgn/.env` に書く（キーは印刷しない）。
+秘密鍵・実弾キーは Actions に置かない。
 
 ## セットアップ
 ```bash
 cd discord-bot
 cp .env.example .env
-# GMGN_API_KEY / DISCORD_WEBHOOK_URL を設定
-npm install -g gmgn-cli   # または既存バイナリ
-python3 load_secrets.py   # box 上なら ~/.config/gmgn/.env を用意
+# GMGN_API_KEY / DISCORD_WEBHOOK_URL / PAPER_BANKROLL_USD=300
+npm install -g gmgn-cli
+python3 load_secrets.py   # box 上
 python3 bot.py --per-page 100
+python3 bot.py --paper-summary
 ```
 
-## テスト
-```bash
-python3 bot.py --test-webhook
-```
-
-## 紙ログ
-- `paper_log.jsonl` / `state.json`（Actions は cache）
+## ワークフロー
+- `signal.yml`: `*/5` 本ポーリング + 紙マーク更新
+- `paper-summary.yml`: 週次（Sat 00:00 UTC ≈ Sun 09:00 JST）`0 0 * * 6`
+- `refresh-wallets.yml`: 週次 Nansen 財布更新 → artifact
 
 ## 注意
 - シークレットをログに出さない
-- GMGN キーが無効なときはソフト終了し、既存アラートの倍率更新だけ続行する
-
-## 運用メモ
-- リポジトリはPublic（Actions無料枠のため）
-- チェック間隔: 約5分（GitHub cronは多少遅延しうる）
-- 秘密情報はGitHub Secretsのみ（コードにキーは無い）
+- Public リポ。Actions 無料枠のため cron は `*/5`
