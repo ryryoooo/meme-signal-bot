@@ -16,29 +16,45 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
+      - name: Configure GMGN env (no echo)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          # write without printing
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
+
       - name: Restore state cache
         uses: actions/cache@v4
         with:
           path: |
             state.json
             paper_log.jsonl
-          key: meme-signal-state-v2
+          key: meme-signal-state-v3
           restore-keys: |
             meme-signal-state-
 
       - name: Run once
         env:
-          NANSEN_API_KEY: ${{ secrets.NANSEN_API_KEY }}
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          NANSEN_FOR_TRADES: "0"
           CHAIN: robinhood
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
           MIN_TRADE_USD: "50"
           COOLDOWN_SECONDS: "21600"
           WATCH_MIN_REALIZED_USD: "0"
+          GMGN_LIMIT: "100"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
           PAPER_LOG_PATH: paper_log.jsonl
-        run: python3 bot.py --pages 2 --per-page 100
-
-      # cache save happens automatically at end of job for actions/cache
+        run: python3 bot.py --per-page 100
