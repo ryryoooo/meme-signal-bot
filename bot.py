@@ -1066,10 +1066,9 @@ def refresh_wallets_nansen(watch_path: Path, pages: int = 2) -> int:
                 # Minimal payload variants
                 payloads = [
                     {
-                        "chain": chain,
+                        "chains": [chain],
                         "pagination": {"page": page, "per_page": 50},
                         "order_by": [{"field": "realized_pnl_usd", "direction": "DESC"}],
-                        "timeframe": tf,
                     },
                     {
                         "chains": [chain],
