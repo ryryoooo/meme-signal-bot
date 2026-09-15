@@ -44,8 +44,6 @@ def token_app_url(chain: str, ca: str, provided: str | None = None) -> str:
     return f"https://gmgn.ai/{slug}/token/{ca}"
 
 
-
-
 def _num(x) -> float | None:
     if x is None or x == "":
         return None
@@ -75,7 +73,20 @@ def _tax(v) -> float | None:
     return n
 
 
-def gmgn_cli_json(args: list[str], timeout: float = 40) -> tuple[dict | None, str | None]:
+def _parse_reset_wait(err: str) -> float:
+    """Seconds to wait from RATE_LIMIT message / reset_at. Cap 90s."""
+    m = re.search(r"reset_at[\"']?\s*[:=]\s*(\d{9,})", err)
+    if m:
+        wait = int(m.group(1)) - time.time()
+        return max(1.0, min(90.0, wait + 1))
+    m = re.search(r"resets? at ([^\n]+)", err, re.I)
+    # fall back short pause
+    if "RATE_LIMIT" in err.upper() or "429" in err:
+        return 8.0
+    return 0.0
+
+
+def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 1) -> tuple[dict | None, str | None]:
     """Run gmgn-cli ... --raw. Returns (data, err_kind). err: auth|rate|other."""
     write_gmgn_dotenv()
     key = (os.environ.get("GMGN_API_KEY") or "").strip()
@@ -88,44 +99,54 @@ def gmgn_cli_json(args: list[str], timeout: float = 40) -> tuple[dict | None, st
     cmd = [cli, *args, "--raw"]
     cache_key = " ".join(args)
     hit = _CACHE.get(cache_key)
-    if hit and (time.time() - hit[0]) < _CACHE_TTL:
+    if hit and (time.time() - hit[0]) < _CACHE_TTL and hit[1] is not None:
         return hit[1], hit[2]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**os.environ})
-    except subprocess.TimeoutExpired:
-        print("gmgn-cli token timeout", flush=True)
-        return None, "other"
-    except Exception as e:
-        print(f"gmgn-cli token spawn fail: {type(e).__name__}", flush=True)
-        return None, "other"
-    err = (proc.stderr or "") + "\n" + (proc.stdout or "")
-    err_u = err.upper()
-    kind: str | None = None
-    if "AUTH_KEY_INVALID" in err_u or "API KEY INVALID" in err_u or " 401 " in err or err_u.startswith("401"):
-        kind = "auth"
-    elif "RATE_LIMIT" in err_u or "429" in err:
-        kind = "rate"
-    elif proc.returncode != 0:
-        kind = "other"
-        safe = re.sub(r"(GMGN_API_KEY|apikey|api[_-]?key)[=:\s]+\S+", r"\1=***", err, flags=re.I)
-        print(f"gmgn-cli token fail: {safe.strip()[:300]}", flush=True)
-    data = None
-    if kind is None:
-        out = (proc.stdout or "").strip()
-        if not out:
+
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**os.environ})
+        except subprocess.TimeoutExpired:
+            print("gmgn-cli token timeout", flush=True)
+            return None, "other"
+        except Exception as e:
+            print(f"gmgn-cli token spawn fail: {type(e).__name__}", flush=True)
+            return None, "other"
+        err = (proc.stderr or "") + "\n" + (proc.stdout or "")
+        err_u = err.upper()
+        kind: str | None = None
+        if "AUTH_KEY_INVALID" in err_u or "API KEY INVALID" in err_u or " 401 " in err or err_u.startswith("401"):
+            kind = "auth"
+        elif "RATE_LIMIT" in err_u or "429" in err:
+            kind = "rate"
+        elif proc.returncode != 0:
             kind = "other"
-        else:
-            try:
-                parsed = json.loads(out)
-            except json.JSONDecodeError:
+            safe = re.sub(r"(GMGN_API_KEY|apikey|api[_-]?key)[=:\s]+\S+", r"\1=***", err, flags=re.I)
+            print(f"gmgn-cli token fail: {safe.strip()[:300]}", flush=True)
+        data = None
+        if kind is None:
+            out = (proc.stdout or "").strip()
+            if not out:
                 kind = "other"
-                parsed = None
-            if isinstance(parsed, dict):
-                data = parsed
             else:
-                kind = "other"
-    _CACHE[cache_key] = (time.time(), data, kind)
-    return data, kind
+                try:
+                    parsed = json.loads(out)
+                except json.JSONDecodeError:
+                    kind = "other"
+                    parsed = None
+                if isinstance(parsed, dict):
+                    data = parsed
+                else:
+                    kind = "other"
+        if kind == "rate" and attempt <= retries:
+            wait = _parse_reset_wait(err)
+            print(f"gmgn-cli rate; sleep {wait:.0f}s then retry {attempt}/{retries}", flush=True)
+            time.sleep(wait)
+            continue
+        # Cache successes and non-rate failures briefly so we don't hammer
+        _CACHE[cache_key] = (time.time(), data, kind)
+        return data, kind
 
 
 def fetch_token_info(chain: str, ca: str) -> tuple[dict | None, str | None]:
@@ -140,14 +161,34 @@ def parse_info(info: dict) -> dict:
     price_obj = info.get("price")
     if isinstance(price_obj, dict):
         price = _num(price_obj.get("price"))
+        # Some payloads nest market_cap under price
+        nested_mcap = _num(
+            price_obj.get("market_cap")
+            or price_obj.get("usd_market_cap")
+            or price_obj.get("mc")
+        )
     else:
         price = _num(price_obj)
+        nested_mcap = None
     circ = _num(info.get("circulating_supply"))
     if circ is None:
         circ = _num(info.get("total_supply"))
-    mcap = None
-    if price is not None and circ is not None and circ > 0:
+    # Prefer GMGN-provided market cap fields when present (matches app better)
+    mcap = _num(
+        info.get("market_cap")
+        or info.get("usd_market_cap")
+        or info.get("mc")
+        or info.get("marketcap")
+    )
+    if mcap is None:
+        mcap = nested_mcap
+    if mcap is None and price is not None and circ is not None and circ > 0:
         mcap = price * circ
+    fdv = _num(info.get("fdv") or info.get("fully_diluted_valuation"))
+    if fdv is None and price is not None:
+        mx = _num(info.get("max_supply") or info.get("total_supply"))
+        if mx and mx > 0:
+            fdv = price * mx
     liq = _num(info.get("liquidity"))
     pool = info.get("pool") if isinstance(info.get("pool"), dict) else {}
     if liq is None:
@@ -161,6 +202,7 @@ def parse_info(info: dict) -> dict:
         "name": (info.get("name") or "").strip() or None,
         "price_usd": price,
         "mcap_usd": mcap,
+        "fdv": fdv if fdv is not None else mcap,
         "liq_usd": liq,
         "holder_count": _num(info.get("holder_count") or stat.get("holder_count")),
         "locked_ratio": _num(info.get("locked_ratio")),
@@ -174,6 +216,18 @@ def parse_info(info: dict) -> dict:
 
 def parse_security(sec: dict) -> dict:
     burn = str(sec.get("burn_status") or "").strip().lower()
+    # Some EVM payloads expose lock as is_locked / liquidity_locked
+    locked_alt = None
+    for k in ("liquidity_locked", "is_locked", "lp_locked", "locked_ratio"):
+        if k in sec:
+            v = sec.get(k)
+            if isinstance(v, (int, float)) or (isinstance(v, str) and v.replace(".", "", 1).isdigit()):
+                locked_alt = _num(v)
+            elif _yesno(v) == "yes":
+                locked_alt = 1.0
+            elif _yesno(v) == "no":
+                locked_alt = 0.0
+            break
     return {
         "honeypot": _yesno(sec.get("is_honeypot")),
         "open_source": _yesno(sec.get("open_source")) or str(sec.get("open_source") or "").strip().lower(),
@@ -183,6 +237,7 @@ def parse_security(sec: dict) -> dict:
         "rug_ratio": _num(sec.get("rug_ratio")),
         "top10": _num(sec.get("top_10_holder_rate")),
         "burn_status": burn,
+        "locked_ratio": locked_alt,
         "is_wash_trading": sec.get("is_wash_trading"),
         "creator_token_status": sec.get("creator_token_status"),
         "sniper_count": _num(sec.get("sniper_count")),
@@ -191,7 +246,7 @@ def parse_security(sec: dict) -> dict:
 
 
 def market_snapshot(chain: str, ca: str) -> dict:
-    """DexScreener-shaped market dict sourced only from GMGN token info."""
+    """Market dict sourced only from GMGN token info."""
     info, err = fetch_token_info(chain, ca)
     if not info:
         return {
@@ -204,6 +259,7 @@ def market_snapshot(chain: str, ca: str) -> dict:
             "url": None,
             "pair": None,
             "source": "gmgn",
+            "fetch_failed": True,
         }
     p = parse_info(info)
     url = token_app_url(chain, ca, p.get("gmgn_url"))
@@ -213,13 +269,14 @@ def market_snapshot(chain: str, ca: str) -> dict:
         "reason": None if ok else "gmgn_empty",
         "liq_usd": p.get("liq_usd"),
         "mcap_usd": p.get("mcap_usd"),
-        "fdv": p.get("mcap_usd"),
+        "fdv": p.get("fdv") or p.get("mcap_usd"),
         "price_usd": p.get("price_usd"),
         "url": url,
         "pair": None,
         "chainId": chain,
         "symbol": p.get("symbol"),
         "source": "gmgn",
+        "fetch_failed": False,
     }
 
 
@@ -234,15 +291,21 @@ def evaluate(
 ) -> dict[str, Any]:
     """Safety + numbers. GMGN only. Never invent."""
     info, info_err = fetch_token_info(chain, ca)
+    # Pace security behind info so GHA IP is less likely to trip leaky-bucket
+    if info:
+        time.sleep(1.2)
     sec, sec_err = fetch_token_security(chain, ca)
     fail: list[str] = []
+    fetch_failed = False
     parsed_info = parse_info(info) if info else {}
     parsed_sec = parse_security(sec) if sec else {}
 
     if not info:
         fail.append(f"gmgn_info:{info_err or 'fail'}")
+        fetch_failed = True
     if not sec:
         fail.append(f"gmgn_security:{sec_err or 'fail'}")
+        fetch_failed = True
 
     price = parsed_info.get("price_usd")
     mcap = parsed_info.get("mcap_usd")
@@ -270,6 +333,8 @@ def evaluate(
 
     burn = parsed_sec.get("burn_status") or ""
     locked = parsed_info.get("locked_ratio")
+    if locked is None:
+        locked = parsed_sec.get("locked_ratio")
     burn_ok = burn in ("burn", "burned", "yes", "1", "true")
     lock_ok = locked is not None and locked >= lp_lock_min
     if sec and info:
@@ -324,6 +389,7 @@ def evaluate(
     print(
         f"safety ca={ca[:10]}… ok={ok} src=gmgn ratio={ratio} "
         f"lp={lp_status}:{lp_reason} locked={locked} burn={burn or '-'} "
+        f"mcap={mcap} liq={liq} fetch_failed={fetch_failed} "
         f"reasons={fail or ['ok']}",
         flush=True,
     )
@@ -333,7 +399,7 @@ def evaluate(
         "ratio": ratio,
         "liq_usd": liq,
         "mcap_usd": mcap,
-        "fdv": mcap,
+        "fdv": parsed_info.get("fdv") or mcap,
         "price_usd": price,
         "dex_url": gmgn_url,
         "gmgn_url": gmgn_url,
@@ -353,6 +419,7 @@ def evaluate(
         "lp_status": lp_status,
         "info_err": info_err,
         "sec_err": sec_err,
+        "fetch_failed": fetch_failed,
     }
 
 
@@ -372,6 +439,8 @@ def _audit_jp(sec: dict, info: dict, top10: float | None) -> str:
         bits.append(f"rug {rug:.2f}")
     burn = sec.get("burn_status") or ""
     locked = info.get("locked_ratio")
+    if locked is None:
+        locked = sec.get("locked_ratio")
     if burn in ("burn", "burned", "yes", "1", "true"):
         bits.append("LPバーン")
     elif locked is not None and locked > 0:

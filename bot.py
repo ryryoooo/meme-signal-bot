@@ -1458,6 +1458,7 @@ def build_embed(
         {"name": "内訳", "value": f"FOMO {n_fomo}人\nスマート {n_sm}人" + (f"\n両方 {n_both}人" if n_both else ""), "inline": True},
         {"name": "時価総額", "value": fmt_usd(safety.get("mcap_usd") or safety.get("fdv")), "inline": True},
         {"name": "流動性", "value": fmt_usd(safety.get("liq_usd")), "inline": True},
+        {"name": "価格", "value": fmt_usd(safety.get("price_usd")), "inline": True},
         {"name": "liq/mcap", "value": ratio_txt, "inline": True},
     ]
 
@@ -1495,7 +1496,7 @@ def build_embed(
         "description": description[:4000],
         "color": color,
         "fields": fields,
-        "footer": {"text": "数値はGMGN · お知らせのみ・自動では買いません"},
+        "footer": {"text": "数値はGMGN取得時点 · お知らせのみ・自動では買いません"},
     }
 
 
@@ -1933,9 +1934,15 @@ def run_once(args: argparse.Namespace) -> int:
                     "safety_jp": safety.get("jp"),
                     "ratio": safety.get("ratio"),
                     "goplus": safety.get("goplus"),
+                    "fetch_failed": bool(safety.get("fetch_failed")),
+                    "mcap": safety.get("mcap_usd"),
+                    "liq": safety.get("liq_usd"),
                 },
             )
-            if skip_notices < MAX_SKIP_NOTICES_PER_RUN:
+            # Don't Discord-notify empty "GMGN取得失敗" — looks out of sync with the app
+            if safety.get("fetch_failed"):
+                print(f"skip notice suppressed (gmgn fetch failed) {ca[:10]}…")
+            elif skip_notices < MAX_SKIP_NOTICES_PER_RUN:
                 try:
                     discord_webhook(webhook, embeds=[build_skip_embed(s, safety, chain)])
                     skip_notices += 1
