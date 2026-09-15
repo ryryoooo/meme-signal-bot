@@ -2,14 +2,25 @@ name: meme-signal
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # GitHub often skips */5 (thundering herd). Explicit offset minutes.
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
   workflow_dispatch: {}
+
+concurrency:
+  group: meme-signal-rh
+  cancel-in-progress: true
 
 jobs:
   poll:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Log trigger
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "run_id=${{ github.run_id }}"
+          date -u +'utc=%Y-%m-%dT%H:%M:%SZ'
 
       - name: Setup Python
         uses: actions/setup-python@v5
