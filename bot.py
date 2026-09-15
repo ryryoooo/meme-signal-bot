@@ -15,6 +15,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
+# Quote / gas placeholders — never treat as meme CA
+SKIP_CA = {
+    "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "0x0000000000000000000000000000000000000000",
+}
+SKIP_SYMBOLS = {
+    "ETH", "WETH", "USDC", "USDT", "DAI", "WBTC", "USDG", "USD", "SOL", "BNB", "WBNB",
+}
+
 
 def load_dotenv(path: Path) -> None:
     if not path.exists():
@@ -137,7 +146,10 @@ def detect_signals(
         if trader not in watch:
             continue
         ca = (t.get("token_bought_address") or "").lower()
-        if not ca.startswith("0x"):
+        if not ca.startswith("0x") or ca in SKIP_CA:
+            continue
+        sym = (t.get("token_bought_symbol") or "").upper().strip()
+        if sym in SKIP_SYMBOLS:
             continue
         usd = float(t.get("trade_value_usd") or 0)
         if usd < min_usd:
@@ -192,17 +204,28 @@ def detect_signals(
 
 
 def format_signal(s: dict, chain: str) -> str:
+    chain_jp = {"robinhood": "RH", "arc": "Arc", "solana": "SOL"}.get(chain, chain)
+    sym = s.get("symbol") or "?"
+    n = s["n"]
+    strength = "強" if n >= 3 else "候補"
+    elapsed = int(s.get("elapsed") or 0)
+    total_usd = sum(float(w.get("usd") or 0) for w in s["wallets"])
     lines = [
-        f"**SIGNAL {s['n']}wallets / {chain}** `{s.get('symbol') or '?'}`",
-        f"CA: `{s['ca']}`",
-        f"window: {int(s['elapsed'])}s / safety: `{s['safety']}`",
-        "wallets:",
+        f"🔔 **重複買い {n}本**（{strength}） / {chain_jp}",
+        f"**${sym}**",
+        f"`{s['ca']}`",
+        f"窓 {elapsed}秒 · 合計約 ${total_usd:,.0f} · セーフティ未確認",
+        "",
+        "財布:",
     ]
     for w in s["wallets"]:
         short = w["address"][:6] + "…" + w["address"][-4:]
-        lab = w["label"] or "-"
-        lines.append(f"- `{short}` {lab} ${w['usd']:.0f}")
-    lines.append("_alert only · no auto trade · paper gate still on_")
+        lab = (w.get("label") or "").strip()
+        # drop noisy emoji-only noise labels a bit
+        name = lab if lab and not lab.startswith("0x") else short
+        lines.append(f"• {name} · ${float(w.get('usd') or 0):,.0f}")
+    lines.append("")
+    lines.append("※通知のみ（自動売買なし）")
     return "\n".join(lines)
 
 
@@ -262,7 +285,7 @@ def main() -> int:
 
     if args.test_webhook:
         url = env("DISCORD_WEBHOOK_URL")
-        discord_webhook(url, "meme-signal bot online (test) · alert only · no trade")
+        discord_webhook(url, "✅ 接続OK（通知のみ・自動売買なし）")
         print("test ok")
         return 0
 
