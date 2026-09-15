@@ -75,7 +75,7 @@ jobs:
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
-          PAPER_MARK_HEARTBEAT: "1"
+          PAPER_MARK_HEARTBEAT: "0"
           CHAIN: arc
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
