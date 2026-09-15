@@ -262,6 +262,19 @@ def _is_fomo_only(o: dict) -> bool:
     return (not others) and bool(srcs or o.get("fomo_handle"))
 
 
+
+_BAD_WALLET_LABEL = re.compile(
+    r"(?:\bteam\b|deployer|creator|dev\s*wallet|copy\s*trad|bundler|"
+    r"sniper\s*bot|label\s*only|mev\s*bot)",
+    re.I,
+)
+
+
+def wallet_label_banned(o: dict) -> bool:
+    lab = str(o.get("address_label") or o.get("label") or "")
+    return bool(_BAD_WALLET_LABEL.search(lab))
+
+
 def wallet_passes_filter(o: dict, min_realized: float) -> bool:
     """Keep winners. FOMO-only uses leaderboard PnL (no win-rate)."""
     rp = _wallet_realized(o)
@@ -282,6 +295,8 @@ def wallet_passes_filter(o: dict, min_realized: float) -> bool:
     if _is_fomo_only(o) and wrn is None:
         return True
     if wrn is not None and nt >= min_n and wrn < min_wr:
+        return False
+    if wallet_label_banned(o):
         return False
     return True
 
@@ -970,6 +985,53 @@ def fetch_nansen_dex_trades(api_key: str, chain: str, page: int, per_page: int, 
     url = "https://api.nansen.ai/api/v1/smart-money/dex-trades"
     data = post_json(url, body, headers={"apikey": api_key})
     return data.get("data") or []
+
+
+
+def refine_wallets(watch_path: Path, min_realized: float | None = None) -> int:
+    """Rewrite watchlist: drop losers / banned labels (FOUNDATION refine)."""
+    if min_realized is None:
+        min_realized = float(os.environ.get("WATCH_MIN_REALIZED_USD") or "0")
+    if not watch_path.exists():
+        print(f"refine-wallets skip: missing {watch_path}")
+        return 0
+    raw: dict[str, dict] = {}
+    for line in watch_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        o = json.loads(line)
+        addr = (o.get("address") or "").lower()
+        if addr.startswith("0x"):
+            raw[addr] = o
+    kept: dict[str, dict] = {}
+    dropped = 0
+    reasons: dict[str, int] = {}
+    for addr, o in raw.items():
+        if wallet_label_banned(o):
+            dropped += 1
+            reasons["label_ban"] = reasons.get("label_ban", 0) + 1
+            continue
+        if not wallet_passes_filter(o, min_realized):
+            dropped += 1
+            rp = _wallet_realized(o)
+            if rp <= 0:
+                reasons["pnl_le_0"] = reasons.get("pnl_le_0", 0) + 1
+            else:
+                reasons["winrate_or_floor"] = reasons.get("winrate_or_floor", 0) + 1
+            continue
+        o = dict(o)
+        o["pass_pnl"] = True
+        o["refined_at"] = datetime.now(timezone.utc).isoformat()
+        kept[addr] = o
+    with watch_path.open("w", encoding="utf-8") as f:
+        for a in sorted(kept.keys()):
+            f.write(json.dumps(kept[a], ensure_ascii=False) + "\n")
+    print(
+        f"refine-wallets raw={len(raw)} keep={len(kept)} dropped={dropped} "
+        f"reasons={reasons} path={watch_path}",
+        flush=True,
+    )
+    return 0
 
 
 def refresh_wallets_nansen(watch_path: Path, pages: int = 2) -> int:
@@ -2338,6 +2400,7 @@ def main() -> int:
     p.add_argument("--test-webhook", action="store_true")
     p.add_argument("--test-fomo-holders", action="store_true", help="仮投稿: live FOMO holder overlap, no paper")
     p.add_argument("--refresh-wallets", action="store_true", help="Nansen pnl-leaderboard → wallets.jsonl (infrequent)")
+    p.add_argument("--refine-wallets", action="store_true", help="Drop losers / banned labels from wallets.jsonl")
     p.add_argument("--refresh-fomo", action="store_true", help="FOMO 7d leaderboard → drop fallen FOMO-only wallets")
     p.add_argument("--harvest-xbtscout", action="store_true", help="Scrape @xbtscout new CAs and GMGN-tag 1")
     p.add_argument("--paper-summary", action="store_true", help="Write paper_summary.md from logs/state")
@@ -2388,6 +2451,13 @@ def main() -> int:
             discord_post=discord_webhook if paper_webhook else None,
         )
         return 0
+
+    if args.refine_wallets:
+        chain = os.environ.get("CHAIN", "robinhood").strip().lower()
+        watch_path = Path(
+            os.environ.get("WATCHLIST_PATH", str(default_watchlist_path(chain)))
+        ).resolve()
+        return refine_wallets(watch_path)
 
     if args.refresh_wallets:
         chain = os.environ.get("CHAIN", "robinhood").strip().lower()

@@ -2,9 +2,17 @@ name: refresh-wallets
 
 on:
   schedule:
-    # Weekly Sun 10:00 JST ≈ Sat 01:00 UTC
-    - cron: "0 1 * * 6"
+    # Daily 10:00 JST = 01:00 UTC (GitHub schedule often skips — cron-job.org also kicks)
+    - cron: "0 1 * * *"
   workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: refresh-wallets-rh
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -17,7 +25,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Refresh RH wallets via Nansen
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
+      - name: Configure GMGN env (no echo)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
+
+      - name: Collect — Nansen PnL leaderboard
         env:
           NANSEN_API_KEY: ${{ secrets.NANSEN_API_KEY }}
           NANSEN_FOR_TRADES: "0"
@@ -25,12 +48,41 @@ jobs:
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
         run: python3 bot.py --refresh-wallets --pages 2
 
-      - name: Refresh FOMO 7d board (drop fallen FOMO-only)
+      - name: Collect — FOMO 7d board
         env:
           FOMO_API_KEY: ${{ secrets.FOMO_API_KEY }}
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
         run: python3 bot.py --refresh-fomo
+
+      - name: Collect — xbtscout smart tags (1 CA)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          XBTSCOUT_MAX_TOKENS: "1"
+        run: python3 bot.py --harvest-xbtscout
+
+      - name: Refine — drop losers / banned labels
+        env:
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          WATCH_MIN_REALIZED_USD: "0"
+          WATCH_MIN_WINRATE: "0.40"
+          WATCH_MIN_TRADES_FOR_WR: "10"
+        run: python3 bot.py --refine-wallets
+
+      - name: Commit watchlist if changed
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rh-wallets/wallets.jsonl fomo-wallets/ || true
+          if git diff --cached --quiet; then
+            echo "no wallet changes"
+          else
+            git commit -m "chore: refresh+refine smart wallets"
+            git push
+          fi
 
       - name: Upload wallets artifact
         uses: actions/upload-artifact@v4
@@ -40,5 +92,3 @@ jobs:
             rh-wallets/wallets.jsonl
             fomo-wallets/
           retention-days: 30
-
-      # Prefer artifact over noisy commits; optional commit if small delta desired later.
