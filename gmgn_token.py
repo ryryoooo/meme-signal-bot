@@ -284,7 +284,7 @@ def evaluate(
     chain: str,
     ca: str,
     *,
-    liq_mcap_min: float = 0.30,
+    liq_mcap_min: float = 0.20,
     lp_lock_min: float = 0.01,
     tax_max: float = 0.10,
     rug_max: float = 0.30,
@@ -337,21 +337,26 @@ def evaluate(
         locked = parsed_sec.get("locked_ratio")
     burn_ok = burn in ("burn", "burned", "yes", "1", "true")
     lock_ok = locked is not None and locked >= lp_lock_min
+    require_lp = str(os.environ.get("LP_LOCK_REQUIRED", "0")).strip().lower() in ("1", "true", "yes")
     if sec and info:
         if burn_ok or lock_ok:
             lp_status = "pass"
             lp_reason = "burn" if burn_ok else "locked"
         elif locked is None and not burn:
-            lp_status = "fail"
+            lp_status = "unknown"
             lp_reason = "lp_unknown"
-            fail.append("lp_unknown")
+            if require_lp:
+                fail.append("lp_unknown")
         else:
-            lp_status = "fail"
+            lp_status = "unlocked"
             lp_reason = "lp_unlocked"
-            fail.append("lp_unlocked")
+            if require_lp:
+                fail.append("lp_unlocked")
     else:
-        lp_status = "fail"
+        lp_status = "unavailable"
         lp_reason = "gmgn_lp_unavailable"
+        if require_lp:
+            fail.append("gmgn_lp_unavailable")
 
     top10 = parsed_sec.get("top10")
     if top10 is None:

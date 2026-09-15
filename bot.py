@@ -88,8 +88,10 @@ CHAIN_META = {
     },
 }
 
-LIQ_MCAP_MIN = 0.30
-LP_LOCK_MIN = 0.01  # locked+burned share of LP; none → skip
+LIQ_MCAP_MIN = 0.20
+LP_LOCK_MIN = 0.01  # locked+burned share of LP
+# LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
+# Set LP_LOCK_REQUIRED=1 to hard-fail unlocked LP again.
 LP_DOMINATE_MAX = 0.30  # top unlocked LP holder
 BURN_LP_ADDRS = {
     "0x0000000000000000000000000000000000000000",
