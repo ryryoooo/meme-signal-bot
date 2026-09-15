@@ -53,3 +53,8 @@ python3 bot.py --test-webhook
 ## 注意
 - シークレットをログに出さない
 - GMGN キーが無効なときはソフト終了し、既存アラートの倍率更新だけ続行する
+
+## 運用メモ
+- リポジトリはPublic（Actions無料枠のため）
+- チェック間隔: 約5分（GitHub cronは多少遅延しうる）
+- 秘密情報はGitHub Secretsのみ（コードにキーは無い）
