@@ -650,25 +650,33 @@ def load_fomo_index(path: Path | None = None) -> dict[str, dict]:
         alt = ROOT / "fomo-wallets" / "leaderboard.jsonl"
         path = alt if alt.exists() else path
     out: dict[str, dict] = {}
-    if not path.exists():
-        return out
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
+    files = [path]
+    lb = ROOT / "fomo-wallets" / "leaderboard.jsonl"
+    if lb.exists() and lb.resolve() != path.resolve():
+        files.append(lb)
+    for fp in files:
+        if not fp.exists():
             continue
-        o = json.loads(line)
-        handle = (o.get("handle") or "").strip()
-        evm = (o.get("evm") or o.get("address") or "").lower()
-        if not handle:
-            continue
-        rec = {
-            "handle": handle,
-            "evm": evm if evm.startswith("0x") and len(evm) == 42 else "",
-            "solana": o.get("solana") or "",
-            "pnlUsd": _num(o.get("pnlUsd") or o.get("realized_pnl_usd")) or 0.0,
-        }
-        out[handle.lower()] = rec
-        if rec["evm"]:
-            out[rec["evm"]] = rec  # also index by address
+        for line in fp.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            o = json.loads(line)
+            handle = (o.get("handle") or "").strip()
+            evm = (o.get("evm") or o.get("address") or "").lower()
+            if not handle:
+                continue
+            rec = {
+                "handle": handle,
+                "evm": evm if evm.startswith("0x") and len(evm) == 42 else "",
+                "solana": o.get("solana") or "",
+                "pnlUsd": _num(o.get("pnlUsd") or o.get("realized_pnl_usd")) or 0.0,
+            }
+            prev = out.get(handle.lower()) or {}
+            if prev.get("evm") and not rec["evm"]:
+                rec["evm"] = prev["evm"]
+            out[handle.lower()] = rec
+            if rec["evm"]:
+                out[rec["evm"]] = rec
     return out
 
 
@@ -775,6 +783,177 @@ def fetch_fomo_buys(chain: str, index: dict[str, dict], min_usd: float, limit: i
         f"chain={fomo_chain} cost={cost} remain={remain}"
     )
     return trades, None
+
+
+
+def _fomo_handles(index: dict[str, dict]) -> set[str]:
+    return {k for k in index if not str(k).startswith("0x")}
+
+
+def fetch_fomo_holders(ca: str, chain: str, index: dict[str, dict], limit: int = 50) -> tuple[list[dict], str | None]:
+    """Who on our FOMO board holds this token. 250 credits. Never prints the key."""
+    load_box_secrets(["FOMO_API_KEY"])
+    key = (os.environ.get("FOMO_API_KEY") or "").strip()
+    if not key or key.lower().startswith("install"):
+        return [], "nokey"
+    meta = CHAIN_META.get(chain) or {}
+    nid = meta.get("goplus_id") or ""
+    q = f"limit={max(1, min(50, limit))}"
+    if nid and str(nid).isdigit():
+        q += f"&networkId={nid}"
+    url = f"https://api.fomoapi.io/token/{ca}/holders?{q}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Accept": "application/json",
+            "User-Agent": "meme-discord-bot/2.0",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode() or "{}")
+            cost = resp.headers.get("x-credits-cost")
+            remain = resp.headers.get("x-credits-remaining")
+    except urllib.error.HTTPError as e:
+        print(f"fomo holders HTTP {e.code}", file=sys.stderr)
+        return [], "http"
+    except Exception as e:
+        print(f"fomo holders fail: {type(e).__name__}", file=sys.stderr)
+        return [], "other"
+    raw = body.get("holders") if isinstance(body, dict) else None
+    if not isinstance(raw, list):
+        print("fomo holders unexpected shape", file=sys.stderr)
+        return [], "other"
+    handles = _fomo_handles(index)
+    out: list[dict] = []
+    for h in raw:
+        if not isinstance(h, dict):
+            continue
+        handle = (h.get("handle") or "").strip()
+        if not handle or handle.lower() not in handles:
+            continue
+        rec = index.get(handle.lower()) or {}
+        wallet = h.get("wallet") if isinstance(h.get("wallet"), dict) else {}
+        evm = (wallet.get("evm") or rec.get("evm") or "").lower()
+        if evm and not (evm.startswith("0x") and len(evm) == 42):
+            evm = rec.get("evm") or ""
+        out.append(
+            {
+                "handle": handle,
+                "evm": evm,
+                "valueUsd": _num(h.get("valueUsd")) or 0.0,
+                "pnlUsd": _num(h.get("pnlUsd")) or 0.0,
+            }
+        )
+    print(f"fomo holders ca={ca[:10]}… board={len(out)} raw={len(raw)} cost={cost} remain={remain}")
+    return out, None
+
+
+def maybe_fomo_holder_signal(
+    trades: list[dict],
+    watch_set: set[str],
+    fomo_index: dict[str, dict],
+    chain: str,
+    state: dict,
+    window: int,
+    min_wallets: int,
+    min_usd: float,
+) -> dict | None:
+    """If 1 watch buy in window, see if other board wallets already hold. Max 1 call / interval."""
+    if not env_bool("FOMO_HOLDERS", True):
+        return None
+    if not fomo_index:
+        return None
+    interval = int(os.environ.get("FOMO_HOLDERS_INTERVAL", "14400"))
+    now = time.time()
+    last = state.get("last_fomo_holders_ts")
+    try:
+        last_f = float(last) if last is not None else 0.0
+        if last_f > 1e12:
+            last_f = last_f / 1000.0
+        if last_f > 0 and (now - last_f) < interval:
+            print(f"fomo holders skip: interval {int(now - last_f)}s < {interval}s")
+            return None
+    except (TypeError, ValueError):
+        pass
+    by_ca: dict[str, list[dict]] = defaultdict(list)
+    for t in trades:
+        trader = (t.get("trader_address") or "").lower()
+        if trader not in watch_set:
+            continue
+        ca = (t.get("token_bought_address") or "").lower()
+        if not ca.startswith("0x") or ca in SKIP_CA:
+            continue
+        usd = float(t.get("trade_value_usd") or 0)
+        if min_usd > 0 and usd < min_usd:
+            continue
+        ts = parse_ts(t.get("block_timestamp"))
+        if ts and now - ts > window:
+            continue
+        by_ca[ca].append(t)
+    candidates: list[tuple[float, str, dict[str, dict], str]] = []
+    for ca, rows in by_ca.items():
+        wallets: dict[str, dict] = {}
+        for r in rows:
+            w = (r.get("trader_address") or "").lower()
+            if w not in wallets:
+                wallets[w] = r
+        if 1 <= len(wallets) < min_wallets:
+            latest = max(parse_ts(r.get("block_timestamp")) for r in wallets.values())
+            sym = rows[0].get("token_bought_symbol") or ""
+            candidates.append((latest, ca, wallets, sym))
+    if not candidates:
+        print("fomo holders skip: no 1-wallet near-miss")
+        return None
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    _latest, ca, wallets, sym = candidates[0]
+    holders, err = fetch_fomo_holders(ca, chain, fomo_index, limit=50)
+    state["last_fomo_holders_ts"] = now
+    if err or not holders:
+        return None
+    identities: dict[str, dict] = dict(wallets)
+    for h in holders:
+        evm = (h.get("evm") or "").lower()
+        rec = fomo_index.get((h.get("handle") or "").lower()) or {}
+        if not evm:
+            evm = (rec.get("evm") or "").lower()
+        if not evm.startswith("0x"):
+            continue
+        if evm in identities:
+            continue
+        identities[evm] = {
+            "trader_address": evm,
+            "trader_address_label": h.get("handle") or "",
+            "trade_value_usd": h.get("valueUsd") or 0,
+            "token_bought_symbol": sym,
+            "block_timestamp": now,
+            "source": "fomo_holders",
+        }
+    if len(identities) < min_wallets:
+        print(f"fomo holders near-miss still n={len(identities)} < {min_wallets}")
+        return None
+    t0 = min(parse_ts(r.get("block_timestamp")) for r in identities.values())
+    return {
+        "key": f"{ca}:holders:{','.join(sorted(identities.keys())[:8])}:{int(t0)}",
+        "ca": ca,
+        "n": len(identities),
+        "t0": t0,
+        "elapsed": 0,
+        "symbol": sym,
+        "source_mode": "fomo_holders",
+        "wallets": [
+            {
+                "address": w,
+                "label": (identities[w].get("trader_address_label") or "")[:80],
+                "usd": float(identities[w].get("trade_value_usd") or 0),
+                "symbol": identities[w].get("token_bought_symbol"),
+                "ts": identities[w].get("block_timestamp"),
+                "source": identities[w].get("source") or "fomo_holders",
+            }
+            for w in sorted(identities.keys())
+        ],
+    }
 
 
 def fetch_nansen_dex_trades(api_key: str, chain: str, page: int, per_page: int, min_usd: float) -> list[dict]:
@@ -1297,6 +1476,9 @@ def build_embed(s: dict, chain: str, safety: dict, source_mode: str) -> dict:
     elif has_fomo and has_gmgn:
         who_jp = "監視中の勝ち財布（GMGN + FOMO）"
         desc_extra = "出典: 監視リスト ∩ GMGNスマートマネー + FOMOリーダー\n"
+    elif source_mode == "fomo_holders" or "fomo_holders" in srcs:
+        who_jp = "FOMOリーダーの保有が重なった"
+        desc_extra = "出典: FOMOリーダー保有人数（買い1本＋既存ホルダー）\n"
     elif has_fomo:
         who_jp = "FOMOリーダーの勝ち財布"
         desc_extra = "出典: FOMOリーダーボード（検証PnL+）\n"
@@ -1672,6 +1854,15 @@ def run_once(args: argparse.Namespace) -> int:
         source_mode = "watchlist"
         print("watchlist-strict: no watchlist overlap signals (cluster disabled)")
 
+    if not signals:
+        hs = maybe_fomo_holder_signal(
+            trades, watch_set, fomo_index, chain, state, window, min_wallets, min_usd
+        )
+        if hs:
+            signals = [hs]
+            source_mode = "fomo_holders"
+            print(f"fomo holders signal n={hs['n']} ca={hs['ca'][:10]}…")
+
     seen = set(state.get("seen_signal_keys") or [])
     ca_last: dict = dict(state.get("ca_last_posted") or {})
     open_alerts: list = list(state.get("open_alerts") or [])
@@ -1820,10 +2011,79 @@ def run_once(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def test_fomo_holders_post() -> int:
+    """One Discord 仮投稿 from live FOMO holders. No paper, no live trade."""
+    load_box_secrets(["FOMO_API_KEY", "DISCORD_WEBHOOK_URL"])
+    chain = os.environ.get("CHAIN", "robinhood").strip().lower()
+    index = load_fomo_index()
+    webhook = resolve_signal_webhook(chain)
+    # latest RH buy CA
+    load_box_secrets(["FOMO_API_KEY"])
+    key = (os.environ.get("FOMO_API_KEY") or "").strip()
+    url = "https://api.fomoapi.io/v2/alerts?type=buy&chain=robinhood&limit=15"
+    req = urllib.request.Request(
+        url,
+        headers={"Authorization": f"Bearer {key}", "Accept": "application/json", "User-Agent": "meme-discord-bot/2.0"},
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        body = json.loads(resp.read().decode() or "{}")
+    ca = ""
+    sym = "不明"
+    for a in body.get("alerts") or []:
+        tok = (a.get("tokenAddress") or "")
+        if tok.startswith("0x"):
+            ca = tok.lower()
+            sym = a.get("token") or "不明"
+            break
+    if not ca:
+        print("test-fomo-holders: no RH CA in alerts")
+        return 1
+    holders, err = fetch_fomo_holders(ca, chain, index, limit=50)
+    if err:
+        print(f"test-fomo-holders fetch err={err}")
+        return 1
+    wallets = []
+    seen = set()
+    for h in holders:
+        evm = (h.get("evm") or "").lower()
+        rec = index.get((h.get("handle") or "").lower()) or {}
+        if not evm:
+            evm = (rec.get("evm") or "").lower()
+        ident = evm if evm.startswith("0x") else f"handle:{(h.get('handle') or '').lower()}"
+        if ident in seen:
+            continue
+        seen.add(ident)
+        wallets.append(
+            {
+                "address": evm if evm.startswith("0x") else ident,
+                "label": h.get("handle") or "",
+                "usd": float(h.get("valueUsd") or 0),
+                "symbol": sym,
+                "source": "fomo_holders",
+            }
+        )
+    s = {
+        "ca": ca,
+        "n": len(wallets),
+        "elapsed": 0,
+        "symbol": sym,
+        "wallets": wallets[:12],
+    }
+    safety = safety_check(ca, chain)
+    embed = build_embed(s, chain, safety, "fomo_holders")
+    embed["title"] = ("【仮投稿】" + (embed.get("title") or ""))[:256]
+    embed["footer"] = {"text": "仮投稿・紙も実弾もなし・ホルダー重なりの見た目確認"}
+    discord_webhook(webhook, content="", embeds=[embed])
+    print(f"test-fomo-holders posted ca={ca[:10]}… n={len(wallets)} safety_ok={safety.get('ok')}")
+    return 0
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--loop", action="store_true", help="poll forever")
     p.add_argument("--test-webhook", action="store_true")
+    p.add_argument("--test-fomo-holders", action="store_true", help="仮投稿: live FOMO holder overlap, no paper")
     p.add_argument("--refresh-wallets", action="store_true", help="Nansen pnl-leaderboard → wallets.jsonl (infrequent)")
     p.add_argument("--refresh-fomo", action="store_true", help="FOMO 7d leaderboard → drop fallen FOMO-only wallets")
     p.add_argument("--paper-summary", action="store_true", help="Write paper_summary.md from logs/state")
@@ -1853,6 +2113,9 @@ def main() -> int:
         )
         print("test ok")
         return 0
+
+    if args.test_fomo_holders:
+        return test_fomo_holders_post()
 
     if args.paper_summary:
         state_path = Path(os.environ.get("STATE_PATH", str(ROOT / "state.json"))).resolve()

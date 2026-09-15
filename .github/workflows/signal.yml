@@ -65,6 +65,8 @@ jobs:
           FOMO_ENABLED: "1"
           FOMO_POLL_SECONDS: "1500"
           FOMO_ALERT_LIMIT: "80"
+          FOMO_HOLDERS: "1"
+          FOMO_HOLDERS_INTERVAL: "14400"
           FOMO_WATCH_PATH: fomo-wallets/wallets_evm.jsonl
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
