@@ -23,6 +23,8 @@ PAPER_SIZE_PCT_STRONG = 30
 PAPER_MAX_ENTRIES_WEEK = 5
 PAPER_MAX_LOSSES_WEEK = 3
 DEFAULT_BANKROLL_USD = 300.0
+# Equity / bankroll ratios for paper-PnL Discord milestones (not signal multipliers)
+PAPER_EQUITY_MILESTONES = (0.80, 0.90, 1.10, 1.25, 1.50, 2.00)
 
 
 def bankroll_usd() -> float:
@@ -60,6 +62,7 @@ def ensure_paper_state(state: dict) -> dict:
     paper.setdefault("week_losses", 0)
     paper.setdefault("week_stopped", False)
     paper.setdefault("equity_curve", [])  # [{ts, equity, cash, open_mv}]
+    paper.setdefault("equity_milestones_hit", [])
     state["paper"] = paper
     if "paper_positions" not in state:
         state["paper_positions"] = []
@@ -106,6 +109,8 @@ def open_paper_position(
     chain: str,
     mcap=None,
     liq=None,
+    webhook: str | None = None,
+    discord_post: Callable | None = None,
 ) -> dict | None:
     """Open virtual position. Returns None if blocked by risk rules."""
     paper = ensure_paper_state(state)
@@ -189,6 +194,31 @@ def open_paper_position(
         f"paper open {ca[:10]}… size={size_pct}% notional=${notional:.2f} "
         f"cash=${paper['cash_usd']:.2f} week_entries={paper['week_entries']}"
     )
+    if webhook and discord_post:
+        try:
+            discord_post(
+                webhook,
+                embeds=[
+                    {
+                        "title": "紙トレード・仮想エントリー",
+                        "description": (
+                            f"📥 ${symbol or '?'} · サイズ {size_pct}% · "
+                            f"${notional:.2f} · n={n}\n"
+                            f"エントリー ${entry_price:.8g} · "
+                            f"週 {paper['week_entries']}/{PAPER_MAX_ENTRIES_WEEK}"
+                        )[:1900],
+                        "color": 0x3498DB,
+                        "footer": {
+                            "text": (
+                                f"仮想 ${base:.0f} · "
+                                f"現金 ${float(paper.get('cash_usd') or 0):.2f} · 実注文なし"
+                            )
+                        },
+                    }
+                ],
+            )
+        except Exception as e:
+            print(f"paper entry discord fail: {type(e).__name__}", flush=True)
     return pos
 
 
@@ -291,8 +321,14 @@ def process_paper_positions(
             pos["remaining_usd"] = 0
             pos["remaining_pct"] = 0
             paper["week_losses"] = int(paper.get("week_losses") or 0) + 1
+            was_week_stopped = bool(paper.get("week_stopped"))
             if paper["week_losses"] >= PAPER_MAX_LOSSES_WEEK:
                 paper["week_stopped"] = True
+                if not was_week_stopped:
+                    notices.append(
+                        f"🛑 週停止 · 連敗 {paper['week_losses']}/{PAPER_MAX_LOSSES_WEEK} · "
+                        f"今週の新規エントリー停止"
+                    )
             stats["stop"] += 1
             notices.append(
                 f"⛔ ストップ ${pos.get('symbol') or '?'} · {mult:.2f}倍 · PnL ${pnl:+.2f}"
@@ -356,6 +392,13 @@ def process_paper_positions(
     state["paper_positions"] = positions
     state["paper"] = paper
     _mark_equity(state, book_path, now)
+    paper = state["paper"]
+
+    # Paper-PnL equity milestones (bankroll ratios) — not signal multiplier followups
+    equity_notices = _equity_milestone_notices(paper)
+    notices.extend(equity_notices)
+    if equity_notices:
+        stats["equity_ms"] = len(equity_notices)
 
     if webhook and discord_post and notices:
         discord_post(
@@ -378,6 +421,37 @@ def process_paper_positions(
     return stats
 
 
+def _equity_milestone_notices(paper: dict) -> list[str]:
+    """Emit paper equity / bankroll milestone lines once each."""
+    br = bankroll_usd()
+    if br <= 0:
+        return []
+    equity = float(paper.get("equity_usd") or 0)
+    ratio = equity / br
+    hit = list(paper.get("equity_milestones_hit") or [])
+    out: list[str] = []
+    for ms in PAPER_EQUITY_MILESTONES:
+        if ms in hit:
+            continue
+        # downside: hit when ratio <= ms; upside: when ratio >= ms
+        if ms < 1.0:
+            if ratio > ms:
+                continue
+        else:
+            if ratio < ms:
+                continue
+        hit.append(ms)
+        pct = (ms - 1.0) * 100.0
+        if ms < 1.0:
+            out.append(f"📉 純資産マイルストーン {ms:g}x銀行 (${equity:.2f} / ${br:.0f})")
+        else:
+            out.append(
+                f"📈 純資産マイルストーン {ms:g}x銀行 ({pct:+.0f}%) · ${equity:.2f}"
+            )
+    paper["equity_milestones_hit"] = hit
+    return out
+
+
 def write_paper_summary(
     paper_path: Path,
     state_path: Path,
@@ -385,6 +459,8 @@ def write_paper_summary(
     out_path: Path,
     load_state: Callable[[Path], dict],
     milestones: tuple = (1.5, 2.0, 3.0, 5.0),
+    webhook: str | None = None,
+    discord_post: Callable | None = None,
 ) -> Path:
     posted = skipped = 0
     reasons: dict[str, int] = {}
@@ -498,4 +574,29 @@ def write_paper_summary(
     lines += ["", "## 注意", "- 実注文なし（LIVE_TRADING ブロック）。GitHub Actions 上のみ更新。", ""]
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"paper_summary written {out_path} equity={paper.get('equity_usd')}")
+    if webhook and discord_post:
+        try:
+            discord_post(
+                webhook,
+                embeds=[
+                    {
+                        "title": "紙トレード週次サマリー",
+                        "description": (
+                            f"純資産 **${float(paper.get('equity_usd') or 0):.2f}** · "
+                            f"現金 **${float(paper.get('cash_usd') or 0):.2f}** · "
+                            f"実現PnL **${float(paper.get('realized_pnl_usd') or 0):+.2f}**\n"
+                            f"週 `{paper.get('week_key')}` エントリー "
+                            f"{paper.get('week_entries')}/{PAPER_MAX_ENTRIES_WEEK} · "
+                            f"負け {paper.get('week_losses')}/{PAPER_MAX_LOSSES_WEEK} · "
+                            f"週停止={bool(paper.get('week_stopped'))}\n"
+                            f"open系={pos_open} / 半分={pos_half} / ストップ={pos_stop} · 実注文なし"
+                        )[:1900],
+                        "color": 0x9B59B6,
+                        "footer": {"text": f"詳細: {out_path.name}"},
+                    }
+                ],
+            )
+            print("paper_summary discord ping ok")
+        except Exception as e:
+            print(f"paper_summary discord fail: {type(e).__name__}", flush=True)
     return out_path

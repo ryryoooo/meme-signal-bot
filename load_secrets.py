@@ -10,6 +10,7 @@ MAP = {
     "NANSEN_API_KEY": ("card", "NANSEN_API_KEY"),
     "GMGN_API_KEY": ("desktop", "GMGN_API_KEY"),
     "DISCORD_WEBHOOK_URL": ("card", "DISCORD_WEBHOOK_URL"),
+    "DISCORD_PAPER_WEBHOOK_URL": ("card", "DISCORD_PAPER_WEBHOOK_URL"),
 }
 
 

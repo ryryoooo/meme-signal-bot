@@ -31,6 +31,8 @@ jobs:
 
       - name: Write paper_summary.md
         env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}
           PAPER_BANKROLL_USD: "300"
           LIVE_TRADING: "0"
           STATE_PATH: state.json

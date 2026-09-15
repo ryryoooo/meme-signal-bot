@@ -126,6 +126,29 @@ def env_bool(name: str, default: bool = False) -> bool:
     return v.strip().lower() in ("1", "true", "yes", "on")
 
 
+def resolve_paper_webhook(signal: str | None = None) -> str | None:
+    """Paper-channel webhook; falls back to signal webhook with a warning if unset."""
+    paper = (os.environ.get("DISCORD_PAPER_WEBHOOK_URL") or "").strip()
+    if paper:
+        return paper
+    sig = (signal or os.environ.get("DISCORD_WEBHOOK_URL") or "").strip()
+    if sig:
+        print(
+            "WARNING: DISCORD_PAPER_WEBHOOK_URL missing — paper posts fall back to DISCORD_WEBHOOK_URL",
+            file=sys.stderr,
+        )
+        return sig
+    return None
+
+
+def resolve_discord_webhooks() -> tuple[str, str]:
+    """Signal webhook (required) + paper webhook (optional, falls back with warning)."""
+    signal = env("DISCORD_WEBHOOK_URL")
+    paper = resolve_paper_webhook(signal)
+    assert paper  # signal non-empty ⇒ fallback always yields a URL
+    return signal, paper
+
+
 def http_get_json(url: str, headers: dict | None = None, timeout: int = 25) -> dict | list | None:
     hdrs = {"User-Agent": "meme-discord-bot/2.0", "Accept": "application/json"}
     if headers:
@@ -1141,7 +1164,7 @@ def run_once(args: argparse.Namespace) -> int:
     write_gmgn_dotenv()
     live_trading_blocked()
 
-    webhook = env("DISCORD_WEBHOOK_URL")
+    webhook, paper_webhook = resolve_discord_webhooks()
     chain = os.environ.get("CHAIN", "robinhood").strip().lower()
     window = int(os.environ.get("WINDOW_SECONDS", "900"))
     min_wallets = int(os.environ.get("MIN_WALLETS", "2"))
@@ -1179,7 +1202,7 @@ def run_once(args: argparse.Namespace) -> int:
         book_path,
         chain,
         fetch_dexscreener,
-        webhook=webhook,
+        webhook=paper_webhook,
         discord_post=discord_webhook,
     )
     if fu or paper_stats.get("marked") or paper_stats.get("half") or paper_stats.get("stop"):
@@ -1357,6 +1380,8 @@ def run_once(args: argparse.Namespace) -> int:
                 chain=chain,
                 mcap=safety.get("mcap_usd") or safety.get("fdv"),
                 liq=safety.get("liq_usd"),
+                webhook=paper_webhook,
+                discord_post=discord_webhook,
             )
         time.sleep(0.5)
 
@@ -1425,6 +1450,7 @@ def main() -> int:
         paper_path = Path(os.environ.get("PAPER_LOG_PATH", str(ROOT / "paper_log.jsonl"))).resolve()
         book_path = Path(os.environ.get("PAPER_BOOK_PATH", str(ROOT / "paper_book.jsonl"))).resolve()
         out_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
+        paper_webhook = resolve_paper_webhook()
         paper_mod.write_paper_summary(
             paper_path,
             state_path,
@@ -1432,6 +1458,8 @@ def main() -> int:
             out_path,
             load_state,
             milestones=MULTIPLIER_MILESTONES,
+            webhook=paper_webhook,
+            discord_post=discord_webhook if paper_webhook else None,
         )
         return 0
 

@@ -9,7 +9,7 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - `ALLOW_GMGN_CLUSTER=0`（既定）で監視リスト外クラスタ投稿は無効。必要なら `1` で再有効化
 - GMGN失敗時はオンチェーン探索を best-effort（偽取引は作らない）
 - **倍率フォローアップ**: 1.5x / 2x / 3x / 5x 到達を各1回（プレーン日本語）
-- **紙トレード**（仮想 **$300**）: 投稿時に仮想ポジション。FOUNDATION準拠
+- **紙トレード**（仮想 **$300**）: 投稿時に仮想ポジション。FOUNDATION準拠。 Discordは `DISCORD_PAPER_WEBHOOK_URL`（紙）と `DISCORD_WEBHOOK_URL`（シグナル）に分離
   - 同時1本 / サイズ20%（n≥3は30%）/ +100%半分 / −40%ストップ / 週最大5 / 連敗3で週終了
   - `paper_book.jsonl` + `paper_summary.md`（エクイティ曲線）を Actions cache / artifact で永続
 - **実弾禁止**: `LIVE_TRADING=0`（有効化してもブロック）
@@ -33,7 +33,8 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 | Secret | 用途 |
 |--------|------|
 | `GMGN_API_KEY` | 定期ジョブ必須 |
-| `DISCORD_WEBHOOK_URL` | 必須 |
+| `DISCORD_WEBHOOK_URL` | シグナル／安全見送り必須 |
+| `DISCORD_PAPER_WEBHOOK_URL` | 紙トレード専用（未設定時はシグナル側にフォールバック） |
 | `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
 
 秘密鍵・実弾キーは Actions に置かない。
