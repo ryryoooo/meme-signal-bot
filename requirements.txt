@@ -1,0 +1,1 @@
+# stdlib-only bot; no pip deps required for core

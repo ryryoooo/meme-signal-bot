@@ -1,0 +1,39 @@
+name: meme-signal
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore state cache
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: meme-signal-state-v1
+          restore-keys: |
+            meme-signal-state-
+
+      - name: Run once
+        env:
+          NANSEN_API_KEY: ${{ secrets.NANSEN_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          CHAIN: robinhood
+          WINDOW_SECONDS: "900"
+          MIN_WALLETS: "2"
+          MIN_TRADE_USD: "50"
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          STATE_PATH: state.json
+        run: python3 bot.py --pages 3 --per-page 100
+
+      # cache save happens automatically at end of job for actions/cache
