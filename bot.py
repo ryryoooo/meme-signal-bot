@@ -1459,12 +1459,12 @@ def build_embed(
         {"name": "時価総額", "value": fmt_usd(safety.get("mcap_usd") or safety.get("fdv")), "inline": True},
         {"name": "流動性", "value": fmt_usd(safety.get("liq_usd")), "inline": True},
         {"name": "liq/mcap", "value": ratio_txt, "inline": True},
-        {"name": "コントラクト", "value": f"`{s['ca']}`", "inline": False},
     ]
 
     gmgn_chain = meta.get("gmgn_chain") or chain
-    gmgn_url = safety.get("gmgn_url") or f"https://gmgn.ai/{gmgn_chain}/token/{s['ca']}"
-    link_lines = [f"[GMGN]({gmgn_url})"]
+    gmgn_url = gmgn_tok.token_app_url(gmgn_chain, s["ca"], safety.get("gmgn_url"))
+    fields.append({"name": "コントラクト", "value": f"[`{s['ca']}`]({gmgn_url})", "inline": False})
+    link_lines = [f"[GMGNアプリで開く]({gmgn_url})"]
     explorer_base = meta.get("explorer")
     if explorer_base:
         link_lines.append(f"[エクスプローラー]({explorer_base}{s['ca']})")
@@ -1491,6 +1491,7 @@ def build_embed(
 
     return {
         "title": title[:256],
+        "url": gmgn_url,
         "description": description[:4000],
         "color": color,
         "fields": fields,
@@ -1506,19 +1507,20 @@ def build_multiplier_embed(alert: dict, mult: float, dex: dict, milestone: float
     title = f"さっきの通知から {mult:.1f}倍 · ${sym}"
     if milestone:
         title = f"さっきの通知から {milestone:g}倍到達 · ${sym}"
-    gmgn_url = dex.get("url") or f"https://gmgn.ai/robinhood/token/{ca}"
+    gmgn_url = gmgn_tok.token_app_url("robinhood", ca or "", dex.get("url"))
     return {
         "title": title[:256],
+        "url": gmgn_url,
         "description": (
             f"通知時の価格から約 **{mult:.2f}倍** です。\n"
             f"現在 時価総額 {fmt_usd(mcap)} / 流動性 {fmt_usd(liq)}（GMGN）"
         )[:4000],
         "color": 0x9B59B6,
         "fields": [
-            {"name": "コントラクト", "value": f"`{ca}`", "inline": False},
+            {"name": "コントラクト", "value": f"[`{ca}`]({gmgn_url})", "inline": False},
             {"name": "時価総額", "value": fmt_usd(mcap), "inline": True},
             {"name": "流動性", "value": fmt_usd(liq), "inline": True},
-            {"name": "リンク", "value": f"[GMGN]({gmgn_url})", "inline": False},
+            {"name": "リンク", "value": f"[GMGNアプリで開く]({gmgn_url})", "inline": False},
         ],
         "footer": {"text": "数値はGMGN · 倍率フォローアップ・自動売買なし"},
     }
@@ -1552,8 +1554,10 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("検査NG")
     reason_jp = "・".join(bits) if bits else (safety.get("jp") or "見送り")
     meta = CHAIN_META.get(chain, {})
+    gmgn_url = gmgn_tok.token_app_url(meta.get("gmgn_chain") or chain, str(s.get("ca") or ""), safety.get("gmgn_url"))
     return {
         "title": f"見送り · ${sym}"[:256],
+        "url": gmgn_url,
         "description": (
             f"{reason_jp}\n"
             + (f"監査: {safety.get('audit_jp')}\n" if safety.get("audit_jp") else "")
@@ -1561,15 +1565,11 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
         )[:4000],
         "color": 0x95A5A6,
         "fields": [
-            {"name": "コントラクト", "value": f"`{s.get('ca')}`", "inline": False},
+            {"name": "コントラクト", "value": f"[`{s.get('ca')}`]({gmgn_url})", "inline": False},
             {"name": "理由", "value": (safety.get("jp") or reason_jp)[:500], "inline": False},
             {"name": "時価総額", "value": fmt_usd(safety.get("mcap_usd") or safety.get("fdv")), "inline": True},
             {"name": "流動性", "value": fmt_usd(safety.get("liq_usd")), "inline": True},
-            {
-                "name": "リンク",
-                "value": f"[GMGN]({safety.get('gmgn_url') or ('https://gmgn.ai/' + (meta.get('gmgn_chain') or chain) + '/token/' + str(s.get('ca') or ''))})",
-                "inline": False,
-            },
+            {"name": "リンク", "value": f"[GMGNアプリで開く]({gmgn_url})", "inline": False},
         ],
         "footer": {"text": f"数値はGMGN · スキップ通知 · {meta.get('jp') or chain}"},
     }

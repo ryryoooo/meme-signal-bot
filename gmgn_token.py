@@ -20,6 +20,32 @@ _CACHE: dict[str, tuple[float, dict | None, str | None]] = {}
 _CACHE_TTL = 90.0
 
 
+_CHAIN_SLUG = {
+    "solana": "sol",
+    "sol": "sol",
+    "bsc": "bsc",
+    "eth": "eth",
+    "base": "base",
+    "robinhood": "robinhood",
+    "rh": "robinhood",
+    "arc": "arc",
+    "stable": "stable",
+}
+
+
+def token_app_url(chain: str, ca: str, provided: str | None = None) -> str:
+    """HTTPS universal link that opens the GMGN iOS/Android app on the token."""
+    ca = (ca or "").strip()
+    if provided:
+        u = provided.strip()
+        if u.startswith("https://gmgn.ai/") and "/token/" in u:
+            return u.split("?")[0]
+    slug = _CHAIN_SLUG.get((chain or "").lower(), chain or "robinhood")
+    return f"https://gmgn.ai/{slug}/token/{ca}"
+
+
+
+
 def _num(x) -> float | None:
     if x is None or x == "":
         return None
@@ -180,7 +206,7 @@ def market_snapshot(chain: str, ca: str) -> dict:
             "source": "gmgn",
         }
     p = parse_info(info)
-    url = p.get("gmgn_url") or f"https://gmgn.ai/{chain}/token/{ca}"
+    url = token_app_url(chain, ca, p.get("gmgn_url"))
     ok = p.get("price_usd") is not None or p.get("liq_usd") is not None
     return {
         "ok": bool(ok),
@@ -294,7 +320,7 @@ def evaluate(
                 jp_bits.append("検査NG")
         jp = "見送り（" + "・".join(jp_bits) + "）"
 
-    gmgn_url = parsed_info.get("gmgn_url") or f"https://gmgn.ai/{chain}/token/{ca}"
+    gmgn_url = token_app_url(chain, ca, parsed_info.get("gmgn_url"))
     print(
         f"safety ca={ca[:10]}… ok={ok} src=gmgn ratio={ratio} "
         f"lp={lp_status}:{lp_reason} locked={locked} burn={burn or '-'} "
