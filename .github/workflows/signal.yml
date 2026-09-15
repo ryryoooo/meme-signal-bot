@@ -68,6 +68,7 @@ jobs:
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
+          PAPER_TRADING: "0"
           PAPER_MARK_HEARTBEAT: "0"
           CHAIN: robinhood
           WINDOW_SECONDS: "900"

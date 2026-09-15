@@ -1878,14 +1878,18 @@ def run_once(args: argparse.Namespace) -> int:
 
     # Multiplier milestones + paper marks (works even if GMGN auth fails)
     fu = process_multiplier_followups(state, webhook, chain, paper_path)
-    paper_stats = paper_mod.process_paper_positions(
-        state,
-        book_path,
-        chain,
-        lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
-        webhook=paper_webhook,
-        discord_post=discord_webhook,
-    )
+    paper_stats = {"marked": 0, "half": 0, "stop": 0, "open": 0}
+    if env_bool("PAPER_TRADING", True):
+        paper_stats = paper_mod.process_paper_positions(
+            state,
+            book_path,
+            chain,
+            lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
+            webhook=paper_webhook,
+            discord_post=discord_webhook,
+        )
+    else:
+        print("PAPER_TRADING=0 — GHA skips paper marks/exits (box paper_tick owns book)", flush=True)
     # Always persist so marks/open positions survive the next Actions cache restore
     save_state(state_path, state)
 
@@ -2062,10 +2066,12 @@ def run_once(args: argparse.Namespace) -> int:
                 "liq": safety.get("liq_usd"),
                 "goplus": safety.get("goplus"),
                 "message_id": msg_id,
+                "alert_price_usd": safety.get("price_usd"),
+                "symbol": s.get("symbol") or safety.get("symbol_hint"),
             },
         )
-        # Virtual paper entry (FOUNDATION: 1 pos, 20/30%, week caps)
-        if safety.get("price_usd"):
+        # Virtual paper entry — optional on GHA; box paper_tick may own the book
+        if env_bool("PAPER_TRADING", True) and safety.get("price_usd"):
             paper_mod.open_paper_position(
                 state,
                 book_path,
@@ -2094,14 +2100,15 @@ def run_once(args: argparse.Namespace) -> int:
     state["gmgn_err"] = gmgn_err
 
     # Remount after any same-run opens so price tracking starts immediately
-    paper_stats = paper_mod.process_paper_positions(
-        state,
-        book_path,
-        chain,
-        lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
-        webhook=paper_webhook,
-        discord_post=discord_webhook,
-    )
+    if env_bool("PAPER_TRADING", True):
+        paper_stats = paper_mod.process_paper_positions(
+            state,
+            book_path,
+            chain,
+            lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
+            webhook=paper_webhook,
+            discord_post=discord_webhook,
+        )
     save_state(state_path, state)
     summary_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
     try:

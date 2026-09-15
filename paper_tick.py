@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Silent 1s paper TP/SL watcher on the box. No Discord. No Super wakes.
+"""Box-owned silent paper TP/SL. No Discord. No Super wakes.
 
-Price: DexScreener (free). GMGN unused here to save API budget.
-Sync: occasionally pull latest GHA paper-state opens into local book.
+SoT: this process owns the paper book. GHA should set PAPER_TRADING=0 and only
+post signal Discord + open_alerts; we adopt new alerts and run +100%/−40%.
+
+Price: DexScreener first (free); GMGN fallback throttled (RH often missing on Dex).
 """
 from __future__ import annotations
 
@@ -19,14 +21,24 @@ sys.path.insert(0, str(ROOT))
 
 import paper_trade as paper_mod  # noqa: E402
 
+try:
+    import gmgn_token as gmgn_tok
+except Exception:
+    gmgn_tok = None  # type: ignore
+
 LIVE = Path(os.environ.get("PAPER_LIVE_DIR") or "/workspace/meme-foundation/paper-live")
 STATE = LIVE / "state.json"
 BOOK = LIVE / "paper_book.jsonl"
 LOG = LIVE / "tick.log"
 REPO = os.environ.get("PAPER_REPO") or "ryryoooo/meme-signal-bot"
-INTERVAL = float(os.environ.get("PAPER_TICK_SEC") or "1")
-SYNC_EVERY = float(os.environ.get("PAPER_SYNC_SEC") or "120")
+INTERVAL = float(os.environ.get("PAPER_TICK_SEC") or "5")
+SYNC_EVERY = float(os.environ.get("PAPER_SYNC_SEC") or "90")
 CHAIN = os.environ.get("CHAIN") or "robinhood"
+GMGN_MIN_GAP = float(os.environ.get("PAPER_GMGN_GAP_SEC") or "20")
+
+_gmgn_last: dict[str, float] = {}
+_price_cache: dict[str, tuple[float, dict]] = {}
+_PRICE_TTL = 8.0
 
 
 def log(msg: str) -> None:
@@ -42,11 +54,11 @@ def log(msg: str) -> None:
 
 def load_state() -> dict:
     if not STATE.exists():
-        return {"paper_positions": [], "paper": {}}
+        return {"paper_positions": [], "paper": {}, "tick_closed_cas": [], "seen_alert_cas": []}
     try:
         return json.loads(STATE.read_text(encoding="utf-8"))
     except Exception:
-        return {"paper_positions": [], "paper": {}}
+        return {"paper_positions": [], "paper": {}, "tick_closed_cas": [], "seen_alert_cas": []}
 
 
 def save_state(st: dict) -> None:
@@ -59,7 +71,7 @@ def save_state(st: dict) -> None:
 def fetch_dex_price(ca: str, chain: str) -> dict:
     url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "paper-tick/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "paper-tick/2.0"})
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode())
     except Exception as e:
@@ -99,11 +111,58 @@ def fetch_dex_price(ca: str, chain: str) -> dict:
         "fdv": mcap,
         "liq_usd": liq_usd,
         "reason": None if price else "no_price",
+        "src": "dex",
     }
 
 
-def sync_opens_from_gha(local: dict) -> dict:
-    """Pull newest paper-state artifact; adopt remote opens we haven't closed locally."""
+def fetch_gmgn_price(ca: str, chain: str) -> dict:
+    if gmgn_tok is None:
+        return {"ok": False, "price_usd": None, "reason": "no_gmgn"}
+    now = time.time()
+    last = _gmgn_last.get(ca.lower(), 0.0)
+    if now - last < GMGN_MIN_GAP:
+        return {"ok": False, "price_usd": None, "reason": "gmgn_throttle"}
+    _gmgn_last[ca.lower()] = now
+    try:
+        snap = gmgn_tok.market_snapshot(chain, ca)
+    except Exception as e:
+        return {"ok": False, "price_usd": None, "reason": type(e).__name__}
+    price = snap.get("price_usd")
+    ok = bool(price and float(price) > 0)
+    return {
+        "ok": ok,
+        "price_usd": float(price) if ok else None,
+        "mcap_usd": snap.get("mcap_usd"),
+        "fdv": snap.get("fdv"),
+        "liq_usd": snap.get("liq_usd"),
+        "reason": None if ok else (snap.get("reason") or "gmgn_empty"),
+        "src": "gmgn",
+    }
+
+
+def fetch_price(ca: str, chain: str) -> dict:
+    key = ca.lower()
+    now = time.time()
+    cached = _price_cache.get(key)
+    if cached and now - cached[0] < _PRICE_TTL and cached[1].get("ok"):
+        return cached[1]
+    dex = fetch_dex_price(ca, chain)
+    if dex.get("ok"):
+        _price_cache[key] = (now, dex)
+        return dex
+    gm = fetch_gmgn_price(ca, chain)
+    if gm.get("ok"):
+        _price_cache[key] = (now, gm)
+        return gm
+    # keep last good mark briefly
+    if cached and cached[1].get("ok"):
+        out = dict(cached[1])
+        out["reason"] = f"stale:{dex.get('reason')}/{gm.get('reason')}"
+        return out
+    return {"ok": False, "price_usd": None, "reason": f"{dex.get('reason')}+{gm.get('reason')}"}
+
+
+def _download_remote_state() -> dict | None:
     try:
         out = subprocess.check_output(
             [
@@ -123,15 +182,11 @@ def sync_opens_from_gha(local: dict) -> dict:
         )
         runs = json.loads(out)
         if not runs:
-            return local
+            return None
         rid = runs[0]["databaseId"]
         arts = json.loads(
             subprocess.check_output(
-                [
-                    "gh",
-                    "api",
-                    f"repos/{REPO}/actions/runs/{rid}/artifacts",
-                ],
+                ["gh", "api", f"repos/{REPO}/actions/runs/{rid}/artifacts"],
                 text=True,
                 timeout=30,
             )
@@ -142,75 +197,113 @@ def sync_opens_from_gha(local: dict) -> dict:
                 aid = a["id"]
                 break
         if not aid:
-            return local
+            return None
         zpath = LIVE / "_sync.zip"
         raw = subprocess.check_output(
             ["gh", "api", f"repos/{REPO}/actions/artifacts/{aid}/zip"],
             timeout=60,
         )
         zpath.write_bytes(raw)
+        sync_dir = LIVE / "_sync"
+        sync_dir.mkdir(parents=True, exist_ok=True)
         subprocess.check_call(
-            ["unzip", "-o", "-q", str(zpath), "state.json", "-d", str(LIVE / "_sync")],
+            ["unzip", "-o", "-q", str(zpath), "state.json", "-d", str(sync_dir)],
             timeout=30,
         )
-        remote = json.loads((LIVE / "_sync" / "state.json").read_text(encoding="utf-8"))
+        return json.loads((sync_dir / "state.json").read_text(encoding="utf-8"))
     except Exception as e:
         log(f"sync skip: {type(e).__name__}")
+        return None
+
+
+def sync_from_gha_alerts(local: dict) -> dict:
+    """Adopt new Discord-signal alerts as paper entries (cash-correct via open_paper_position)."""
+    remote = _download_remote_state()
+    if not remote:
         return local
 
-    closed = {
+    closed = set(local.get("tick_closed_cas") or [])
+    closed |= {
         (p.get("ca") or "").lower()
         for p in (local.get("paper_positions") or [])
         if (p.get("status") or "") in ("stopped", "closed", "done")
     }
-    # also remember locally exited cas
-    closed |= set(local.get("tick_closed_cas") or [])
-
-    local_active = {
-        (p.get("ca") or "").lower()
+    active = [
+        p
         for p in (local.get("paper_positions") or [])
         if (p.get("status") or "open") in ("open", "half_taken")
-    }
+    ]
+    if active:
+        # already in a position — do not open another
+        return local
 
-    adopted = 0
-    positions = list(local.get("paper_positions") or [])
-    for rp in remote.get("paper_positions") or []:
-        st = rp.get("status") or "open"
-        if st not in ("open", "half_taken"):
+    alerts = list(remote.get("open_alerts") or [])
+    alerts.sort(key=lambda a: float(a.get("posted_at") or 0), reverse=True)
+    seen = set(local.get("seen_alert_cas") or [])
+
+    for alert in alerts:
+        ca = (alert.get("ca") or "").lower()
+        if not ca or ca in closed or ca in seen:
             continue
-        ca = (rp.get("ca") or "").lower()
-        if not ca or ca in closed or ca in local_active:
+        price = alert.get("alert_price_usd")
+        try:
+            price = float(price) if price is not None else None
+        except (TypeError, ValueError):
+            price = None
+        if not price or price <= 0:
             continue
-        positions.append(rp)
-        local_active.add(ca)
-        adopted += 1
+        # skip very old alerts (>6h)
+        try:
+            age = time.time() - float(alert.get("posted_at") or 0)
+        except (TypeError, ValueError):
+            age = 0
+        if age > 6 * 3600:
+            seen.add(ca)
+            continue
+        pos = paper_mod.open_paper_position(
+            local,
+            BOOK,
+            ca=ca,
+            symbol=alert.get("symbol"),
+            entry_price=price,
+            n=2,
+            chain=CHAIN,
+            mcap=alert.get("alert_mcap"),
+            liq=alert.get("alert_liq"),
+            webhook=None,
+            discord_post=None,
+        )
+        seen.add(ca)
+        if pos:
+            log(f"sync open {alert.get('symbol')} {ca[:10]}… entry={price} from_alert")
+            break
+        log(f"sync open blocked {ca[:10]}…")
+        break
 
-    # If local has no paper bankroll yet, take remote paper meta (cash etc.) once
-    if not (local.get("paper") or {}).get("cash_usd") and remote.get("paper"):
-        local["paper"] = remote["paper"]
-
-    local["paper_positions"] = positions
-    if adopted:
-        log(f"sync adopted_opens={adopted} active={len(local_active)}")
+    local["seen_alert_cas"] = list(seen)[-500:]
     return local
 
 
 def main() -> int:
     LIVE.mkdir(parents=True, exist_ok=True)
     BOOK.touch(exist_ok=True)
-    log(f"start interval={INTERVAL}s sync_every={SYNC_EVERY}s chain={CHAIN} dir={LIVE}")
+    # ensure paper bankroll exists
+    st0 = load_state()
+    paper_mod.ensure_paper_state(st0)
+    save_state(st0)
+    log(
+        f"start interval={INTERVAL}s sync_every={SYNC_EVERY}s chain={CHAIN} "
+        f"gmgn_gap={GMGN_MIN_GAP}s dir={LIVE}"
+    )
     last_sync = 0.0
     last_status = 0.0
     while True:
         t0 = time.time()
         st = load_state()
         if t0 - last_sync >= SYNC_EVERY:
-            st = sync_opens_from_gha(st)
+            st = sync_from_gha_alerts(st)
             save_state(st)
             last_sync = t0
-
-        def fetch(_ca: str, ch: str) -> dict:
-            return fetch_dex_price(_ca, ch or CHAIN)
 
         before = {
             (p.get("ca") or "").lower(): p.get("status")
@@ -220,11 +313,10 @@ def main() -> int:
             st,
             BOOK,
             CHAIN,
-            fetch,
+            lambda ca, ch: fetch_price(ca, ch or CHAIN),
             webhook=None,
             discord_post=None,
         )
-        # remember newly closed
         closed = list(st.get("tick_closed_cas") or [])
         for p in st.get("paper_positions") or []:
             ca = (p.get("ca") or "").lower()
