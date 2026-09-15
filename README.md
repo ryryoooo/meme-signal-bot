@@ -27,6 +27,11 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - 定期ジョブでは dex-trades を呼ばない（`NANSEN_FOR_TRADES=0`）
 - 週次: `refresh-wallets.yml` → `python3 bot.py --refresh-wallets`（artifact）
 
+## X / @xbtscout
+- RHジョブ内で **30分おき** に nitter から新CAを取る（X公式は403）
+- **新しく出たCAだけ** GMGN `smart_degen` を1本。既存261の再スキャンはしない
+- 取れた財布は監視リストへ `xbtscout_gmgn`。キャッシュで永続
+
 ## 投稿前ゲート
 - 監視財布: 実現PnL>0。勝率データがある場合は <40%かつ10戦以上を除外（FOMO専任は週次PnL）
 - 安全: DexScreener **流動性/時価 ≥30%**。GoPlusで **LPロックorバーン**（未ロック見送り、LP上位が30%以上も見送り）。GoPlus未対応チェーンは契約/LP検査スキップ

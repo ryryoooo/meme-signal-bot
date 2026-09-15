@@ -5,3 +5,4 @@ __pycache__/
 paper_log.jsonl
 paper_book.jsonl
 paper_summary.md
+xbtscout/cursor.json

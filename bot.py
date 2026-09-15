@@ -1818,6 +1818,45 @@ def run_once(args: argparse.Namespace) -> int:
     state = load_state(state_path)
     paper_mod.ensure_paper_state(state)
 
+    if chain == "robinhood" and env_bool("XBTSCOUT_ENABLED", True):
+        interval = int(os.environ.get("XBTSCOUT_SCRAPE_SECONDS", "1800"))
+        now_x = time.time()
+        last_x = state.get("last_xbtscout_scrape_ts")
+        due = True
+        try:
+            last_xf = float(last_x) if last_x is not None else 0.0
+            if last_xf > 1e12:
+                last_xf = last_xf / 1000.0
+            if last_xf > 0 and (now_x - last_xf) < interval:
+                due = False
+                print(f"xbtscout scrape skip: {int(now_x - last_xf)}s < {interval}s")
+        except (TypeError, ValueError):
+            due = True
+        if due:
+            try:
+                new_cas = scrape_xbtscout_cas()
+            except Exception as e:
+                print(f"xbtscout scrape err {type(e).__name__}", file=sys.stderr)
+                new_cas = []
+            state["last_xbtscout_scrape_ts"] = now_x
+            if new_cas:
+                harvest_xbtscout_wallets(watch_path, max_tokens=1, only_cas=new_cas)
+                watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
+                fomo_addrs = fomo_watch_addresses(fomo_index)
+                for addr, rec in fomo_addrs.items():
+                    if addr not in watch:
+                        watch[addr] = {
+                            "address": addr,
+                            "address_label": rec.get("handle") or "",
+                            "fomo_handle": rec.get("handle") or "",
+                            "realized_pnl_usd": rec.get("pnlUsd") or 0,
+                            "pass_pnl": True,
+                            "source_endpoints": ["fomo_leaderboard"],
+                        }
+                watch_set = set(watch.keys())
+                print(f"xbtscout new_cas={len(new_cas)} watch={len(watch_set)}")
+            save_state(state_path, state)
+
     # Multiplier milestones + paper marks (works even if GMGN auth fails)
     fu = process_multiplier_followups(state, webhook, chain, paper_path)
     paper_stats = paper_mod.process_paper_positions(
@@ -2112,6 +2151,217 @@ def test_fomo_holders_post() -> int:
     return 0
 
 
+
+
+def scrape_xbtscout_cas() -> list[str]:
+    """Pull new 0x CAs from nitter @xbtscout. Fail soft. Returns new CAs."""
+    cas_path = ROOT / "xbtscout" / "cas.jsonl"
+    cas_path.parent.mkdir(parents=True, exist_ok=True)
+    have: set[str] = set()
+    rows: list[dict] = []
+    if cas_path.exists():
+        for line in cas_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            o = json.loads(line)
+            ca = (o.get("ca") or "").lower()
+            if ca.startswith("0x"):
+                have.add(ca)
+                rows.append(o)
+    ca_re = re.compile(r"0x[a-fA-F0-9]{40}")
+    urls = [
+        "https://nitter.jaydenha.uk/xbtscout/rss",
+        "https://nitter.jaydenha.uk/xbtscout",
+    ]
+    html = ""
+    for url in urls:
+        req = urllib.request.Request(url, headers={"User-Agent": "meme-discord-bot/2.0", "Accept": "text/html,application/rss+xml"})
+        try:
+            with urllib.request.urlopen(req, timeout=18) as resp:
+                html = resp.read().decode("utf-8", errors="ignore")
+            if html.strip():
+                print(f"xbtscout scrape ok {url.split('/')[2]} bytes={len(html)}")
+                break
+        except Exception as e:
+            print(f"xbtscout scrape fail {url.split('/')[2]} {type(e).__name__}", file=sys.stderr)
+            continue
+    if not html:
+        print("xbtscout scrape: no page")
+        return []
+    found = []
+    seen = set()
+    for m in ca_re.finditer(html):
+        ca = m.group(0).lower()
+        if ca in SKIP_CA or ca in seen:
+            continue
+        seen.add(ca)
+        found.append(ca)
+    added = 0
+    now = datetime.now(timezone.utc).isoformat()
+    new_rows = []
+    for ca in found:
+        if ca in have:
+            continue
+        new_rows.append({"ca": ca, "source_url_or_text_snip": "nitter_xbtscout", "chain_guess": "robinhood", "date": now, "page": 0})
+        have.add(ca)
+        added += 1
+    if new_rows:
+        cas_path.write_text(
+            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in (new_rows + rows)),
+            encoding="utf-8",
+        )
+    print(f"xbtscout scrape new={added} page_cas={len(found)} total={len(have)}")
+    return [r["ca"] for r in new_rows]
+
+
+def harvest_xbtscout_wallets(
+    watch_path: Path,
+    max_tokens: int | None = None,
+    only_cas: list[str] | None = None,
+) -> int:
+    """GMGN smart_degen on newly scraped xbtscout CAs only (no 261 backlog drain)."""
+    write_gmgn_dotenv()
+    max_n = int(max_tokens if max_tokens is not None else os.environ.get("XBTSCOUT_MAX_TOKENS", "1"))
+    new_cas = [(c or "").lower() for c in (only_cas or []) if str(c).lower().startswith("0x")]
+    if not new_cas:
+        try:
+            new_cas = scrape_xbtscout_cas()
+        except Exception as e:
+            print(f"xbtscout scrape err {type(e).__name__}", file=sys.stderr)
+            new_cas = []
+    if not new_cas:
+        print("harvest-xbtscout: no new CAs")
+        return 0
+    batch = [{"ca": c} for c in new_cas[:max_n]]
+    cli = shutil.which("gmgn-cli")
+    if not cli:
+        print("harvest-xbtscout skip: gmgn-cli missing", file=sys.stderr)
+        return 1
+
+    def gmgn(args: list[str]):
+        try:
+            proc = subprocess.run(
+                [cli, *args],
+                capture_output=True,
+                text=True,
+                timeout=90,
+                env={**os.environ},
+            )
+        except Exception as e:
+            print(f"gmgn-cli {args[0:2]} fail {type(e).__name__}", file=sys.stderr)
+            return None
+        out = (proc.stdout or "").strip()
+        err = (proc.stderr or "")
+        if "RATE_LIMIT" in (out + err).upper() or "429" in (out + err):
+            print("harvest-xbtscout rate-limit; stopping batch", file=sys.stderr)
+            return "rate"
+        i = min([x for x in (out.find("{"), out.find("[")) if x >= 0], default=-1)
+        if i < 0:
+            return None
+        try:
+            return json.loads(out[i:])
+        except json.JSONDecodeError:
+            return None
+
+    found: dict[str, dict] = {}
+    wanted = {"smart_degen", "renowned", "smart_money"}
+    queried = 0
+    for rec in batch:
+        ca = rec["ca"]
+        data = gmgn(["token", "traders", "--chain", "robinhood", "--address", ca, "--tag", "smart_degen", "--limit", "50", "--order-by", "profit", "--raw"])
+        if data == "rate":
+            break
+        queried += 1
+        rows = []
+        if isinstance(data, list):
+            rows = data
+        elif isinstance(data, dict):
+            rows = data.get("list") or data.get("data") or []
+            if isinstance(rows, dict):
+                rows = rows.get("list") or []
+        if not isinstance(rows, list):
+            rows = []
+        n_keep = 0
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            addr = (r.get("address") or r.get("wallet_address") or r.get("maker") or "").lower()
+            if not addr.startswith("0x") or len(addr) != 42:
+                continue
+            tags = r.get("tags") or []
+            if isinstance(tags, str):
+                tags = [tags]
+            mi = r.get("maker_info") or {}
+            if isinstance(mi, dict):
+                tags = list(tags) + list(mi.get("tags") or [])
+                label = mi.get("name") or ""
+            else:
+                label = r.get("name") or ""
+            tagset = {str(t).lower() for t in tags if t}
+            if not (tagset & wanted) and "smart_degen" not in tagset:
+                tagset.add("smart_degen")  # endpoint already filtered
+            pnl = _num(r.get("profit") or r.get("realized_profit") or r.get("total_profit"))
+            if pnl is not None and pnl <= 0:
+                continue
+            prev = found.get(addr)
+            if prev:
+                continue
+            found[addr] = {
+                "address": addr,
+                "address_label": label or "",
+                "gmgn_tags": list(tagset),
+                "gmgn_pnl_usd": pnl,
+                "source_ca": ca,
+            }
+            n_keep += 1
+        print(f"xbtscout {ca[:10]}… traders keep={n_keep} rows={len(rows)}")
+        time.sleep(1.2)
+
+    existing: dict[str, dict] = {}
+    if watch_path.exists():
+        for line in watch_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            o = json.loads(line)
+            a = (o.get("address") or "").lower()
+            if a.startswith("0x"):
+                existing[a] = o
+    added = tagged = 0
+    now = datetime.now(timezone.utc).isoformat()
+    for addr, w in found.items():
+        pnl = w.get("gmgn_pnl_usd")
+        if addr in existing:
+            o = existing[addr]
+            srcs = list(o.get("source_endpoints") or [])
+            if "xbtscout_gmgn" not in srcs:
+                srcs.append("xbtscout_gmgn")
+                o["source_endpoints"] = srcs
+                tagged += 1
+            if pnl and (not o.get("realized_pnl_usd") or float(o.get("realized_pnl_usd") or 0) <= 0):
+                o["realized_pnl_usd"] = pnl
+                o["pass_pnl"] = True
+            continue
+        rp = float(pnl) if pnl and pnl > 0 else 0.01
+        existing[addr] = {
+            "address": addr,
+            "address_label": w.get("address_label") or "",
+            "realized_pnl_usd": rp,
+            "pass_pnl": True,
+            "gmgn_pnl_usd": pnl,
+            "gmgn_tags": w.get("gmgn_tags") or ["smart_degen"],
+            "source_endpoints": ["xbtscout_gmgn"],
+            "source_ca": w.get("source_ca"),
+            "collected_at": now,
+        }
+        added += 1
+    watch_path.parent.mkdir(parents=True, exist_ok=True)
+    with watch_path.open("w", encoding="utf-8") as f:
+        for a in sorted(existing):
+            f.write(json.dumps(existing[a], ensure_ascii=False) + "\n")
+    print(f"harvest-xbtscout queried={queried} found={len(found)} added={added} tagged={tagged} watch={len(existing)}")
+    return 0
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--loop", action="store_true", help="poll forever")
@@ -2119,6 +2369,7 @@ def main() -> int:
     p.add_argument("--test-fomo-holders", action="store_true", help="仮投稿: live FOMO holder overlap, no paper")
     p.add_argument("--refresh-wallets", action="store_true", help="Nansen pnl-leaderboard → wallets.jsonl (infrequent)")
     p.add_argument("--refresh-fomo", action="store_true", help="FOMO 7d leaderboard → drop fallen FOMO-only wallets")
+    p.add_argument("--harvest-xbtscout", action="store_true", help="Scrape @xbtscout new CAs and GMGN-tag 1")
     p.add_argument("--paper-summary", action="store_true", help="Write paper_summary.md from logs/state")
     p.add_argument("--pages", type=int, default=2, help="legacy Nansen pages if NANSEN_FOR_TRADES=1")
     p.add_argument("--per-page", type=int, default=100, help="GMGN --limit / Nansen per_page")
@@ -2181,6 +2432,13 @@ def main() -> int:
             os.environ.get("WATCHLIST_PATH", str(default_watchlist_path(chain)))
         ).resolve()
         return refresh_fomo_wallets(watch_path)
+
+    if args.harvest_xbtscout:
+        chain = os.environ.get("CHAIN", "robinhood").strip().lower()
+        watch_path = Path(
+            os.environ.get("WATCHLIST_PATH", str(default_watchlist_path(chain)))
+        ).resolve()
+        return harvest_xbtscout_wallets(watch_path)
 
     if args.loop:
         poll = int(os.environ.get("POLL_SECONDS", "60"))
