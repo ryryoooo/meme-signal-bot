@@ -50,8 +50,9 @@ jobs:
             paper_log_arc.jsonl
             paper_book_arc.jsonl
             paper_summary_arc.md
-          key: meme-signal-arc-state-v1
+          key: meme-signal-arc-state-v2-${{ github.run_id }}
           restore-keys: |
+            meme-signal-arc-state-v2-
             meme-signal-arc-state-
 
       - name: Resolve Arc watchlist path
@@ -74,6 +75,7 @@ jobs:
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
+          PAPER_MARK_HEARTBEAT: "1"
           CHAIN: arc
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"

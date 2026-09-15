@@ -1600,6 +1600,11 @@ def process_multiplier_followups(state: dict, webhook: str, chain: str, paper_pa
         if not price_now or price_now <= 0:
             continue
         mult = price_now / alert_price
+        alert["last_followup_at"] = now
+        alert["last_followup_mult"] = mult
+        alert["last_price_usd"] = price_now
+        alert["last_mcap"] = dex.get("mcap_usd") or dex.get("fdv")
+        alert["last_liq"] = dex.get("liq_usd")
         hit = list(alert.get("milestones_hit") or [])
         next_ms = None
         for ms in MULTIPLIER_MILESTONES:
@@ -1607,6 +1612,7 @@ def process_multiplier_followups(state: dict, webhook: str, chain: str, paper_pa
                 next_ms = ms
                 break
         # Milestone crossings only (each once): 1.5x / 2x / 3x / 5x
+        # Still refresh last_* above so price is always tracked in state
         if next_ms is None:
             continue
         milestone = next_ms
@@ -1815,8 +1821,8 @@ def run_once(args: argparse.Namespace) -> int:
         webhook=paper_webhook,
         discord_post=discord_webhook,
     )
-    if fu or paper_stats.get("marked") or paper_stats.get("half") or paper_stats.get("stop"):
-        save_state(state_path, state)
+    # Always persist so marks/open positions survive the next Actions cache restore
+    save_state(state_path, state)
 
     trades, source_name, gmgn_err = collect_trades(args, chain, min_usd, watch_set, state=state, fomo_index=fomo_index)
 
@@ -2021,6 +2027,16 @@ def run_once(args: argparse.Namespace) -> int:
     state["trade_source"] = source_name
     state["source_mode"] = source_mode
     state["gmgn_err"] = gmgn_err
+
+    # Remount after any same-run opens so price tracking starts immediately
+    paper_stats = paper_mod.process_paper_positions(
+        state,
+        book_path,
+        chain,
+        lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
+        webhook=paper_webhook,
+        discord_post=discord_webhook,
+    )
     save_state(state_path, state)
     summary_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
     try:

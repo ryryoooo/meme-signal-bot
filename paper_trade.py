@@ -400,6 +400,33 @@ def process_paper_positions(
     if equity_notices:
         stats["equity_ms"] = len(equity_notices)
 
+    # Heartbeat: always surface open marks so price is tracked visibly each poll
+    heartbeat_on = str((os.environ.get("PAPER_MARK_HEARTBEAT") or "1")).strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if webhook and discord_post and heartbeat_on and stats["marked"]:
+        lines = []
+        for pos in positions:
+            st = pos.get("status") or "open"
+            if st not in ("open", "half_taken"):
+                continue
+            if not pos.get("last_mark_mult"):
+                continue
+            mult = float(pos["last_mark_mult"])
+            rem = float(pos.get("remaining_usd") or 0)
+            u_pnl = rem * mult - rem
+            mcap = pos.get("last_mcap")
+            mcap_s = f"${mcap:,.0f}" if isinstance(mcap, (int, float)) else "-"
+            flag = "半分後" if st == "half_taken" else "オープン"
+            lines.append(
+                f"· `${pos.get('symbol') or '?'}` {mult:.2f}x · uPnL ${u_pnl:+.2f} · "
+                f"残 ${rem:.0f} · mcap {mcap_s} · {flag}"
+            )
+        if lines:
+            notices.append("📊 値動きマーク\n" + "\n".join(lines))
+
     if webhook and discord_post and notices:
         discord_post(
             webhook,

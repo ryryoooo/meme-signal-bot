@@ -52,9 +52,11 @@ jobs:
             paper_summary.md
             rh-wallets/wallets.jsonl
             xbtscout/
-          key: meme-signal-state-v5
+          # Unique key each run so marks/opens persist (fixed keys never update)
+          key: meme-signal-state-v6-${{ github.run_id }}
           restore-keys: |
-            meme-signal-state-
+            meme-signal-state-v6-
+            meme-signal-state-v5
 
       - name: Run once (signals + paper marks)
         env:
@@ -66,6 +68,7 @@ jobs:
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
+          PAPER_MARK_HEARTBEAT: "1"
           CHAIN: robinhood
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
