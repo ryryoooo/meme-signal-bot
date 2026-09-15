@@ -204,28 +204,42 @@ def detect_signals(
 
 
 def format_signal(s: dict, chain: str) -> str:
-    chain_jp = {"robinhood": "RH", "arc": "Arc", "solana": "SOL"}.get(chain, chain)
-    sym = s.get("symbol") or "?"
+    chain_jp = {
+        "robinhood": "Robinhoodチェーン",
+        "arc": "Arcチェーン",
+        "solana": "Solana",
+    }.get(chain, chain)
+    sym = s.get("symbol") or "不明"
     n = s["n"]
-    strength = "強" if n >= 3 else "候補"
+    # plain language strength
+    if n >= 3:
+        headline = f"買いが重なった（{n}人）· やや強い"
+    else:
+        headline = f"買いが重なった（{n}人）"
     elapsed = int(s.get("elapsed") or 0)
+    if elapsed < 60:
+        when = f"約{elapsed}秒のあいだ"
+    else:
+        when = f"約{elapsed // 60}分{elapsed % 60}秒のあいだ"
     total_usd = sum(float(w.get("usd") or 0) for w in s["wallets"])
     lines = [
-        f"🔔 **重複買い {n}本**（{strength}） / {chain_jp}",
-        f"**${sym}**",
+        f"🔔 **{headline}**",
+        f"コイン: **${sym}**（{chain_jp}）",
+        f"コントラクト:",
         f"`{s['ca']}`",
-        f"窓 {elapsed}秒 · 合計約 ${total_usd:,.0f} · セーフティ未確認",
+        f"{when}に監視中の勝ち財布が同じコインを購入",
+        f"購入合計の目安: 約 ${total_usd:,.0f}",
+        "安全チェック: まだ自動では見ていない（自分で確認）",
         "",
-        "財布:",
+        "誰が買ったか:",
     ]
     for w in s["wallets"]:
         short = w["address"][:6] + "…" + w["address"][-4:]
         lab = (w.get("label") or "").strip()
-        # drop noisy emoji-only noise labels a bit
         name = lab if lab and not lab.startswith("0x") else short
-        lines.append(f"• {name} · ${float(w.get('usd') or 0):,.0f}")
+        lines.append(f"• {name} · 約 ${float(w.get('usd') or 0):,.0f}")
     lines.append("")
-    lines.append("※通知のみ（自動売買なし）")
+    lines.append("※お知らせだけです。自動では買いません。")
     return "\n".join(lines)
 
 
