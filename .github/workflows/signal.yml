@@ -2,7 +2,7 @@ name: meme-signal
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/20 * * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -19,8 +19,10 @@ jobs:
       - name: Restore state cache
         uses: actions/cache@v4
         with:
-          path: state.json
-          key: meme-signal-state-v1
+          path: |
+            state.json
+            paper_log.jsonl
+          key: meme-signal-state-v2
           restore-keys: |
             meme-signal-state-
 
@@ -32,8 +34,11 @@ jobs:
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
           MIN_TRADE_USD: "50"
+          COOLDOWN_SECONDS: "21600"
+          WATCH_MIN_REALIZED_USD: "0"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
-        run: python3 bot.py --pages 3 --per-page 100
+          PAPER_LOG_PATH: paper_log.jsonl
+        run: python3 bot.py --pages 2 --per-page 100
 
       # cache save happens automatically at end of job for actions/cache

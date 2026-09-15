@@ -2,3 +2,4 @@
 state.json
 *.pyc
 __pycache__/
+paper_log.jsonl
