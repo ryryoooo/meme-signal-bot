@@ -163,6 +163,7 @@ def fetch_price(ca: str, chain: str) -> dict:
 
 
 def _download_remote_state() -> dict | None:
+    """Prefer newest artifact that still has alerts / opens / posted log rows."""
     try:
         out = subprocess.check_output(
             [
@@ -173,7 +174,7 @@ def _download_remote_state() -> dict | None:
                 REPO,
                 "--workflow=meme-signal",
                 "--limit",
-                "1",
+                "8",
                 "--json",
                 "databaseId",
             ],
@@ -181,39 +182,70 @@ def _download_remote_state() -> dict | None:
             timeout=30,
         )
         runs = json.loads(out)
-        if not runs:
-            return None
-        rid = runs[0]["databaseId"]
-        arts = json.loads(
-            subprocess.check_output(
-                ["gh", "api", f"repos/{REPO}/actions/runs/{rid}/artifacts"],
-                text=True,
-                timeout=30,
-            )
-        )
-        aid = None
-        for a in arts.get("artifacts") or []:
-            if a.get("name") == "paper-state" and not a.get("expired"):
-                aid = a["id"]
-                break
-        if not aid:
-            return None
-        zpath = LIVE / "_sync.zip"
-        raw = subprocess.check_output(
-            ["gh", "api", f"repos/{REPO}/actions/artifacts/{aid}/zip"],
-            timeout=60,
-        )
-        zpath.write_bytes(raw)
-        sync_dir = LIVE / "_sync"
-        sync_dir.mkdir(parents=True, exist_ok=True)
-        subprocess.check_call(
-            ["unzip", "-o", "-q", str(zpath), "state.json", "-d", str(sync_dir)],
-            timeout=30,
-        )
-        return json.loads((sync_dir / "state.json").read_text(encoding="utf-8"))
     except Exception as e:
         log(f"sync skip: {type(e).__name__}")
         return None
+
+    sync_dir = LIVE / "_sync"
+    sync_dir.mkdir(parents=True, exist_ok=True)
+    zpath = LIVE / "_sync.zip"
+    best = None
+    best_score = -1
+    for run in runs:
+        rid = run["databaseId"]
+        try:
+            arts = json.loads(
+                subprocess.check_output(
+                    ["gh", "api", f"repos/{REPO}/actions/runs/{rid}/artifacts"],
+                    text=True,
+                    timeout=30,
+                )
+            )
+            aid = None
+            for a in arts.get("artifacts") or []:
+                if a.get("name") == "paper-state" and not a.get("expired"):
+                    aid = a["id"]
+                    break
+            if not aid:
+                continue
+            raw = subprocess.check_output(
+                ["gh", "api", f"repos/{REPO}/actions/artifacts/{aid}/zip"],
+                timeout=60,
+            )
+            zpath.write_bytes(raw)
+            subprocess.check_call(
+                ["unzip", "-o", "-q", str(zpath), "-d", str(sync_dir)],
+                timeout=30,
+            )
+            st = json.loads((sync_dir / "state.json").read_text(encoding="utf-8"))
+            log_path = sync_dir / "paper_log.jsonl"
+            if log_path.exists():
+                st["_paper_log_path"] = str(log_path)
+            score = len(st.get("open_alerts") or [])
+            score += sum(
+                1
+                for p in (st.get("paper_positions") or [])
+                if (p.get("status") or "open") in ("open", "half_taken")
+            )
+            if log_path.exists():
+                score += sum(
+                    1
+                    for ln in log_path.read_text(encoding="utf-8").splitlines()
+                    if ln.strip() and json.loads(ln).get("posted")
+                )
+            if score > best_score:
+                best_score = score
+                best = st
+                if score > 0:
+                    # good enough — prefer freshest non-empty
+                    break
+        except Exception:
+            continue
+    if best is None:
+        log("sync skip: no artifacts")
+    elif best_score <= 0:
+        log("sync note: newest artifacts empty of opens/alerts")
+    return best
 
 
 def sync_from_gha_alerts(local: dict) -> dict:
@@ -238,8 +270,84 @@ def sync_from_gha_alerts(local: dict) -> dict:
         return local
 
     alerts = list(remote.get("open_alerts") or [])
+    # Fallback: reconstruct alerts from paper_log posted rows (cache may drop open_alerts)
+    log_path = remote.get("_paper_log_path")
+    if log_path:
+        try:
+            for ln in Path(log_path).read_text(encoding="utf-8").splitlines():
+                if not ln.strip():
+                    continue
+                row = json.loads(ln)
+                if not row.get("posted"):
+                    continue
+                ca = (row.get("ca") or "").lower()
+                if not ca:
+                    continue
+                price = row.get("alert_price_usd") or row.get("price_usd")
+                try:
+                    price = float(price) if price is not None else None
+                except (TypeError, ValueError):
+                    price = None
+                ts = row.get("ts")
+                posted_at = 0.0
+                if isinstance(ts, (int, float)):
+                    posted_at = float(ts)
+                elif isinstance(ts, str) and ts:
+                    try:
+                        from datetime import datetime
+                        posted_at = datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+                    except Exception:
+                        posted_at = 0.0
+                alerts.append(
+                    {
+                        "ca": ca,
+                        "symbol": row.get("symbol"),
+                        "alert_price_usd": price,
+                        "alert_mcap": row.get("mcap"),
+                        "alert_liq": row.get("liq"),
+                        "posted_at": posted_at,
+                        "n": row.get("n") or 2,
+                    }
+                )
+        except Exception as e:
+            log(f"paper_log parse skip: {type(e).__name__}")
+
+    # also mirror remote open paper_positions that still have entry_price
+    for rp in remote.get("paper_positions") or []:
+        if (rp.get("status") or "open") not in ("open", "half_taken"):
+            continue
+        ca = (rp.get("ca") or "").lower()
+        if not ca:
+            continue
+        try:
+            price = float(rp.get("entry_price") or 0)
+        except (TypeError, ValueError):
+            price = 0.0
+        if price <= 0:
+            continue
+        alerts.append(
+            {
+                "ca": ca,
+                "symbol": rp.get("symbol"),
+                "alert_price_usd": price,
+                "alert_mcap": rp.get("alert_mcap") or rp.get("last_mcap"),
+                "alert_liq": rp.get("alert_liq") or rp.get("last_liq"),
+                "posted_at": float(rp.get("opened_at") or 0),
+                "n": int(rp.get("n") or 2),
+            }
+        )
+
+    alerts.sort(key=lambda a: float(a.get("posted_at") or 0), reverse=True)
+    # de-dupe by ca keep newest
+    dedup = {}
+    for a in alerts:
+        ca = (a.get("ca") or "").lower()
+        if ca and ca not in dedup:
+            dedup[ca] = a
+    alerts = list(dedup.values())
     alerts.sort(key=lambda a: float(a.get("posted_at") or 0), reverse=True)
     seen = set(local.get("seen_alert_cas") or [])
+    log(f"sync candidates={len(alerts)} closed={len(closed)}")
 
     for alert in alerts:
         ca = (alert.get("ca") or "").lower()
@@ -266,7 +374,7 @@ def sync_from_gha_alerts(local: dict) -> dict:
             ca=ca,
             symbol=alert.get("symbol"),
             entry_price=price,
-            n=2,
+            n=int(alert.get("n") or 2),
             chain=CHAIN,
             mcap=alert.get("alert_mcap"),
             liq=alert.get("alert_liq"),
