@@ -89,7 +89,11 @@ CHAIN_META = {
     },
 }
 
-LIQ_MCAP_MIN = 0.10
+# Heat gates from 2x+ alert sample (provisional): winners had cluster≥~$208, liq≥~$1.6k
+LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.20"))
+MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "1500"))
+MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "4000"))
+MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "200"))
 MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "1800"))  # skip if younger than 30m
 LP_LOCK_MIN = 0.01  # locked+burned share of LP
 # LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
@@ -1494,6 +1498,53 @@ def fetch_goplus(ca: str, chain: str) -> dict:
     return {"status": "pass", "reason": None, "buy_tax": buy_tax, "sell_tax": sell_tax, "lp": lp}
 
 
+def heat_gate_reasons(safety: dict) -> list[str]:
+    """Skip thin / low-heat markets (2x+ winners were thicker)."""
+    fails: list[str] = []
+    liq = safety.get("liq_usd")
+    mcap = safety.get("mcap_usd") or safety.get("fdv")
+    ratio = safety.get("ratio")
+    try:
+        min_liq = float(os.environ.get("MIN_LIQ_USD", str(MIN_LIQ_USD)))
+    except (TypeError, ValueError):
+        min_liq = MIN_LIQ_USD
+    try:
+        min_mcap = float(os.environ.get("MIN_MCAP_USD", str(MIN_MCAP_USD)))
+    except (TypeError, ValueError):
+        min_mcap = MIN_MCAP_USD
+    try:
+        liq_mcap_min = float(os.environ.get("LIQ_MCAP_MIN", str(LIQ_MCAP_MIN)))
+    except (TypeError, ValueError):
+        liq_mcap_min = LIQ_MCAP_MIN
+    if liq is None:
+        fails.append("liq_na")
+    else:
+        try:
+            if float(liq) < min_liq:
+                fails.append(f"liq_thin={float(liq):.0f}<{min_liq:.0f}")
+        except (TypeError, ValueError):
+            fails.append("liq_na")
+    if mcap is None:
+        fails.append("no_mcap")
+    else:
+        try:
+            if float(mcap) < min_mcap:
+                fails.append(f"mcap_thin={float(mcap):.0f}<{min_mcap:.0f}")
+        except (TypeError, ValueError):
+            fails.append("no_mcap")
+    if ratio is None:
+        if liq is not None and mcap:
+            try:
+                ratio = float(liq) / float(mcap)
+            except (TypeError, ValueError, ZeroDivisionError):
+                ratio = None
+    if ratio is None:
+        fails.append("liq_ratio=na")
+    elif float(ratio) < liq_mcap_min:
+        fails.append(f"liq_ratio={float(ratio):.2f}")
+    return fails
+
+
 def safety_check(ca: str, chain: str) -> dict:
     """GMGN info + security. DexScreener/GoPlus are not the source of truth."""
     meta = CHAIN_META.get(chain, {})
@@ -1520,9 +1571,18 @@ def safety_check(ca: str, chain: str) -> dict:
             f"mcap={mcap} liq={liq} fetch_failed={fetch_failed} reasons={['ok'] if ok else ['gmgn_info:fail']}",
             flush=True,
         )
+        reasons = ["ok"] if ok else ["gmgn_info:fail"]
+        if ok:
+            heat = heat_gate_reasons(
+                {"liq_usd": liq, "mcap_usd": mcap, "fdv": snap.get("fdv") or mcap, "ratio": ratio}
+            )
+            if heat:
+                ok = False
+                reasons = heat
+                jp = "見送り（薄い盛り上がり）"
         return {
             "ok": ok,
-            "reasons": ["ok"] if ok else ["gmgn_info:fail"],
+            "reasons": reasons,
             "ratio": ratio,
             "liq_usd": liq,
             "mcap_usd": mcap,
@@ -1538,13 +1598,24 @@ def safety_check(ca: str, chain: str) -> dict:
             "fetch_failed": fetch_failed,
             "checklist": [],
         }
-    return gmgn_tok.evaluate(
+    out = gmgn_tok.evaluate(
         gmgn_chain,
         ca,
         liq_mcap_min=LIQ_MCAP_MIN,
         min_age_sec=float(MIN_TOKEN_AGE_SEC),
         lp_lock_min=float(os.environ.get("LP_LOCK_MIN", str(LP_LOCK_MIN))),
     )
+    if out.get("ok") and not out.get("fetch_failed"):
+        heat = heat_gate_reasons(out)
+        # evaluate already checks liq_ratio; still enforce absolute liq/mcap floors
+        heat = [h for h in heat if not str(h).startswith("liq_ratio")]
+        if heat:
+            out = dict(out)
+            out["ok"] = False
+            prev = [r for r in (out.get("reasons") or []) if r != "ok"]
+            out["reasons"] = prev + heat
+            out["jp"] = "見送り（薄い盛り上がり）"
+    return out
 
 
 def strength_label(n: int, total_usd: float) -> tuple[str, int]:
@@ -1708,8 +1779,12 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("ペアなし")
         elif rs.startswith("launch_age"):
             bits.append("ローンチ直後")
-        elif rs.startswith("liq_ratio"):
+        elif rs.startswith("liq_ratio") or rs.startswith("liq_thin") or rs == "liq_na":
             bits.append("薄い板")
+        elif rs.startswith("mcap_thin"):
+            bits.append("時価薄い")
+        elif rs.startswith("weak_cluster"):
+            bits.append("買い合計が小さい")
         elif "honeypot" in rs:
             bits.append("honeypot")
         elif "cannot_sell" in rs:
