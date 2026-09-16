@@ -25,6 +25,16 @@ on:
         required: false
         default: "1"
         type: string
+      max_avg_cost:
+        description: Max avg buy cost (0=off)
+        required: false
+        default: "0"
+        type: string
+      max_start_holding_ts:
+        description: Max start_holding_at unix (0=off)
+        required: false
+        default: "0"
+        type: string
 
 permissions:
   contents: write
@@ -64,6 +74,8 @@ jobs:
         env:
           CHAIN: ${{ github.event.inputs.chain }}
           MIN_PROFIT_USD: ${{ github.event.inputs.min_profit }}
+          MAX_AVG_COST: ${{ github.event.inputs.max_avg_cost }}
+          MAX_START_HOLDING_TS: ${{ github.event.inputs.max_start_holding_ts }}
           TOKEN_SYMBOL: ${{ github.event.inputs.symbol }}
         run: |
           python3 scripts/harvest_token_profit_wallets.py \
@@ -71,6 +83,8 @@ jobs:
             --token "${{ github.event.inputs.token }}" \
             --symbol "${{ github.event.inputs.symbol }}" \
             --min-profit "$MIN_PROFIT_USD" \
+            --max-avg-cost "${MAX_AVG_COST:-0}" \
+            --max-start-holding-ts "${MAX_START_HOLDING_TS:-0}" \
             --limit 100
 
       - name: Commit watchlist if changed

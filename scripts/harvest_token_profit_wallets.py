@@ -125,6 +125,8 @@ def main() -> int:
     ap.add_argument("--symbol", default=os.environ.get("TOKEN_SYMBOL", ""))
     ap.add_argument("--limit", type=int, default=100)
     ap.add_argument("--min-profit", type=float, default=float(os.environ.get("MIN_PROFIT_USD", "1")))
+    ap.add_argument("--max-avg-cost", type=float, default=float(os.environ.get("MAX_AVG_COST", "0") or 0))
+    ap.add_argument("--max-start-holding-ts", type=float, default=float(os.environ.get("MAX_START_HOLDING_TS", "0") or 0))
     ap.add_argument(
         "--watchlist",
         default="",
@@ -179,6 +181,14 @@ def main() -> int:
         pr = profit_of(row)
         if pr < args.min_profit:
             continue
+        avg_cost = num(row.get("avg_cost"))
+        if args.max_avg_cost and args.max_avg_cost > 0:
+            if avg_cost is None or avg_cost <= 0 or avg_cost > args.max_avg_cost:
+                continue
+        start_h = num(row.get("start_holding_at"))
+        if args.max_start_holding_ts and args.max_start_holding_ts > 0:
+            if start_h is None or start_h <= 0 or start_h > args.max_start_holding_ts:
+                continue
         tags = row.get("tags") or row.get("tag") or []
         if isinstance(tags, str):
             tags = [tags]
@@ -188,6 +198,8 @@ def main() -> int:
                 "realized_profit": pr,
                 "unrealized_profit": num(row.get("unrealized_profit") or row.get("unrealized_pnl")) or 0.0,
                 "buy_volume_cur": num(row.get("buy_volume_cur") or row.get("buy_volume")),
+                "avg_cost": avg_cost,
+                "start_holding_at": start_h,
                 "sell_volume_cur": num(row.get("sell_volume_cur") or row.get("sell_volume")),
                 "tags": tags,
                 "raw": {k: row.get(k) for k in list(row.keys())[:40]},
