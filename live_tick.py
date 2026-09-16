@@ -200,12 +200,17 @@ def fetch_price(ca: str) -> dict:
 
 
 def live_danger_gate(ca: str) -> tuple[bool, list[str]]:
-    """Mirror bot.live_danger_gate: Arc ignores open_source danger."""
+    """Mirror bot.live_danger_gate: Arc ignores open_source danger.
+
+    Auth/fetch failures are soft-skip (not "danger"), so we retry next sync.
+    """
     if gmgn_tok is None:
         return False, ["no_gmgn"]
     sec, sec_err = gmgn_tok.fetch_token_security("arc", ca)
     if not sec:
-        return False, [f"live_security:{sec_err or 'fail'}"]
+        err = (sec_err or "fail").lower()
+        # do not burn the alert as permanent danger on transient auth
+        return False, [f"live_security_soft:{sec_err or 'fail'}"]
     parsed = gmgn_tok.parse_security(sec)
     checklist = gmgn_tok.gmgn_security_checklist(parsed, "arc")
     _ok, fails = gmgn_tok.checklist_no_danger(checklist)
@@ -386,7 +391,10 @@ def sync_and_open(live_state: dict, meta: dict) -> dict:
             log(f"live try {a.get('symbol')} {ca[:10]}… danger_ok={danger_ok}")
         except Exception as e:
             log(f"live open soft-fail {ca[:10]}… {type(e).__name__}")
-        seen.add(ca)
+        # permanent seen only when not a soft security miss (retry next sync)
+        soft = (not danger_ok) and any(str(x).startswith("live_security_soft:") for x in (danger_reasons or []))
+        if not soft:
+            seen.add(ca)
         # respect max open via can_open inside open_live_position
         meta["seen_alert_cas"] = list(seen)[-500:]
         save_tick_meta(meta)
