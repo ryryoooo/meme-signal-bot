@@ -335,6 +335,43 @@ def wallet_passes_filter(o: dict, min_realized: float) -> bool:
     return True
 
 
+
+def wallet_is_early_stage(meta: dict | None) -> bool:
+    """True if wallet looks like early / 仕込み smart money (not late chase only)."""
+    if not meta:
+        return False
+    parts: list[str] = []
+    for key in ("tags", "sources", "source_endpoints"):
+        for x in meta.get(key) or []:
+            parts.append(str(x))
+    for key in ("source", "address_label", "label"):
+        v = meta.get(key)
+        if v:
+            parts.append(str(v))
+    blob = " ".join(parts).lower()
+    if any(
+        s in blob
+        for s in (
+            "early2x",
+            "early_live",
+            "early:",
+            "early ",
+            "nansen",
+            "smart trader",
+            "30d smart",
+            "90d smart",
+            "180d smart",
+        )
+    ):
+        return True
+    # bare tag/source token starting with early
+    for p in parts:
+        pl = str(p).lower().strip()
+        if pl.startswith("early") or pl == "nansen" or pl.startswith("nansen:"):
+            return True
+    return False
+
+
 def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], int, bool]:
     raw: dict[str, dict] = {}
     if not path.exists():
@@ -351,6 +388,14 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
     dropped = len(raw) - len(filtered)
     if dropped:
         print(f"watchlist drop losers={dropped} keep={len(filtered)} raw={len(raw)}")
+    early_only = env_bool("WATCH_EARLY_ONLY", False)
+    if early_only and filtered:
+        before = len(filtered)
+        filtered = {a: o for a, o in filtered.items() if wallet_is_early_stage(o)}
+        print(
+            f"watchlist early_only keep={len(filtered)} dropped={before - len(filtered)} before={before}",
+            flush=True,
+        )
     if not filtered:
         print(
             f"WARNING: watchlist filter emptied list (raw={len(raw)}); falling back to all",
@@ -2259,6 +2304,44 @@ def run_once(args: argparse.Namespace) -> int:
             "source": source_name,
             "source_mode": source_mode,
         }
+
+        # Prefer 仕込み smart wallets in the overlap (Arc default on)
+        require_early = env_bool(
+            "REQUIRE_EARLY_HIT",
+            True if (chain or "").lower() == "arc" else False,
+        )
+        if require_early:
+            early_addrs = [
+                (w.get("address") or "").lower()
+                for w in (s.get("wallets") or [])
+                if wallet_is_early_stage(watch.get((w.get("address") or "").lower()) or {})
+            ]
+            print(
+                f"early_hit ca={ca[:10]}… early={len(early_addrs)}/{s['n']} "
+                f"cluster_usd={total_usd:.0f}",
+                flush=True,
+            )
+            if not early_addrs:
+                append_paper_log(
+                    paper_path,
+                    {**base_row, "posted": False, "reason": "no_early_wallet"},
+                )
+                skipped += 1
+                continue
+
+        try:
+            min_cluster = float(os.environ.get("MIN_CLUSTER_USD", str(MIN_CLUSTER_USD)))
+        except (TypeError, ValueError):
+            min_cluster = MIN_CLUSTER_USD
+        if total_usd < min_cluster:
+            reason = f"weak_cluster={total_usd:.0f}<{min_cluster:.0f}"
+            print(f"skip {ca} {reason}", flush=True)
+            append_paper_log(
+                paper_path,
+                {**base_row, "posted": False, "reason": reason},
+            )
+            skipped += 1
+            continue
 
         if s["key"] in seen:
             append_paper_log(paper_path, {**base_row, "posted": False, "reason": "already_seen"})
