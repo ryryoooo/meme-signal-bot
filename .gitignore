@@ -6,3 +6,7 @@ paper_log.jsonl
 paper_book.jsonl
 paper_summary.md
 xbtscout/cursor.json
+live_state_arc.json
+live_book_arc.jsonl
+live_state*.json
+live_book*.jsonl

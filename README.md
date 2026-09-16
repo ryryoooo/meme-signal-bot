@@ -10,9 +10,9 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - GMGN失敗時はオンチェーン探索を best-effort（偽取引は作らない）
 - **倍率フォローアップ**: 1.5x / 2x / 3x / 5x 到達を各1回（プレーン日本語）
 - **紙トレード**（仮想 **$300**）: 投稿時に仮想ポジション。FOUNDATION準拠。 Discordは `DISCORD_PAPER_WEBHOOK_URL`（紙）と `DISCORD_WEBHOOK_URL`（シグナル）に分離
-  - 同時1本 / サイズ20%（n≥3は30%）/ +100%半分 / −40%ストップ / 週最大5 / 連敗3で週終了
+  - 同時最大5本 / サイズ20%（n≥3は30%）/ +100%半分 / −40%ストップ / 週エントリー・連敗キャップなし（既定）
   - `paper_book.jsonl` + `paper_summary.md`（エクイティ曲線）を Actions cache / artifact で永続
-- **実弾禁止**: `LIVE_TRADING=0`（有効化してもブロック）
+- **Arc LIVE**（`signal-arc.yml` のみ）: `LIVE_TRADING=1` で gmgn-cli swap（USDC→token / 利確・損切りは自前プロセッサ）。紙と同じリスク上限。キーは Actions に置かない（`GMGN_API_KEY` + `GMGN_ALLOW_AUTOMATED_TRADES` のみ）。**RH は紙/通知のみ**（`signal.yml` は `LIVE_TRADING=0`）
 - **ATH追いフィルタは未実装**（意図的）
 
 ## チェーン
@@ -20,8 +20,9 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - Arc: `CHAIN=arc` + `arc-wallets/wallets.jsonl`（RHを壊さない）
   - **Arc 公開メインネット開始: 2026-09-16**（JST）
   - 定期ジョブ `signal-arc.yml`（`meme-signal-arc`）が RH と並列で `*/5` 稼働
-  - 状態は分離: `state-arc.json` / `paper_*_arc.*`（紙 $300 も RH と混ぜない）
+  - 状態は分離: `state-arc.json` / `paper_*_arc.*` / `live_*_arc.*`（紙・LIVE とも RH と混ぜない）
   - シグナルWebhookは `DISCORD_ARC_WEBHOOK_URL` 優先（未設定時は `DISCORD_WEBHOOK_URL`）
+  - LIVE: `LIVE_WALLET_ADDRESS` + `LIVE_BANKROLL_USD`（オンチェーン USDC と小さい方でサイズ）。condition-orders は Arc 非対応
 
 ## Nansen
 - 定期ジョブでは dex-trades を呼ばない（`NANSEN_FOR_TRADES=0`）
@@ -50,7 +51,7 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 | `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
 | `FOMO_API_KEY` | RHジョブ。`/v2/alerts` を25分以上間隔。未設定ならGMGNのみ |
 
-秘密鍵・実弾キーは Actions に置かない。
+秘密鍵・ウォレット `PRIVATE_KEY` は Actions に置かない（box のみ）。LIVE は API Key バインド財布 + `GMGN_ALLOW_AUTOMATED_TRADES`。
 
 ## セットアップ
 ```bash
@@ -65,7 +66,7 @@ python3 bot.py --paper-summary
 
 ## ワークフロー
 - `signal.yml`: RH `*/5` ポーリング + 紙マーク更新
-- `signal-arc.yml`: Arc `*/5` ポーリング + 分離紙状態（メインネット 2026-09-16 開始想定）
+- `signal-arc.yml`: Arc `*/5` ポーリング + 紙 + LIVE（`LIVE_TRADING=1`、メインネット 2026-09-16）
 - `paper-summary.yml`: 週次（Sat 00:00 UTC ≈ Sun 09:00 JST）`0 0 * * 6`（RH）
 - `refresh-wallets.yml`: 週次 Nansen 財布更新 → artifact
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Standalone RH/Arc meme overlap signal → Discord webhook. Paper only.
+"""Standalone RH/Arc meme overlap signal → Discord webhook.
 
 Primary trade source: GMGN smartmoney (gmgn-cli) + FOMO leaderboard buys (throttled).
 Watchlist-strict by default (ALLOW_GMGN_CLUSTER=0).
 Nansen: optional wallet-list refresh only (--refresh-wallets), NOT dex-trades polling.
-LIVE_TRADING is blocked (stub only) until paper gate.
+LIVE_TRADING: Arc-only real swaps when LIVE_TRADING=1 (RH stays paper/notify).
 """
 from __future__ import annotations
 
@@ -49,6 +49,7 @@ except ImportError:  # Actions / VPS without load_secrets helper
 
 import paper_trade as paper_mod
 import gmgn_token as gmgn_tok
+import live_trade as live_mod
 
 SKIP_CA = {
     "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
@@ -105,8 +106,8 @@ FOLLOWUP_COOLDOWN_SEC = 30 * 60
 NANSEN_SLEEP = 0.8
 DEFAULT_COOLDOWN_SECONDS = 7200  # 2h
 MAX_SKIP_NOTICES_PER_RUN = 3
-# Paper: $300 bankroll, FOUNDATION risk (1 pos, 20/30%, +100% half, -40% stop, max5/week, 3-loss week stop)
-# LIVE_TRADING: never place real orders. Env LIVE_TRADING must stay 0 until paper gate.
+# Paper: $300 bankroll, FOUNDATION risk (max 5 open, 20/30%, +100% half, -40% stop; week caps off by default)
+# LIVE_TRADING: Arc-only when LIVE_TRADING=1 + LIVE_CHAINS includes arc. RH never live-trades.
 
 
 
@@ -405,14 +406,49 @@ def default_watchlist_path(chain: str) -> Path:
     return ROOT / "rh-wallets" / "wallets.jsonl"
 
 
+def live_trading_enabled(chain: str | None = None) -> bool:
+    """True only when LIVE_TRADING=1 and chain is Arc (or listed in LIVE_CHAINS). RH never."""
+    if not env_bool("LIVE_TRADING", False):
+        return False
+    ch = (chain or os.environ.get("CHAIN") or "").strip().lower()
+    if ch in ("robinhood", "rh"):
+        return False
+    allowed_raw = (os.environ.get("LIVE_CHAINS") or "arc").strip()
+    allowed = {x.strip().lower() for x in allowed_raw.split(",") if x.strip()}
+    return ch in allowed
+
+
 def live_trading_blocked() -> None:
-    """Hard stub: refuse live trading regardless of env typo."""
-    if env_bool("LIVE_TRADING", False):
+    """Startup note: LIVE_TRADING only applies to allowed chains (Arc). RH stays paper."""
+    if not env_bool("LIVE_TRADING", False):
+        return
+    chain = (os.environ.get("CHAIN") or "").strip().lower()
+    if live_trading_enabled(chain):
+        print(f"LIVE_TRADING=1 enabled for chain={chain}", flush=True)
+    else:
         print(
-            "LIVE_TRADING=1 ignored — live trading blocked until paper gate. "
-            "Forcing paper-only mode.",
+            f"LIVE_TRADING=1 set but live disabled for chain={chain or '?'} "
+            "(Arc-only; RH paper/notify only).",
             file=sys.stderr,
         )
+
+
+def live_danger_gate(ca: str, chain: str) -> tuple[bool, list[str]]:
+    """Live buys still block on GMGN danger 🚫 even if ARC_SKIP_SECURITY_AUDIT=1 for Discord.
+
+    Returns (ok_to_live_buy, fail_reasons).
+    """
+    meta = CHAIN_META.get(chain, {})
+    gmgn_chain = meta.get("gmgn_chain") or chain
+    sec, sec_err = gmgn_tok.fetch_token_security(gmgn_chain, ca)
+    if not sec:
+        return False, [f"live_security:{sec_err or 'fail'}"]
+    parsed = gmgn_tok.parse_security(sec)
+    checklist = gmgn_tok.gmgn_security_checklist(parsed, gmgn_chain)
+    no_danger, fails = gmgn_tok.checklist_no_danger(checklist)
+    if not no_danger:
+        return False, fails
+    return True, []
 
 
 def parse_ts(s) -> float:
@@ -1847,6 +1883,9 @@ def run_once(args: argparse.Namespace) -> int:
     state_path = Path(os.environ.get("STATE_PATH", str(ROOT / "state.json"))).resolve()
     paper_path = Path(os.environ.get("PAPER_LOG_PATH", str(ROOT / "paper_log.jsonl"))).resolve()
     book_path = Path(os.environ.get("PAPER_BOOK_PATH", str(ROOT / "paper_book.jsonl"))).resolve()
+    live_state_path = live_mod.state_path(ROOT)
+    live_book_path = live_mod.book_path(ROOT)
+    live_on = live_trading_enabled(chain)
 
     watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
     fomo_index = load_fomo_index()
@@ -1933,6 +1972,26 @@ def run_once(args: argparse.Namespace) -> int:
     # Always persist so marks/open positions survive the next Actions cache restore
     save_state(state_path, state)
 
+    live_stats = {"marked": 0, "half": 0, "stop": 0, "open": 0, "fail": 0}
+    live_state = {}
+    if live_on:
+        live_state = live_mod.load_live_state(live_state_path)
+        live_mod.ensure_live_state(live_state)
+        try:
+            live_stats = live_mod.process_live_positions(
+                live_state,
+                live_book_path,
+                chain,
+                lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
+                webhook=paper_webhook,
+                discord_post=discord_webhook,
+            )
+        except Exception as e:
+            print(f"live process soft-fail: {type(e).__name__}", file=sys.stderr)
+        live_mod.save_live_state(live_state_path, live_state)
+    elif env_bool("LIVE_TRADING", False):
+        print("live process skipped (chain not allowed)", flush=True)
+
     trades, source_name, gmgn_err = collect_trades(args, chain, min_usd, watch_set, state=state, fomo_index=fomo_index)
 
     if gmgn_err == "auth":
@@ -1949,7 +2008,7 @@ def run_once(args: argparse.Namespace) -> int:
     if not trades:
         print(
             f"no trades source={source_name} gmgn_err={gmgn_err}; "
-            f"done (followups={fu} paper={paper_stats})"
+            f"done (followups={fu} paper={paper_stats} live={live_stats})"
         )
         state["last_poll_ts"] = datetime.now(timezone.utc).isoformat()
         state["watch_size"] = len(watch_set)
@@ -2125,6 +2184,31 @@ def run_once(args: argparse.Namespace) -> int:
                 webhook=paper_webhook,
                 discord_post=discord_webhook,
             )
+        # Arc LIVE entry (soft-fail); RH never reaches live_on
+        if live_on and safety.get("price_usd"):
+            try:
+                danger_ok, danger_reasons = live_danger_gate(ca, chain)
+                if not live_state:
+                    live_state = live_mod.load_live_state(live_state_path)
+                    live_mod.ensure_live_state(live_state)
+                live_mod.open_live_position(
+                    live_state,
+                    live_book_path,
+                    ca=ca,
+                    symbol=s.get("symbol") or safety.get("symbol_hint"),
+                    entry_price=float(safety["price_usd"]),
+                    n=int(s["n"]),
+                    chain=chain,
+                    mcap=safety.get("mcap_usd") or safety.get("fdv"),
+                    liq=safety.get("liq_usd"),
+                    webhook=paper_webhook,
+                    discord_post=discord_webhook,
+                    danger_ok=danger_ok,
+                    danger_reasons=danger_reasons,
+                )
+                live_mod.save_live_state(live_state_path, live_state)
+            except Exception as e:
+                print(f"live open soft-fail: {type(e).__name__}", file=sys.stderr)
         time.sleep(0.5)
 
     state["seen_signal_keys"] = list(seen)
@@ -2149,6 +2233,22 @@ def run_once(args: argparse.Namespace) -> int:
             webhook=paper_webhook,
             discord_post=discord_webhook,
         )
+    if live_on:
+        try:
+            if not live_state:
+                live_state = live_mod.load_live_state(live_state_path)
+                live_mod.ensure_live_state(live_state)
+            live_stats = live_mod.process_live_positions(
+                live_state,
+                live_book_path,
+                chain,
+                lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
+                webhook=paper_webhook,
+                discord_post=discord_webhook,
+            )
+            live_mod.save_live_state(live_state_path, live_state)
+        except Exception as e:
+            print(f"live remount soft-fail: {type(e).__name__}", file=sys.stderr)
     save_state(state_path, state)
     summary_path = Path(os.environ.get("PAPER_SUMMARY_PATH", str(ROOT / "paper_summary.md"))).resolve()
     try:
@@ -2160,7 +2260,7 @@ def run_once(args: argparse.Namespace) -> int:
     print(
         f"done source={source_name}/{source_mode} trades={len(trades)} signals={len(signals)} "
         f"posted={posted} skipped={skipped} skip_notices={skip_notices} "
-        f"followups={fu} paper={paper_stats} watch={len(watch_set)}"
+        f"followups={fu} paper={paper_stats} live={live_stats} watch={len(watch_set)}"
     )
     return 0
 
