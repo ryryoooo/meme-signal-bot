@@ -468,7 +468,8 @@ def live_trading_blocked() -> None:
 def live_danger_gate(ca: str, chain: str) -> tuple[bool, list[str]]:
     """Live buys still block on GMGN danger 🚫 even if ARC_SKIP_SECURITY_AUDIT=1 for Discord.
 
-    Returns (ok_to_live_buy, fail_reasons).
+    Arc: ignore open_source=no (GMGN often marks all Arc tokens 🚫 for unverified source).
+    Other 🚫 (honeypot, tax, rug, …) still block. Returns (ok_to_live_buy, fail_reasons).
     """
     meta = CHAIN_META.get(chain, {})
     gmgn_chain = meta.get("gmgn_chain") or chain
@@ -477,8 +478,10 @@ def live_danger_gate(ca: str, chain: str) -> tuple[bool, list[str]]:
         return False, [f"live_security:{sec_err or 'fail'}"]
     parsed = gmgn_tok.parse_security(sec)
     checklist = gmgn_tok.gmgn_security_checklist(parsed, gmgn_chain)
-    no_danger, fails = gmgn_tok.checklist_no_danger(checklist)
-    if not no_danger:
+    _ok, fails = gmgn_tok.checklist_no_danger(checklist)
+    if (chain or "").lower() == "arc":
+        fails = [f for f in fails if not str(f).startswith("audit_open_source:")]
+    if fails:
         return False, fails
     return True, []
 
