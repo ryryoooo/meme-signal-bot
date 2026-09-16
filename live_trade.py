@@ -170,6 +170,27 @@ def _size_notional_usd(n: int) -> tuple[float, int, float | None]:
     return notional, size_pct, onchain
 
 
+def _fmt_money(x: float | None) -> str:
+    """Signed money: +$1.23 / -$1.23."""
+    if x is None:
+        return "—"
+    sign = "+" if x >= 0 else "-"
+    return f"{sign}${abs(x):,.2f}"
+
+
+def _portfolio_lines(state: dict) -> str:
+    live = ensure_live_state(state)
+    opens = active_positions(state)
+    realized = float(live.get("realized_pnl_usd") or 0)
+    open_cost = sum(float(p.get("remaining_usd") or 0) for p in opens)
+    parts = [
+        f"実現PnL **{_fmt_money(realized)}**",
+        f"オープン **{len(opens)}/{max_open_positions() or '∞'}**",
+        f"拘束中 ~${open_cost:,.0f}",
+    ]
+    return " · ".join(parts)
+
+
 def _notify(
     webhook: str | None,
     discord_post: Callable | None,
@@ -177,21 +198,24 @@ def _notify(
     title: str,
     description: str,
     color: int = 0xE67E22,
+    fields: list[dict] | None = None,
+    state: dict | None = None,
 ) -> None:
     if not webhook or not discord_post:
         return
     try:
-        discord_post(
-            webhook,
-            embeds=[
-                {
-                    "title": title,
-                    "description": description[:1900],
-                    "color": color,
-                    "footer": {"text": "LIVE Arc · gmgn-cli swap"},
-                }
-            ],
-        )
+        desc = description[:1800]
+        if state is not None:
+            desc = (desc + "\n\n" + _portfolio_lines(state)).strip()[:1900]
+        embed: dict = {
+            "title": title,
+            "description": desc,
+            "color": color,
+            "footer": {"text": "⚡ Arc 実弾 · 自動売買"},
+        }
+        if fields:
+            embed["fields"] = fields[:8]
+        discord_post(webhook, embeds=[embed])
     except Exception as e:
         print(f"live discord fail: {type(e).__name__}", flush=True)
 
@@ -233,9 +257,9 @@ def open_live_position(
         _notify(
             webhook,
             discord_post,
-            title="LIVE見送り（危険🚫）",
+            title="⚠️ 実弾見送り（危険🚫）",
             description=f"${symbol or '?'} · `{ca[:12]}…`\n" + ", ".join(reasons[:6]),
-            color=0xE74C3C,
+            color=0xE67E22,
         )
         return None
 
@@ -264,9 +288,9 @@ def open_live_position(
         _notify(
             webhook,
             discord_post,
-            title="LIVE見送り（USDC不足）",
+            title="⚠️ 実弾見送り（USDC不足）",
             description=f"${symbol or '?'} · bankroll=${bankroll_usd():.0f} · onchain={onchain}",
-            color=0xE74C3C,
+            color=0xE67E22,
         )
         return None
 
@@ -287,12 +311,12 @@ def open_live_position(
         _notify(
             webhook,
             discord_post,
-            title="LIVEエントリー失敗",
+            title="⚠️ 実弾エラー",
             description=(
-                f"${symbol or '?'} · ${notional:.2f} USDC → token\n"
+                f"エントリー失敗 · ${symbol or '?'} · ${notional:.2f} USDC → token\n"
                 f"reason=`{err}` · シグナルジョブは継続"
             ),
-            color=0xE74C3C,
+            color=0xE67E22,
         )
         return None
 
@@ -352,16 +376,26 @@ def open_live_position(
         f"week_entries={live['week_entries']}",
         flush=True,
     )
+    gmgn = f"https://gmgn.ai/arc/token/{ca}"
     _notify(
         webhook,
         discord_post,
-        title="LIVEエントリー",
+        title=f"🟢 実弾エントリー · ${symbol or '?'}",
         description=(
-            f"📥 ${symbol or '?'} · サイズ {size_pct}% · ${notional:.2f}\n"
-            f"n={n} · entry ${entry_price:.8g} · "
-            f"週 {live['week_entries']}/{'∞' if max_entries_week()<=0 else max_entries_week()}"
+            f"**買った** · サイズ {size_pct}% · **${notional:.2f}**\n"
+            f"監視財布 n={n} · 入口 ${entry_price:.8g}\n"
+            f"[GMGN]({gmgn}) · `{ca}`"
         ),
-        color=0xE67E22,
+        color=0x2ECC71,
+        fields=[
+            {"name": "ルール", "value": "+100%で半分 / −40%で全損切", "inline": False},
+            {
+                "name": "USDC",
+                "value": f"onchain={onchain if onchain is not None else '—'} · bankroll=${bankroll_usd():.0f}",
+                "inline": False,
+            },
+        ],
+        state=state,
     )
     return pos
 
@@ -379,7 +413,6 @@ def process_live_positions(
     _rollover_week(live)
     now = time.time()
     stats = {"marked": 0, "half": 0, "stop": 0, "open": 0, "fail": 0}
-    notices: list[str] = []
     positions = list(state.get("live_positions") or [])
     chain = (chain or "arc").strip().lower()
 
@@ -439,7 +472,16 @@ def process_live_positions(
                         "swap": live_exec.summarize_swap_result(data),
                     },
                 )
-                notices.append(f"⛔ LIVEストップ失敗 ${pos.get('symbol') or '?'} · `{err}` · 次回再試行")
+                _notify(
+                    webhook,
+                    discord_post,
+                    title="⚠️ 実弾エラー",
+                    description=(
+                        f"損切り失敗 · ${pos.get('symbol') or '?'} · {mult:.2f}倍\n"
+                        f"reason=`{err}` · 次回再試行"
+                    ),
+                    color=0xE67E22,
+                )
                 print(f"live stop swap fail {ca[:10]}… {err}", flush=True)
                 continue
             exit_value = rem * mult
@@ -456,7 +498,18 @@ def process_live_positions(
             if max_losses_week() > 0 and live["week_losses"] >= max_losses_week():
                 live["week_stopped"] = True
             stats["stop"] += 1
-            notices.append(f"⛔ LIVEストップ ${pos.get('symbol') or '?'} · {mult:.2f}倍 · PnL ${pnl:+.2f}")
+            _notify(
+                webhook,
+                discord_post,
+                title=f"🔴 損切り · ${pos.get('symbol') or '?'}",
+                description=(
+                    f"**{mult:.2f}倍** · このPnL **{_fmt_money(pnl)}**\n"
+                    f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
+                    f"`{ca}`"
+                ),
+                color=0xE74C3C,
+                state=state,
+            )
             append_live_book(
                 book,
                 {
@@ -491,7 +544,16 @@ def process_live_positions(
                         "swap": live_exec.summarize_swap_result(data),
                     },
                 )
-                notices.append(f"💰 LIVE半分利確失敗 ${pos.get('symbol') or '?'} · `{err}` · 次回再試行")
+                _notify(
+                    webhook,
+                    discord_post,
+                    title="⚠️ 実弾エラー",
+                    description=(
+                        f"半分利確失敗 · ${pos.get('symbol') or '?'} · {mult:.2f}倍\n"
+                        f"reason=`{err}` · 次回再試行"
+                    ),
+                    color=0xE67E22,
+                )
                 print(f"live half swap fail {ca[:10]}… {err}", flush=True)
                 continue
             half = rem / 2.0
@@ -508,7 +570,19 @@ def process_live_positions(
             pos["half_taken_price"] = price
             pos["swap_half"] = live_exec.summarize_swap_result(data)
             stats["half"] += 1
-            notices.append(f"💰 LIVE半分利確 ${pos.get('symbol') or '?'} · {mult:.2f}倍 · PnL ${pnl:+.2f}")
+            _notify(
+                webhook,
+                discord_post,
+                title=f"🟡 半分利確 · ${pos.get('symbol') or '?'}",
+                description=(
+                    f"**{mult:.2f}倍** · このPnL **{_fmt_money(pnl)}**\n"
+                    f"残り ~${float(pos.get('remaining_usd') or 0):,.2f}\n"
+                    f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
+                    f"`{ca}`"
+                ),
+                color=0xF1C40F,
+                state=state,
+            )
             append_live_book(
                 book,
                 {
@@ -545,12 +619,4 @@ def process_live_positions(
     state["live_positions"] = positions
     state["live"] = live
 
-    if notices:
-        _notify(
-            webhook,
-            discord_post,
-            title="LIVE更新",
-            description="\n".join(notices),
-            color=0xE67E22,
-        )
     return stats

@@ -22,6 +22,7 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
   - 定期ジョブ `signal-arc.yml`（`meme-signal-arc`）が RH と並列で `*/5` 稼働
   - 状態は分離: `state-arc.json` / `paper_*_arc.*` / `live_*_arc.*`（紙・LIVE とも RH と混ぜない）
   - シグナルWebhookは `DISCORD_ARC_WEBHOOK_URL` 優先（未設定時は `DISCORD_WEBHOOK_URL`）
+  - **LIVE専用チャンネル**: Discordでチャンネル作成 → Integrations → Webhook → GitHub Secret と box card に `DISCORD_ARC_LIVE_WEBHOOK_URL` を設定（alias `DISCORD_ARC_LIVE` も可）。未設定時は Arcシグナル→紙Webhookへフォールバック（WARNING）
   - LIVE: `LIVE_WALLET_ADDRESS` + `LIVE_BANKROLL_USD`（オンチェーン USDC と小さい方でサイズ）。condition-orders は Arc 非対応
 
 ## Nansen
@@ -48,6 +49,7 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 | `DISCORD_ARC_WEBHOOK_URL` | Arcシグナル専用（推奨。未設定時は上にフォールバック） |
 | `DISCORD_PAPER_WEBHOOK_URL` | 紙トレード専用（未設定時はシグナル側にフォールバック） |
 | `DISCORD_ARC_PAPER` | Arc紙トレード専用（任意。未設定時は紙Webhookへ） |
+| `DISCORD_ARC_LIVE_WEBHOOK_URL` | Arc **実弾**専用チャンネル（推奨。未設定時は Arcシグナル→紙へフォールバック） |
 | `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
 | `FOMO_API_KEY` | RHジョブ。`/v2/alerts` を25分以上間隔。未設定ならGMGNのみ |
 
@@ -62,6 +64,7 @@ npm install -g gmgn-cli
 python3 load_secrets.py   # box 上
 python3 bot.py --per-page 100
 python3 bot.py --paper-summary
+python3 bot.py --test-live-webhook   # Arc LIVE チャンネルにサンプルPnL（swapなし）
 ```
 
 ## ワークフロー

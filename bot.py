@@ -172,6 +172,34 @@ def resolve_signal_webhook(chain: str | None = None) -> str:
     return env("DISCORD_WEBHOOK_URL")
 
 
+def resolve_live_webhook(chain: str | None = None) -> str | None:
+    """Arc LIVE-channel webhook; falls back to Arc signal then paper with WARNING."""
+    chain = (chain or os.environ.get("CHAIN") or "robinhood").strip().lower()
+    live = (
+        os.environ.get("DISCORD_ARC_LIVE_WEBHOOK_URL")
+        or os.environ.get("DISCORD_ARC_LIVE")
+        or ""
+    ).strip()
+    if chain == "arc" and live:
+        return live
+    if chain == "arc":
+        arc = (os.environ.get("DISCORD_ARC_WEBHOOK_URL") or "").strip()
+        if arc:
+            print(
+                "WARNING: DISCORD_ARC_LIVE_WEBHOOK_URL missing — live posts fall back to DISCORD_ARC_WEBHOOK_URL",
+                file=sys.stderr,
+            )
+            return arc
+    paper = resolve_paper_webhook(None, chain)
+    if paper:
+        print(
+            "WARNING: DISCORD_ARC_LIVE_WEBHOOK_URL missing — live posts fall back to paper webhook",
+            file=sys.stderr,
+        )
+        return paper
+    return None
+
+
 def resolve_discord_webhooks() -> tuple[str, str]:
     """Signal webhook (required) + paper webhook (optional, falls back with warning)."""
     chain = (os.environ.get("CHAIN") or "robinhood").strip().lower()
@@ -1886,6 +1914,7 @@ def run_once(args: argparse.Namespace) -> int:
     live_state_path = live_mod.state_path(ROOT)
     live_book_path = live_mod.book_path(ROOT)
     live_on = live_trading_enabled(chain)
+    live_webhook = resolve_live_webhook(chain) if live_on else None
 
     watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
     fomo_index = load_fomo_index()
@@ -1983,7 +2012,7 @@ def run_once(args: argparse.Namespace) -> int:
                 live_book_path,
                 chain,
                 lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
-                webhook=paper_webhook,
+                webhook=live_webhook,
                 discord_post=discord_webhook,
             )
         except Exception as e:
@@ -2201,7 +2230,7 @@ def run_once(args: argparse.Namespace) -> int:
                     chain=chain,
                     mcap=safety.get("mcap_usd") or safety.get("fdv"),
                     liq=safety.get("liq_usd"),
-                    webhook=paper_webhook,
+                    webhook=live_webhook,
                     discord_post=discord_webhook,
                     danger_ok=danger_ok,
                     danger_reasons=danger_reasons,
@@ -2243,7 +2272,7 @@ def run_once(args: argparse.Namespace) -> int:
                 live_book_path,
                 chain,
                 lambda ca, ch: gmgn_tok.market_snapshot(CHAIN_META.get(ch, {}).get("gmgn_chain") or ch, ca),
-                webhook=paper_webhook,
+                webhook=live_webhook,
                 discord_post=discord_webhook,
             )
             live_mod.save_live_state(live_state_path, live_state)
@@ -2548,6 +2577,11 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--loop", action="store_true", help="poll forever")
     p.add_argument("--test-webhook", action="store_true")
+    p.add_argument(
+        "--test-live-webhook",
+        action="store_true",
+        help="Post a sample Arc LIVE PnL embed (no swap)",
+    )
     p.add_argument("--test-fomo-holders", action="store_true", help="仮投稿: live FOMO holder overlap, no paper")
     p.add_argument("--refresh-wallets", action="store_true", help="Nansen pnl-leaderboard → wallets.jsonl (infrequent)")
     p.add_argument("--refine-wallets", action="store_true", help="Drop losers / banned labels from wallets.jsonl")
@@ -2579,6 +2613,31 @@ def main() -> int:
             ],
         )
         print("test ok")
+        return 0
+
+    if args.test_live_webhook:
+        url = resolve_live_webhook("arc")
+        if not url:
+            print("test-live-webhook: no webhook resolved", file=sys.stderr)
+            return 1
+        discord_webhook(
+            url,
+            content="",
+            embeds=[
+                {
+                    "title": "🟢 実弾エントリー · $TEST",
+                    "description": (
+                        "**買った** · サイズ 20% · **$16.00**\n"
+                        "監視財布 n=2 · 入口 $0.00012345\n"
+                        "[GMGN](https://gmgn.ai/arc/token/0xtest) · `0xtest…`\n\n"
+                        "実現PnL **+$0.00** · オープン **1/5** · 拘束中 ~$16"
+                    ),
+                    "color": 0x2ECC71,
+                    "footer": {"text": "⚡ Arc 実弾 · 自動売買"},
+                }
+            ],
+        )
+        print("test-live-webhook ok")
         return 0
 
     if args.test_fomo_holders:
