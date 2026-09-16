@@ -647,8 +647,8 @@ def write_paper_summary(
                             f"現金 **${float(paper.get('cash_usd') or 0):.2f}** · "
                             f"実現PnL **${float(paper.get('realized_pnl_usd') or 0):+.2f}**\n"
                             f"週 `{paper.get('week_key')}` エントリー "
-                            f"{paper.get('week_entries')}/{PAPER_MAX_ENTRIES_WEEK} · "
-                            f"負け {paper.get('week_losses')}/{PAPER_MAX_LOSSES_WEEK} · "
+                            f"{paper.get('week_entries')}/{'∞' if max_entries_week()<=0 else max_entries_week()} · "
+                            f"負け {paper.get('week_losses')}/{'∞' if max_losses_week()<=0 else max_losses_week()} · "
                             f"週停止={bool(paper.get('week_stopped'))}\n"
                             f"open系={pos_open} / 半分={pos_half} / ストップ={pos_stop} · 実注文なし"
                         )[:1900],
