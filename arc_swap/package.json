@@ -1,0 +1,20 @@
+{
+  "name": "arc_swap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@uniswap/router-sdk": "^2.11.4",
+    "@uniswap/sdk-core": "^7.19.2",
+    "@uniswap/universal-router-sdk": "^5.11.5",
+    "@uniswap/v4-sdk": "^2.3.3",
+    "ethers": "^6.17.0"
+  },
+  "type": "module"
+}

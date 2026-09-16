@@ -1,15 +1,24 @@
-"""Thin gmgn-cli swap wrapper for Arc live trades. Never logs secrets."""
+"""Arc live swap execution via Uniswap V4 Universal Router (no gmgn-cli swap).
+
+Never logs secrets. Interface kept stable for live_tick / live_trade:
+  swap_buy_usdc_to_token / swap_sell_token_to_usdc / fetch_usdc_balance_usd
+"""
 from __future__ import annotations
 
 import json
 import os
 import re
-import shutil
 import subprocess
+from pathlib import Path
 from typing import Any
 
 ARC_USDC = "0x3600000000000000000000000000000000000000"
 ARC_USDC_DECIMALS = 6
+ARC_CHAIN_ID = 5042
+ARC_RPC = os.environ.get("ARC_RPC") or "https://rpc.mainnet.arc.io"
+
+ROOT = Path(__file__).resolve().parent
+SWAP_SCRIPT = ROOT / "arc_swap" / "swap_v4.cjs"
 
 _SECRET_RE = re.compile(
     r"(GMGN_API_KEY|API[_-]?KEY|PRIVATE[_-]?KEY|WALLET_PRIVATE_KEY|apikey)"
@@ -41,209 +50,186 @@ def usd_from_usdc_raw(raw) -> float | None:
         return None
 
 
-def _parse_balance_usd(data: dict | None) -> float | None:
-    if not isinstance(data, dict):
-        return None
-    # gmgn-cli portfolio token-balance --raw: {"balances":[{"balance":"82.69",...}]}
-    bals = data.get("balances")
-    if isinstance(bals, list) and bals:
-        for row in bals:
-            if not isinstance(row, dict):
-                continue
-            for key in ("balance", "ui_amount", "uiAmount", "usd_value", "amount"):
-                v = row.get(key)
-                if v is None:
-                    continue
-                try:
-                    f = float(v)
-                except (TypeError, ValueError):
-                    continue
-                # human USDC string like "82.69" (decimal field may be 0)
-                if f > 1e9:
-                    u = usd_from_usdc_raw(f)
-                    if u is not None:
-                        return u
-                return f
-    # Common shapes: balance / amount / ui_amount / usd_value / data.balance
-    nested = data.get("data") if isinstance(data.get("data"), dict) else data
-    for key in ("usd_value", "usd", "balance_usd", "value_usd"):
-        v = nested.get(key) if isinstance(nested, dict) else None
-        if v is not None:
-            try:
-                return float(v)
-            except (TypeError, ValueError):
-                pass
-    for key in ("ui_amount", "uiAmount", "balance_ui", "amount_ui"):
-        v = nested.get(key) if isinstance(nested, dict) else None
-        if v is not None:
-            try:
-                return float(v)
-            except (TypeError, ValueError):
-                pass
-    for key in ("balance", "amount", "raw_balance", "token_balance"):
-        v = nested.get(key) if isinstance(nested, dict) else None
-        if v is None:
+def _ensure_pk() -> bool:
+    """Load GMGN_PRIVATE_KEY from box-secrets / dotenv into env. Never print it."""
+    try:
+        from load_secrets import load, write_gmgn_dotenv
+    except ImportError:
+        load = None  # type: ignore
+        write_gmgn_dotenv = None  # type: ignore
+    if load:
+        load(["GMGN_PRIVATE_KEY", "GMGN_API_KEY"])
+    if write_gmgn_dotenv:
+        write_gmgn_dotenv()
+    if (os.environ.get("GMGN_PRIVATE_KEY") or "").strip():
+        return True
+    # fallback: live-arc/.gmgn.env or ~/.config/gmgn/.env
+    for path in (
+        Path("/workspace/meme-foundation/live-arc/.gmgn.env"),
+        Path.home() / ".config" / "gmgn" / ".env",
+    ):
+        if not path.exists():
             continue
-        # Prefer human amount if float-like small; else treat as raw
         try:
-            f = float(v)
-        except (TypeError, ValueError):
+            for ln in path.read_text(encoding="utf-8").splitlines():
+                if ln.startswith("GMGN_PRIVATE_KEY=") and ln.split("=", 1)[1].strip():
+                    os.environ["GMGN_PRIVATE_KEY"] = ln.split("=", 1)[1].strip()
+                    return True
+                if ln.startswith("PRIVATE_KEY=") and ln.split("=", 1)[1].strip():
+                    os.environ["GMGN_PRIVATE_KEY"] = ln.split("=", 1)[1].strip()
+                    return True
+        except OSError:
             continue
-        if f > 1e9:  # likely raw 6-dec
-            u = usd_from_usdc_raw(f)
-            if u is not None:
-                return u
-        return f
-    return None
+    return bool((os.environ.get("GMGN_PRIVATE_KEY") or os.environ.get("PRIVATE_KEY") or "").strip())
 
 
 def fetch_usdc_balance_usd(chain: str = "arc", timeout: float = 35) -> tuple[float | None, str | None]:
     """On-chain Arc USDC balance in USD units. Soft-fail → (None, err)."""
-    try:
-        from load_secrets import write_gmgn_dotenv
-    except ImportError:
-        write_gmgn_dotenv = None  # type: ignore
-    if write_gmgn_dotenv:
-        write_gmgn_dotenv()
+    if chain and chain != "arc":
+        return None, "unsupported_chain"
     w = wallet_address()
     if not w:
         return None, "no_wallet"
-    cli = shutil.which("gmgn-cli")
-    if not cli:
-        return None, "no_cli"
-    cmd = [
-        cli,
-        "portfolio",
-        "token-balance",
-        "--chain",
-        chain,
-        "--wallet",
-        w,
-        "--token",
-        ARC_USDC,
-        "--raw",
-    ]
+    # eth_call balanceOf via cast/curl-style node one-liner (no pk needed)
+    script = f"""
+const {{ethers}}=require('ethers');
+(async()=>{{
+  const p=new ethers.JsonRpcProvider({json.dumps(ARC_RPC)},{ARC_CHAIN_ID});
+  const c=new ethers.Contract({json.dumps(ARC_USDC)},['function balanceOf(address) view returns (uint256)'],p);
+  const b=await c.balanceOf({json.dumps(w)});
+  console.log(b.toString());
+}})().catch(e=>{{console.error(e.message);process.exit(1);}});
+"""
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**os.environ})
+        proc = subprocess.run(
+            ["node", "-e", script],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=str(ROOT / "arc_swap"),
+        )
     except subprocess.TimeoutExpired:
         return None, "timeout"
     except Exception as e:
         return None, type(e).__name__
     if proc.returncode != 0:
         err = _redact((proc.stderr or "") + " " + (proc.stdout or ""))
-        kind = "rate" if "RATE_LIMIT" in err.upper() or "429" in err else "other"
-        print(f"live_exec usdc_balance fail kind={kind}: {err.strip()[:240]}", flush=True)
-        return None, kind
-    out = (proc.stdout or "").strip()
+        print(f"live_exec usdc_balance fail: {err.strip()[:240]}", flush=True)
+        return None, "rpc"
+    out = (proc.stdout or "").strip().splitlines()
     if not out:
         return None, "empty"
     try:
-        data = json.loads(out)
-    except json.JSONDecodeError:
+        raw = int(out[-1].strip())
+    except ValueError:
         return None, "bad_json"
-    bal = _parse_balance_usd(data if isinstance(data, dict) else None)
-    return bal, None if bal is not None else "parse"
+    return raw / (10**ARC_USDC_DECIMALS), None
 
 
-def _run_swap(args: list[str], timeout: float = 90) -> tuple[dict | None, str | None]:
-    """Run gmgn-cli swap --raw --yes. Returns (json|None, err_kind|None)."""
+def _parse_swap_stdout(stdout: str) -> dict | None:
+    """Take last JSON line with step=done or ok/hash."""
+    done = None
+    for ln in (stdout or "").splitlines():
+        ln = ln.strip()
+        if not ln.startswith("{"):
+            continue
+        try:
+            obj = json.loads(ln)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(obj, dict):
+            continue
+        if obj.get("step") == "done" or obj.get("ok") is True or obj.get("hash") or obj.get("tx_hash"):
+            done = obj
+    return done
+
+
+def _run_v4_swap(env_extra: dict[str, str], timeout: float = 120) -> tuple[dict | None, str | None]:
+    if not _ensure_pk():
+        return None, "no_key"
+    if not SWAP_SCRIPT.exists():
+        print(f"live_exec missing swap script: {SWAP_SCRIPT}", flush=True)
+        return None, "no_script"
+    env = {**os.environ, **env_extra}
+    # Prefer GMGN_PRIVATE_KEY name the script already reads
+    if not env.get("GMGN_PRIVATE_KEY") and env.get("PRIVATE_KEY"):
+        env["GMGN_PRIVATE_KEY"] = env["PRIVATE_KEY"]
+    side = env_extra.get("SIDE", "?")
+    token = (env_extra.get("TOKEN") or "")[:12]
+    print(f"live_exec v4_swap side={side} token={token}…", flush=True)
     try:
-        from load_secrets import write_gmgn_dotenv
-    except ImportError:
-        write_gmgn_dotenv = None  # type: ignore
-    if write_gmgn_dotenv:
-        write_gmgn_dotenv()
-    if not (os.environ.get("GMGN_API_KEY") or "").strip():
-        return None, "auth"
-    allow = (os.environ.get("GMGN_ALLOW_AUTOMATED_TRADES") or "").strip()
-    # gmgn-cli confirmTrade requires EXACT string "1"
-    if allow != "1":
-        os.environ["GMGN_ALLOW_AUTOMATED_TRADES"] = "1"
-        allow = "1"
-    cli = shutil.which("gmgn-cli")
-    if not cli:
-        return None, "no_cli"
-    w = wallet_address()
-    if not w:
-        return None, "no_wallet"
-    cmd = [cli, "swap", "--yes", "--raw", "--auto-slippage", "--from", w, *args]
-    print(f"live_exec swap yes=1 allow={allow!r} from={w[:10]}… {" ".join(args[:6])}…", flush=True)
-    try:
-        env = {**os.environ, "GMGN_ALLOW_AUTOMATED_TRADES": "1"}
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+        proc = subprocess.run(
+            ["node", str(SWAP_SCRIPT)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=env,
+            cwd=str(SWAP_SCRIPT.parent),
+        )
     except subprocess.TimeoutExpired:
-        print("live_exec swap timeout", flush=True)
+        print("live_exec v4_swap timeout", flush=True)
         return None, "timeout"
     except Exception as e:
-        print(f"live_exec swap spawn fail: {type(e).__name__}", flush=True)
+        print(f"live_exec v4_swap spawn fail: {type(e).__name__}", flush=True)
         return None, "spawn"
-    err = _redact((proc.stderr or "") + chr(10) + (proc.stdout or ""))
-    err_u = err.upper()
-    # Always keep a useful tail — confirmation banner is always printed first
+    out = proc.stdout or ""
+    err = _redact((proc.stderr or "") + "\n" + out)
     tail = err.strip()[-800:] if err.strip() else ""
-    if "PROCEEDING NON-INTERACTIVELY" in err_u:
-        print("live_exec confirm: proceeded non-interactively", flush=True)
-    if "AUTH_KEY_INVALID" in err_u or "API KEY INVALID" in err_u:
-        print(f"live_exec swap auth fail: {tail}", flush=True)
-        return None, "auth"
-    if "RATE_LIMIT" in err_u or "429" in err_u or "BANNED" in err_u:
-        print(f"live_exec swap rate/ban: {tail}", flush=True)
-        return None, "rate"
-    if "BIND" in err_u or "BINDING" in err_u or "NOT BOUND" in err_u or "NOT LINKED" in err_u:
-        print(f"live_exec swap binding: {tail}", flush=True)
-        return None, "binding"
-    if "CONFIRMATION NOT RECEIVED" in err_u or "NO INTERACTIVE TERMINAL" in err_u:
-        print(f"live_exec swap confirm_blocked: {tail}", flush=True)
-        return None, "confirm"
-    if "--YES WAS SUPPLIED BUT" in err_u or "ALLOW_AUTOMATED" in err_u and "NOT SET" in err_u:
-        print(f"live_exec swap allow_flag: {tail}", flush=True)
-        return None, "allow_flag"
+    # Always echo step lines (no secrets in them)
+    for ln in out.splitlines():
+        if ln.startswith("{"):
+            print(f"live_exec {ln[:300]}", flush=True)
     if proc.returncode != 0:
-        print(f"live_exec swap fail rc={proc.returncode}: {tail}", flush=True)
+        print(f"live_exec v4_swap fail rc={proc.returncode}: {tail}", flush=True)
+        # classify
+        if "insufficient" in tail.lower():
+            return None, "insufficient"
+        if "missing private key" in tail.lower():
+            return None, "no_key"
+        if "no_v4_pool" in tail.lower():
+            return None, "no_v4_pool"
         return None, "other"
-    out = (proc.stdout or "").strip()
-    if not out:
-        print(f"live_exec swap empty stdout; stderr_tail={tail}", flush=True)
+    data = _parse_swap_stdout(out)
+    if not data:
+        print(f"live_exec v4_swap no done line: {tail}", flush=True)
         return None, "empty"
-    try:
-        data = json.loads(out)
-    except json.JSONDecodeError:
-        print(f"live_exec swap non-json: {_redact(out)[:200]}", flush=True)
-        return None, "bad_json"
-    if not isinstance(data, dict):
-        return None, "bad_shape"
-    code = data.get("code")
-    if code is not None and str(code) not in ("0", "200", "ok", "OK"):
-        msg = _redact(str(data.get("message") or data.get("error") or code))
-        print(f"live_exec swap api_code={code} msg={msg[:200]}", flush=True)
-        return data, "api"
+    if data.get("ok") is False or data.get("status") not in (1, "1", None):
+        if data.get("status") not in (1, "1"):
+            print(f"live_exec v4_swap bad status: {data}", flush=True)
+            return data, "revert"
+    # Normalize fields live_trade expects
+    if "tx_hash" not in data and data.get("hash"):
+        data["tx_hash"] = data["hash"]
+    if "hash" not in data and data.get("tx_hash"):
+        data["hash"] = data["tx_hash"]
     return data, None
+
 
 def swap_buy_usdc_to_token(
     chain: str,
     token: str,
     amount_usd: float,
     *,
-    timeout: float = 90,
+    timeout: float = 120,
 ) -> tuple[dict | None, str | None]:
     """Buy token with Arc USDC. amount_usd is human USD."""
+    if chain and chain != "arc":
+        return None, "unsupported_chain"
     raw = usdc_raw_from_usd(amount_usd)
     if raw == "0":
         return None, "zero_amount"
     token = (token or "").strip()
     if not token.startswith("0x"):
         return None, "bad_token"
-    return _run_swap(
-        [
-            "--chain",
-            chain,
-            "--input-token",
-            ARC_USDC,
-            "--output-token",
-            token,
-            "--amount",
-            raw,
-        ],
+    return _run_v4_swap(
+        {
+            "SIDE": "buy",
+            "TOKEN": token,
+            "AMOUNT_USD": str(amount_usd),
+            "SLIPPAGE_BPS": os.environ.get("LIVE_SLIPPAGE_BPS") or "5000",
+            "DISCOVER_POOL": os.environ.get("LIVE_DISCOVER_POOL") or "1",
+            "RPC": ARC_RPC,
+        },
         timeout=timeout,
     )
 
@@ -253,24 +239,24 @@ def swap_sell_token_to_usdc(
     token: str,
     percent: float,
     *,
-    timeout: float = 90,
+    timeout: float = 120,
 ) -> tuple[dict | None, str | None]:
     """Sell percent of token holdings to Arc USDC (1–100)."""
+    if chain and chain != "arc":
+        return None, "unsupported_chain"
     token = (token or "").strip()
     if not token.startswith("0x"):
         return None, "bad_token"
     pct = max(1, min(100, int(round(float(percent)))))
-    return _run_swap(
-        [
-            "--chain",
-            chain,
-            "--input-token",
-            token,
-            "--output-token",
-            ARC_USDC,
-            "--percent",
-            str(pct),
-        ],
+    return _run_v4_swap(
+        {
+            "SIDE": "sell",
+            "TOKEN": token,
+            "PERCENT": str(pct),
+            "SLIPPAGE_BPS": os.environ.get("LIVE_SLIPPAGE_BPS") or "5000",
+            "DISCOVER_POOL": os.environ.get("LIVE_DISCOVER_POOL") or "1",
+            "RPC": ARC_RPC,
+        },
         timeout=timeout,
     )
 
@@ -280,7 +266,12 @@ def summarize_swap_result(data: dict | None) -> dict[str, Any]:
     if not isinstance(data, dict):
         return {}
     out: dict[str, Any] = {}
-    for k in ("hash", "tx_hash", "txid", "order_id", "id", "status", "code"):
+    for k in (
+        "hash", "tx_hash", "txid", "order_id", "id", "status", "code",
+        "side", "amountIn", "amountOutReceived", "amountInSpent", "fee", "tickSpacing",
+        "decimals", "tokenDecimals", "quoteKind", "poolIsNative", "quoteIsNative",
+        "fillPriceUsd", "amountOutQuoted",
+    ):
         if data.get(k) is not None:
             out[k] = data.get(k)
     nested = data.get("data")

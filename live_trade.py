@@ -1,4 +1,4 @@
-"""Arc-only LIVE auto-trading. Same risk rules as paper; real swaps via live_exec.
+"""Arc-only LIVE auto-trading. Same risk rules as paper; real swaps via live_exec (Uniswap V4).
 
 Risk (LIVE_* env; 0 = unlimited for caps):
 - concurrent opens: LIVE_MAX_OPEN (default 5)
@@ -51,6 +51,49 @@ def bankroll_usd() -> float:
         return float(os.environ.get("LIVE_BANKROLL_USD") or DEFAULT_BANKROLL_USD)
     except (TypeError, ValueError):
         return DEFAULT_BANKROLL_USD
+
+
+def exit_grace_sec() -> float:
+    try:
+        return max(0.0, float(os.environ.get("LIVE_EXIT_GRACE_SEC") or "120"))
+    except (TypeError, ValueError):
+        return 120.0
+
+
+def stop_confirm_needed() -> int:
+    return max(1, _env_int("LIVE_STOP_CONFIRM", 2))
+
+
+def fill_price_usd_from_swap(swap: dict | None) -> float | None:
+    """USD per token from buy swap amounts. Prefer amountInSpent over amountIn."""
+    if not isinstance(swap, dict):
+        return None
+    raw_in = swap.get("amountInSpent")
+    if raw_in is None:
+        raw_in = swap.get("amountIn")
+    raw_out = swap.get("amountOutReceived")
+    if raw_in is None or raw_out is None:
+        return None
+    try:
+        ain = float(raw_in)
+        aout = float(raw_out)
+    except (TypeError, ValueError):
+        return None
+    if ain <= 0 or aout <= 0:
+        return None
+    # Native wei-looking amounts are 18-dec; ERC20 USDC is 6-dec
+    usd_in = ain / 1e18 if ain >= 1e15 else ain / 1e6
+    try:
+        dec = int(swap.get("decimals") if swap.get("decimals") is not None else (
+            swap.get("tokenDecimals") if swap.get("tokenDecimals") is not None else 18
+        ))
+    except (TypeError, ValueError):
+        dec = 18
+    tokens_out = aout / (10 ** dec)
+    if tokens_out <= 0:
+        return None
+    fill = usd_in / tokens_out
+    return fill if fill > 0 else None
 
 
 def state_path(root: Path | None = None) -> Path:
@@ -325,11 +368,19 @@ def open_live_position(
     cash = float(live.get("cash_usd") or bankroll_usd())
     live["cash_usd"] = max(0.0, cash - notional)
 
+    swap_sum = live_exec.summarize_swap_result(data)
+    alert_price = float(entry_price)
+    fill = fill_price_usd_from_swap(swap_sum) or fill_price_usd_from_swap(data)
+    # Prefer fill; if missing, keep any fresh price already passed as entry_price (caller refetch).
+    use_entry = fill if (fill is not None and fill > 0) else alert_price
+
     pos = {
         "id": f"live-{ca[:10]}-{int(time.time())}",
         "ca": ca,
         "symbol": symbol,
-        "entry_price": entry_price,
+        "entry_price": use_entry,
+        "alert_price_usd": alert_price,
+        "alert_entry_price": alert_price,
         "size_pct": size_pct,
         "notional_usd": notional,
         "remaining_usd": notional,
@@ -343,8 +394,10 @@ def open_live_position(
         "alert_mcap": mcap,
         "alert_liq": liq,
         "week_key": live["week_key"],
-        "swap_open": live_exec.summarize_swap_result(data),
+        "swap_open": swap_sum,
         "onchain_usdc_at_open": onchain,
+        "stop_confirm_count": 0,
+        "entry_from_fill": bool(fill and fill > 0),
     }
     positions = list(state.get("live_positions") or [])
     positions.append(pos)
@@ -357,7 +410,9 @@ def open_live_position(
             "event": "open",
             "ca": ca,
             "symbol": symbol,
-            "entry_price": entry_price,
+            "entry_price": use_entry,
+            "alert_price_usd": alert_price,
+            "fill_price_usd": fill,
             "size_pct": size_pct,
             "notional_usd": notional,
             "n": n,
@@ -373,6 +428,7 @@ def open_live_position(
     )
     print(
         f"live open {ca[:10]}… size={size_pct}% notional=${notional:.2f} "
+        f"entry={use_entry:.8g} alert={alert_price:.8g} fill={fill} "
         f"week_entries={live['week_entries']}",
         flush=True,
     )
@@ -383,8 +439,9 @@ def open_live_position(
         title=f"🟢 実弾エントリー · ${symbol or '?'}",
         description=(
             f"**買った** · サイズ {size_pct}% · **${notional:.2f}**\n"
-            f"監視財布 n={n} · 入口 ${entry_price:.8g}\n"
-            f"[GMGN]({gmgn}) · `{ca}`"
+            f"監視財布 n={n} · 約定入口 ${use_entry:.8g}"
+            + (f" (alert ${alert_price:.8g})" if abs(use_entry - alert_price) / max(alert_price, 1e-18) > 0.01 else "")
+            + f"\n[GMGN]({gmgn}) · `{ca}`"
         ),
         color=0x2ECC71,
         fields=[
@@ -453,11 +510,45 @@ def process_live_positions(
                 "mult": mult,
                 "status": status,
                 "remaining_usd": rem,
+                "entry_price": entry,
+                "stop_confirm_count": int(pos.get("stop_confirm_count") or 0),
             },
         )
 
-        # -40% stop → sell 100% remaining
+        opened_at = float(pos.get("opened_at") or 0)
+        in_grace = opened_at > 0 and (now - opened_at) < exit_grace_sec()
+        if in_grace:
+            # No stop AND no half-take during grace after open
+            if mult > LIVE_STOP_MULT:
+                pos["stop_confirm_count"] = 0
+            stats["open"] += 1
+            continue
+
+        # -40% stop → sell 100% remaining (needs LIVE_STOP_CONFIRM consecutive marks)
         if mult <= LIVE_STOP_MULT:
+            need = stop_confirm_needed()
+            cnt = int(pos.get("stop_confirm_count") or 0) + 1
+            pos["stop_confirm_count"] = cnt
+            if cnt < need:
+                append_live_book(
+                    book,
+                    {
+                        "event": "stop_pending",
+                        "ca": ca,
+                        "symbol": pos.get("symbol"),
+                        "mult": mult,
+                        "confirm": cnt,
+                        "need": need,
+                        "price": price,
+                        "entry_price": entry,
+                    },
+                )
+                print(
+                    f"live stop_pending {ca[:10]}… mult={mult:.2f} confirm={cnt}/{need}",
+                    flush=True,
+                )
+                stats["open"] += 1
+                continue
             data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 100)
             if err or data is None:
                 stats["fail"] += 1
@@ -527,6 +618,9 @@ def process_live_positions(
             )
             print(f"live stop {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}", flush=True)
             continue
+
+        # Recovered above stop → reset consecutive confirm counter
+        pos["stop_confirm_count"] = 0
 
         # +100% half take → sell 50%
         if (not pos.get("half_taken")) and mult >= LIVE_HALF_TAKE_MULT and status == "open":

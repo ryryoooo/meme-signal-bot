@@ -10,3 +10,4 @@ live_state_arc.json
 live_book_arc.jsonl
 live_state*.json
 live_book*.jsonl
+arc_swap/node_modules/
