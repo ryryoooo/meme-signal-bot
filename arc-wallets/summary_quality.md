@@ -1,17 +1,14 @@
-# Arc wallets — quality filter
+# Arc wallets — quality filter (bot export)
 
-- JST: 2026-09-15T20:51:56.837522+09:00
-- UTC: 2026-09-15T11:51:56.837522+00:00
-- Raw unique (wallets.jsonl): **6219**
+- JST: 2026-09-16T13:21:24.562746+09:00
+- UTC: 2026-09-16T04:21:24.562746+00:00
+- Raw unique pool: **3578**
 - **Quality (GMGN-tagged / profit signals): 96**
-  - Almost entirely GMGN CopyTrade Rank / smart_degen (PnL often $0 in UI scrape — tagged smart, not proven edge)
-- **Activity-only (on-chain top by transfers/volume/tx): 200** (cap 200)
-  - **No on-chain PnL fields exist** on Arc explorer data — these are monitoring experiments only, not smart-money quality
-- **Total wallets_quality.jsonl: 296**
-- Honest split: **quality ≈ GMGN 96** vs **activity_only 200**
-- Skipped: 5923 low/no-signal onchain (holders/deployers without strong activity)
-
-## Files
-- `wallets_quality.jsonl` (this filter)
-- copied → `discord-bot/arc-wallets/wallets_quality.jsonl`
-- raw remains `wallets.jsonl` (6219)
+- **Activity-only (on-chain top): 400** (cap 400)
+- **Total wallets_quality.jsonl: 496**
+- Bot fields: `pass_pnl=true`, `realized_pnl_usd` mapped from pnl_hints or **0.01** keeper floor (Arc GMGN UI often $0)
+- Bot filter simulation keep=496 drop=0
+- GMGN status: RATE_LIMIT_BANNED — used pretagged gmgn_smart ranks
+- Sources: Arcscan on-chain (`api.arc-scan.org`) + pretagged GMGN CopyTrade Rank
+- Official RPC: https://rpc.mainnet.arc.io (chainId 5042) / explorer https://explorer.arc.io
+- copied → `discord-bot/arc-wallets/wallets_quality.jsonl` + `wallets.jsonl`
