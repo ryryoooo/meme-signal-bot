@@ -33,7 +33,7 @@ jobs:
           node-version: "20"
 
       - name: Install gmgn-cli
-        run: npm install -g gmgn-cli
+        run: npm install -g gmgn-cli@1.6.4
 
       - name: Configure GMGN env (no echo)
         env:
@@ -90,7 +90,7 @@ jobs:
           GMGN_ALLOW_AUTOMATED_TRADES: "1"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
-          PAPER_TRADING: "1"
+          PAPER_TRADING: "0"
           PAPER_ONE_PER_CHAIN: "0"
           PAPER_MAX_OPEN: "5"
           PAPER_MAX_ENTRIES_WEEK: "0"

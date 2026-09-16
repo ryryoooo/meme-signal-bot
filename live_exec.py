@@ -135,18 +135,19 @@ def _run_swap(args: list[str], timeout: float = 90) -> tuple[dict | None, str | 
         write_gmgn_dotenv()
     if not (os.environ.get("GMGN_API_KEY") or "").strip():
         return None, "auth"
-    allow = (os.environ.get("GMGN_ALLOW_AUTOMATED_TRADES") or "").strip().lower()
-    if allow not in ("1", "true", "yes", "on"):
-        return None, "allow_flag"
+    allow = (os.environ.get("GMGN_ALLOW_AUTOMATED_TRADES") or "").strip()
+    # gmgn-cli confirmTrade requires EXACT string "1"
+    if allow != "1":
+        os.environ["GMGN_ALLOW_AUTOMATED_TRADES"] = "1"
+        allow = "1"
     cli = shutil.which("gmgn-cli")
     if not cli:
         return None, "no_cli"
     w = wallet_address()
     if not w:
         return None, "no_wallet"
-    cmd = [cli, "swap", *args, "--from", w, "--yes", "--raw", "--auto-slippage"]
-    # Never log full cmd with secrets; args have no keys
-    print(f"live_exec swap {' '.join(args[:8])}…", flush=True)
+    cmd = [cli, "swap", "--yes", "--raw", "--auto-slippage", "--from", w, *args]
+    print(f"live_exec swap yes=1 allow={allow!r} from={w[:10]}… {" ".join(args[:6])}…", flush=True)
     try:
         env = {**os.environ, "GMGN_ALLOW_AUTOMATED_TRADES": "1"}
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
@@ -156,22 +157,33 @@ def _run_swap(args: list[str], timeout: float = 90) -> tuple[dict | None, str | 
     except Exception as e:
         print(f"live_exec swap spawn fail: {type(e).__name__}", flush=True)
         return None, "spawn"
-    err = _redact((proc.stderr or "") + "\n" + (proc.stdout or ""))
+    err = _redact((proc.stderr or "") + chr(10) + (proc.stdout or ""))
     err_u = err.upper()
+    # Always keep a useful tail — confirmation banner is always printed first
+    tail = err.strip()[-800:] if err.strip() else ""
+    if "PROCEEDING NON-INTERACTIVELY" in err_u:
+        print("live_exec confirm: proceeded non-interactively", flush=True)
     if "AUTH_KEY_INVALID" in err_u or "API KEY INVALID" in err_u:
-        print(f"live_exec swap auth fail: {err.strip()[:240]}", flush=True)
+        print(f"live_exec swap auth fail: {tail}", flush=True)
         return None, "auth"
     if "RATE_LIMIT" in err_u or "429" in err_u or "BANNED" in err_u:
-        print(f"live_exec swap rate/ban: {err.strip()[:240]}", flush=True)
+        print(f"live_exec swap rate/ban: {tail}", flush=True)
         return None, "rate"
-    if "BIND" in err_u or "BINDING" in err_u or "NOT BOUND" in err_u:
-        print(f"live_exec swap binding: {err.strip()[:240]}", flush=True)
+    if "BIND" in err_u or "BINDING" in err_u or "NOT BOUND" in err_u or "NOT LINKED" in err_u:
+        print(f"live_exec swap binding: {tail}", flush=True)
         return None, "binding"
+    if "CONFIRMATION NOT RECEIVED" in err_u or "NO INTERACTIVE TERMINAL" in err_u:
+        print(f"live_exec swap confirm_blocked: {tail}", flush=True)
+        return None, "confirm"
+    if "--YES WAS SUPPLIED BUT" in err_u or "ALLOW_AUTOMATED" in err_u and "NOT SET" in err_u:
+        print(f"live_exec swap allow_flag: {tail}", flush=True)
+        return None, "allow_flag"
     if proc.returncode != 0:
-        print(f"live_exec swap fail rc={proc.returncode}: {err.strip()[:300]}", flush=True)
+        print(f"live_exec swap fail rc={proc.returncode}: {tail}", flush=True)
         return None, "other"
     out = (proc.stdout or "").strip()
     if not out:
+        print(f"live_exec swap empty stdout; stderr_tail={tail}", flush=True)
         return None, "empty"
     try:
         data = json.loads(out)
@@ -180,14 +192,12 @@ def _run_swap(args: list[str], timeout: float = 90) -> tuple[dict | None, str | 
         return None, "bad_json"
     if not isinstance(data, dict):
         return None, "bad_shape"
-    # Soft success: some APIs nest under data / code
     code = data.get("code")
     if code is not None and str(code) not in ("0", "200", "ok", "OK"):
         msg = _redact(str(data.get("message") or data.get("error") or code))
         print(f"live_exec swap api_code={code} msg={msg[:200]}", flush=True)
         return data, "api"
     return data, None
-
 
 def swap_buy_usdc_to_token(
     chain: str,

@@ -68,7 +68,7 @@ jobs:
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
-          PAPER_TRADING: "1"
+          PAPER_TRADING: "0"
           PAPER_ONE_PER_CHAIN: "0"
           PAPER_MAX_OPEN: "5"
           PAPER_MAX_ENTRIES_WEEK: "0"
