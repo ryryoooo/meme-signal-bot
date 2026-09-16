@@ -69,7 +69,10 @@ jobs:
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
           PAPER_TRADING: "1"
-          PAPER_ONE_PER_CHAIN: "1"
+          PAPER_ONE_PER_CHAIN: "0"
+          PAPER_MAX_OPEN: "5"
+          PAPER_MAX_ENTRIES_WEEK: "0"
+          PAPER_MAX_LOSSES_WEEK: "0"
           PAPER_MARK_HEARTBEAT: "0"
           CHAIN: robinhood
           WINDOW_SECONDS: "900"

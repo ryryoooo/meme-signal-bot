@@ -1,11 +1,10 @@
 """Virtual paper trading ($300 bankroll). Never places real orders.
 
-FOUNDATION risk rules:
-- 1 open position at a time
+Risk rules (env-overridable; 0 = unlimited for caps):
+- concurrent opens: PAPER_MAX_OPEN (default 5)
 - size 20% (30% if n>=3)
 - +100% half-take / -40% stop
-- max 5 entries / week
-- 3 losses in a week → stop for the week
+- weekly entry / loss caps off by default (PAPER_MAX_ENTRIES_WEEK=0, PAPER_MAX_LOSSES_WEEK=0)
 """
 from __future__ import annotations
 
@@ -20,9 +19,34 @@ PAPER_HALF_TAKE_MULT = 2.0
 PAPER_STOP_MULT = 0.60
 PAPER_SIZE_PCT_DEFAULT = 20
 PAPER_SIZE_PCT_STRONG = 30
-PAPER_MAX_ENTRIES_WEEK = 5
-PAPER_MAX_LOSSES_WEEK = 3
 DEFAULT_BANKROLL_USD = 300.0
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(float(os.environ.get(name, str(default))))
+    except (TypeError, ValueError):
+        return default
+
+
+def max_entries_week() -> int:
+    """0 = unlimited."""
+    return max(0, _env_int("PAPER_MAX_ENTRIES_WEEK", 0))
+
+
+def max_losses_week() -> int:
+    """0 = unlimited (no week stop)."""
+    return max(0, _env_int("PAPER_MAX_LOSSES_WEEK", 0))
+
+
+def max_open_positions() -> int:
+    """Max concurrent open/half_taken positions. 0 = unlimited."""
+    return max(0, _env_int("PAPER_MAX_OPEN", 5))
+
+
+# Back-compat names used in f-strings / summaries (resolved at call time where possible)
+PAPER_MAX_ENTRIES_WEEK = max_entries_week()
+PAPER_MAX_LOSSES_WEEK = max_losses_week()
 # Equity / bankroll ratios for paper-PnL Discord milestones (not signal multipliers)
 PAPER_EQUITY_MILESTONES = (0.80, 0.90, 1.10, 1.25, 1.50, 2.00)
 
@@ -89,20 +113,22 @@ def active_positions(state: dict) -> list[dict]:
 def can_open_paper(state: dict, chain: str | None = None) -> tuple[bool, str]:
     paper = ensure_paper_state(state)
     _rollover_week(paper)
-    if paper.get("week_stopped"):
-        return False, "week_stopped_3_losses"
-    if int(paper.get("week_entries") or 0) >= PAPER_MAX_ENTRIES_WEEK:
+    max_loss = max_losses_week()
+    if max_loss > 0 and paper.get("week_stopped"):
+        return False, "week_stopped_losses"
+    max_ent = max_entries_week()
+    if max_ent > 0 and int(paper.get("week_entries") or 0) >= max_ent:
         return False, "week_max_entries"
     active = active_positions(state)
-    if active:
-        # 実戦: チェーン別に1本まで（RHとArcを並行可）
-        one_per = str(os.environ.get("PAPER_ONE_PER_CHAIN") or "1").strip().lower() in ("1", "true", "yes")
-        if one_per and chain:
-            ch = (chain or "").lower()
-            if any((p.get("chain") or "").lower() == ch for p in active):
-                return False, "already_in_position"
-            return True, "ok"
-        return False, "already_in_position"
+    max_open = max_open_positions()
+    if max_open > 0 and len(active) >= max_open:
+        return False, "max_open_positions"
+    # optional legacy: one open per chain
+    one_per = str(os.environ.get("PAPER_ONE_PER_CHAIN") or "0").strip().lower() in ("1", "true", "yes")
+    if one_per and chain and active:
+        ch = (chain or "").lower()
+        if any((p.get("chain") or "").lower() == ch for p in active):
+            return False, "already_in_position"
     return True, "ok"
 
 
@@ -213,7 +239,7 @@ def open_paper_position(
                             f"📥 ${symbol or '?'} · サイズ {size_pct}% · "
                             f"${notional:.2f} · n={n}\n"
                             f"エントリー ${entry_price:.8g} · "
-                            f"週 {paper['week_entries']}/{PAPER_MAX_ENTRIES_WEEK}"
+                            f"週 {paper['week_entries']}/{'∞' if max_entries_week()<=0 else max_entries_week()}"
                         )[:1900],
                         "color": 0x3498DB,
                         "footer": {
@@ -330,11 +356,11 @@ def process_paper_positions(
             pos["remaining_pct"] = 0
             paper["week_losses"] = int(paper.get("week_losses") or 0) + 1
             was_week_stopped = bool(paper.get("week_stopped"))
-            if paper["week_losses"] >= PAPER_MAX_LOSSES_WEEK:
+            if max_losses_week() > 0 and paper["week_losses"] >= max_losses_week():
                 paper["week_stopped"] = True
                 if not was_week_stopped:
                     notices.append(
-                        f"🛑 週停止 · 連敗 {paper['week_losses']}/{PAPER_MAX_LOSSES_WEEK} · "
+                        f"🛑 週停止 · 連敗 {paper['week_losses']}/{max_losses_week()} · "
                         f"今週の新規エントリー停止"
                     )
             stats["stop"] += 1
@@ -570,8 +596,8 @@ def write_paper_summary(
         f"- 現金: **${float(paper.get('cash_usd') or 0):.2f}**",
         f"- 純資産: **${float(paper.get('equity_usd') or 0):.2f}**",
         f"- 実現PnL: **${float(paper.get('realized_pnl_usd') or 0):+.2f}**",
-        f"- 週キー: `{paper.get('week_key')}` エントリー {paper.get('week_entries')}/{PAPER_MAX_ENTRIES_WEEK} "
-        f"・負け {paper.get('week_losses')}/{PAPER_MAX_LOSSES_WEEK} "
+        f"- 週キー: `{paper.get('week_key')}` エントリー {paper.get('week_entries')}/{'∞' if max_entries_week()<=0 else max_entries_week()} "
+        f"・負け {paper.get('week_losses')}/{'∞' if max_losses_week()<=0 else max_losses_week()} "
         f"・週停止={bool(paper.get('week_stopped'))}",
         f"- 投稿: **{posted}** / 見送り: **{skipped}** / 倍率FU: **{followups}**",
         f"- オープン中アラート: **{len(open_alerts)}**",
@@ -595,8 +621,8 @@ def write_paper_summary(
     lines += [
         "",
         "## 紙ポジション（FOUNDATION）",
-        f"- 同時1本 / サイズ {PAPER_SIZE_PCT_DEFAULT}%（n≥3→{PAPER_SIZE_PCT_STRONG}%）",
-        f"- +100%半分 / −40%ストップ / 週最大{PAPER_MAX_ENTRIES_WEEK} / 連敗{PAPER_MAX_LOSSES_WEEK}で週終了",
+        f"- 同時最大{max_open_positions() or '∞'}本 / サイズ {PAPER_SIZE_PCT_DEFAULT}%（n≥3→{PAPER_SIZE_PCT_STRONG}%）",
+        f"- +100%半分 / −40%ストップ / 週エントリー{'無制限' if max_entries_week()<=0 else max_entries_week()} / 連敗停止{'なし' if max_losses_week()<=0 else max_losses_week()}",
         f"- 帳簿: " + ", ".join(f"{k}={v}" for k, v in sorted(book_counts.items())),
         f"- 状態 open系={pos_open} / 半分利確済={pos_half} / ストップ={pos_stop}",
         "",
