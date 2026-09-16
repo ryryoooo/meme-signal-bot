@@ -1434,6 +1434,46 @@ def safety_check(ca: str, chain: str) -> dict:
     """GMGN info + security. DexScreener/GoPlus are not the source of truth."""
     meta = CHAIN_META.get(chain, {})
     gmgn_chain = meta.get("gmgn_chain") or chain
+    # Arc: ignore security-audit gates while collecting launch data (env overrideable)
+    arc_skip = (chain or "").lower() == "arc" and env_bool("ARC_SKIP_SECURITY_AUDIT", True)
+    if arc_skip:
+        snap = gmgn_tok.market_snapshot(gmgn_chain, ca)
+        price = snap.get("price_usd")
+        mcap = snap.get("mcap_usd") or snap.get("fdv")
+        liq = snap.get("liq_usd")
+        ratio = None
+        if liq is not None and mcap and mcap > 0:
+            try:
+                ratio = float(liq) / float(mcap)
+            except (TypeError, ValueError):
+                ratio = None
+        fetch_failed = bool(snap.get("fetch_failed")) or not snap.get("ok")
+        # Still require a usable market snapshot when available; never block on audit fields
+        ok = not fetch_failed
+        jp = "通過（Arc・監査スキップ）" if ok else "見送り（GMGN取得失敗）"
+        print(
+            f"safety ca={ca[:10]}… ok={ok} src=gmgn-arc-skip ratio={ratio} "
+            f"mcap={mcap} liq={liq} fetch_failed={fetch_failed} reasons={['ok'] if ok else ['gmgn_info:fail']}",
+            flush=True,
+        )
+        return {
+            "ok": ok,
+            "reasons": ["ok"] if ok else ["gmgn_info:fail"],
+            "ratio": ratio,
+            "liq_usd": liq,
+            "mcap_usd": mcap,
+            "fdv": snap.get("fdv") or mcap,
+            "price_usd": price,
+            "dex_url": snap.get("url"),
+            "gmgn_url": snap.get("url"),
+            "goplus": "unused",
+            "jp": jp,
+            "audit_jp": "（Arc・セキュリティ監査スキップ）",
+            "symbol_hint": snap.get("symbol"),
+            "source": "gmgn",
+            "fetch_failed": fetch_failed,
+            "checklist": [],
+        }
     return gmgn_tok.evaluate(
         gmgn_chain,
         ca,

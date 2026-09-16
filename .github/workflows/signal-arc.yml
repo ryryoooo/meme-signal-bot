@@ -81,6 +81,7 @@ jobs:
           PAPER_MARK_HEARTBEAT: "0"
           MIN_TOKEN_AGE_SEC: "1800"
           CHAIN: arc
+          ARC_SKIP_SECURITY_AUDIT: "1"
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
           MIN_TRADE_USD: "50"
