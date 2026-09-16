@@ -55,13 +55,13 @@ def bankroll_usd() -> float:
 
 def exit_grace_sec() -> float:
     try:
-        return max(0.0, float(os.environ.get("LIVE_EXIT_GRACE_SEC") or "120"))
+        return max(0.0, float(os.environ.get("LIVE_EXIT_GRACE_SEC") or "15"))
     except (TypeError, ValueError):
-        return 120.0
+        return 15.0
 
 
 def stop_confirm_needed() -> int:
-    return max(1, _env_int("LIVE_STOP_CONFIRM", 2))
+    return max(1, _env_int("LIVE_STOP_CONFIRM", 1))
 
 
 def fill_price_usd_from_swap(swap: dict | None) -> float | None:
@@ -457,6 +457,69 @@ def open_live_position(
     return pos
 
 
+
+def _close_already_flat(
+    state: dict,
+    book: Path,
+    live: dict,
+    pos: dict,
+    *,
+    now: float,
+    price: float,
+    entry: float,
+    mult: float,
+    rem: float,
+    reason: str,
+    webhook: str | None,
+    discord_post: Callable | None,
+) -> None:
+    """Token already gone on-chain — book flat, stop retry spam."""
+    ca = pos.get("ca")
+    exit_value = rem * mult if rem and mult else 0.0
+    pnl = exit_value - rem
+    live["cash_usd"] = float(live.get("cash_usd") or 0) + exit_value
+    live["realized_pnl_usd"] = float(live.get("realized_pnl_usd") or 0) + pnl
+    pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+    pos["status"] = "closed_dust" if abs(pnl) < 0.5 else "stopped"
+    pos["closed_at"] = now
+    pos["remaining_usd"] = 0
+    pos["remaining_pct"] = 0
+    pos["flat_reason"] = reason
+    if pos["status"] == "stopped":
+        live["week_losses"] = int(live.get("week_losses") or 0) + 1
+        if max_losses_week() > 0 and live["week_losses"] >= max_losses_week():
+            live["week_stopped"] = True
+    append_live_book(
+        book,
+        {
+            "event": "closed_dust" if pos["status"] == "closed_dust" else "stop",
+            "ca": ca,
+            "symbol": pos.get("symbol"),
+            "entry_price": entry,
+            "exit_price": price,
+            "mult": mult,
+            "pnl_usd": pnl,
+            "reason": reason,
+            "cash_usd": live["cash_usd"],
+        },
+    )
+    print(
+        f"live already_flat {str(ca)[:10]}… status={pos['status']} mult={mult:.2f} pnl={pnl:.2f}",
+        flush=True,
+    )
+    _notify(
+        webhook,
+        discord_post,
+        title=f"⚪ 残高0でクローズ · ${pos.get('symbol') or '?'}",
+        description=(
+            f"on-chain tokenBal=0 · **{mult:.2f}倍** · PnL **{_fmt_money(pnl)}**\n"
+            f"`{ca}`"
+        ),
+        color=0x95A5A6,
+        state=state,
+    )
+
+
 def process_live_positions(
     state: dict,
     book: Path,
@@ -551,6 +614,15 @@ def process_live_positions(
                 continue
             data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 100)
             if err or data is None:
+                if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                    _close_already_flat(
+                        state, book, live, pos,
+                        now=now, price=price, entry=entry, mult=mult, rem=rem,
+                        reason="already_flat",
+                        webhook=webhook, discord_post=discord_post,
+                    )
+                    stats["stop"] += 1
+                    continue
                 stats["fail"] += 1
                 append_live_book(
                     book,
@@ -626,6 +698,15 @@ def process_live_positions(
         if (not pos.get("half_taken")) and mult >= LIVE_HALF_TAKE_MULT and status == "open":
             data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 50)
             if err or data is None:
+                if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                    _close_already_flat(
+                        state, book, live, pos,
+                        now=now, price=price, entry=entry, mult=mult, rem=rem,
+                        reason="already_flat_half",
+                        webhook=webhook, discord_post=discord_post,
+                    )
+                    stats["stop"] += 1
+                    continue
                 stats["fail"] += 1
                 append_live_book(
                     book,

@@ -318,8 +318,27 @@ async function main() {
   let currency0 = null;
   let currency1 = null;
   let poolIsNative = false;
+  let usedPoolCache = false;
 
-  if (process.env.POOL_FEE && process.env.TICK_SPACING) {
+  // Full cache hit: fee + tick + both currencies (skip DexScreener/Initialize)
+  if (
+    process.env.POOL_FEE && process.env.TICK_SPACING &&
+    process.env.CURRENCY0 && process.env.CURRENCY1
+  ) {
+    fee = Number(process.env.POOL_FEE);
+    tickSpacing = Number(process.env.TICK_SPACING);
+    currency0 = ethers.getAddress(process.env.CURRENCY0);
+    currency1 = ethers.getAddress(process.env.CURRENCY1);
+    if (process.env.HOOKS) hooks = ethers.getAddress(process.env.HOOKS);
+    if (process.env.POOL_IS_NATIVE === '1') poolIsNative = true;
+    else if (process.env.POOL_IS_NATIVE === '0') poolIsNative = false;
+    else poolIsNative = isNativeAddr(currency0) || isNativeAddr(currency1);
+    usedPoolCache = true;
+    jlog({
+      step: 'pool_cache_hit', fee, tickSpacing, hooks,
+      currency0, currency1, poolIsNative,
+    });
+  } else if (process.env.POOL_FEE && process.env.TICK_SPACING) {
     fee = Number(process.env.POOL_FEE);
     tickSpacing = Number(process.env.TICK_SPACING);
     // Optional override: POOL_QUOTE=native|usdc (default probe both via currencies if set)
@@ -592,6 +611,7 @@ async function main() {
     block: receipt.blockNumber,
     fee,
     tickSpacing,
+    hooks,
     poolIsNative,
     quoteIsNative,
     quoteKind,
