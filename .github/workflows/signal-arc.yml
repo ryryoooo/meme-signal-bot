@@ -106,10 +106,10 @@ jobs:
           MIN_CLUSTER_USD: "200"
           MIN_LIQ_USD: "1500"
           MIN_MCAP_USD: "4000"
-          LIQ_MCAP_MIN: "0.20"
+          LIQ_MCAP_MIN: "0.05"
           COOLDOWN_SECONDS: "7200"
           WATCH_MIN_REALIZED_USD: "0"
-          GMGN_LIMIT: "40"
+          GMGN_LIMIT: "100"
           GMGN_COOLDOWN_PAD_SEC: "300"
           WATCHLIST_PATH: ${{ steps.wl.outputs.path }}
           STATE_PATH: state-arc.json
