@@ -1,7 +1,9 @@
 name: meme-signal-arc
 
 on:
-  # schedule disabled to save API/GHA minutes — enable manually when Arc is live
+  schedule:
+    # Offset vs RH (:0/:5) so free kickers don't stampede. GitHub schedule often skips — cron-job.org also kicks.
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
   workflow_dispatch: {}
 
 concurrency:
@@ -70,10 +72,14 @@ jobs:
           DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}
           DISCORD_ARC_PAPER: ${{ secrets.DISCORD_ARC_PAPER }}
           NANSEN_FOR_TRADES: "0"
+          FOMO_ENABLED: "0"
+          XBTSCOUT_ENABLED: "0"
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
           PAPER_BANKROLL_USD: "300"
+          PAPER_TRADING: "0"
           PAPER_MARK_HEARTBEAT: "0"
+          MIN_TOKEN_AGE_SEC: "1800"
           CHAIN: arc
           WINDOW_SECONDS: "900"
           MIN_WALLETS: "2"
