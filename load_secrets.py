@@ -15,6 +15,7 @@ MAP = {
     "DISCORD_ARC_PAPER": ("card", "DISCORD_ARC_PAPER"),
     "DISCORD_ARC_LIVE_WEBHOOK_URL": ("card", "DISCORD_ARC_LIVE_WEBHOOK_URL"),
     "FOMO_API_KEY": ("card", "FOMO_API_KEY"),
+    "GMGN_PRIVATE_KEY": ("desktop", "GMGN_PRIVATE_KEY"),
 }
 
 
@@ -42,13 +43,17 @@ def load(names: list[str] | None = None) -> dict[str, bool]:
 
 def write_gmgn_dotenv(path: Path | None = None) -> bool:
     """Write ~/.config/gmgn/.env from env/box-secrets. Never print the key."""
-    load(["GMGN_API_KEY"])
+    load(["GMGN_API_KEY", "GMGN_PRIVATE_KEY"])
     key = (os.environ.get("GMGN_API_KEY") or "").strip()
     if not key:
         return False
     dest = path or (Path.home() / ".config/gmgn/.env")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(f"GMGN_API_KEY={key}\n", encoding="utf-8")
+    lines = [f"GMGN_API_KEY={key}"]
+    pk = (os.environ.get("GMGN_PRIVATE_KEY") or "").strip()
+    if pk:
+        lines.append(f"GMGN_PRIVATE_KEY={pk}")
+    dest.write_text("\n".join(lines) + "\n", encoding="utf-8")
     try:
         dest.chmod(0o600)
     except OSError:

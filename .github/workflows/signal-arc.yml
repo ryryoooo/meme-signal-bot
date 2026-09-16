@@ -77,7 +77,7 @@ jobs:
           NANSEN_FOR_TRADES: "0"
           FOMO_ENABLED: "0"
           XBTSCOUT_ENABLED: "0"
-          LIVE_TRADING: "1"
+          LIVE_TRADING: "0"
           LIVE_CHAINS: "arc"
           LIVE_WALLET_ADDRESS: "0x822AFdCc7f1Ec829f4456A3921ff54B4a6dBCfAe"
           LIVE_BANKROLL_USD: "80"
