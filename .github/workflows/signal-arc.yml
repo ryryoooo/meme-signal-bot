@@ -7,8 +7,9 @@ on:
   workflow_dispatch: {}
 
 concurrency:
+  # Queue instead of cancel — 5m kickers were aborting ~6m runs → zero buy notifies.
   group: meme-signal-arc
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   poll:

@@ -123,7 +123,7 @@ def load_live_state(path: Path) -> dict:
 
 def save_live_state(path: Path, state: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp = path.parent / f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp"
     tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     tmp.replace(path)
 

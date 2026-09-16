@@ -66,8 +66,16 @@ def load(names: list[str] | None = None) -> dict[str, bool]:
             if picked:
                 val = picked
         ok = isinstance(val, str) and bool(val.strip())
-        if ok and name not in os.environ:
-            os.environ[name] = val.strip()
+        if ok:
+            cur = (os.environ.get(name) or "").strip()
+            # overwrite missing OR obviously bad API placeholders already in env
+            bad_api = name == "GMGN_API_KEY" and (
+                not cur or cur.lower().startswith("inst") or not (
+                    cur.lower().startswith("gmgn") or len(cur) >= 20
+                )
+            )
+            if name not in os.environ or bad_api or (name == "GMGN_PRIVATE_KEY" and not cur):
+                os.environ[name] = val.strip()
         status[name] = bool(os.environ.get(name))
     return status
 

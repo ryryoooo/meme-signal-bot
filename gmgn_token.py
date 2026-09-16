@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 try:
@@ -18,6 +19,7 @@ except ImportError:
 
 _CACHE: dict[str, tuple[float, dict | None, str | None]] = {}
 _CACHE_TTL = 90.0
+_COOLDOWN_PATH = Path(os.environ.get("GMGN_COOLDOWN_PATH") or "/workspace/meme-foundation/live-arc/gmgn_cooldown.json")
 
 
 _CHAIN_SLUG = {
@@ -73,22 +75,86 @@ def _tax(v) -> float | None:
     return n
 
 
-def _parse_reset_wait(err: str) -> float:
-    """Seconds to wait from RATE_LIMIT message / reset_at. Cap 90s."""
+def _parse_reset_until(err: str) -> float:
+    """Unix time when GMGN says the IP ban/limit resets. 0 if unknown."""
+    err = err or ""
     m = re.search(r"reset_at[\"']?\s*[:=]\s*(\d{9,})", err)
     if m:
-        wait = int(m.group(1)) - time.time()
-        return max(1.0, min(90.0, wait + 1))
-    m = re.search(r"resets? at ([^\n]+)", err, re.I)
-    # fall back short pause
+        return float(m.group(1))
+    m = re.search(r"~(\d+)s remaining", err, re.I)
+    if m:
+        return time.time() + float(m.group(1))
+    m = re.search(
+        r"resets? at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?: GMT([+-]\d{2}:\d{2}))?",
+        err,
+        re.I,
+    )
+    if m:
+        from datetime import datetime, timezone, timedelta
+        ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+        off = m.group(2)
+        if off:
+            sign = 1 if off.startswith("+") else -1
+            hh, mm = off[1:].split(":")
+            ts = ts.replace(tzinfo=timezone(timedelta(hours=sign * int(hh), minutes=sign * int(mm))))
+        else:
+            ts = ts.replace(tzinfo=timezone.utc)
+        return ts.timestamp()
+    if "RATE_LIMIT_BANNED" in err.upper():
+        return time.time() + 300.0
     if "RATE_LIMIT" in err.upper() or "429" in err:
-        return 8.0
+        return time.time() + 60.0
     return 0.0
 
 
-def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 1) -> tuple[dict | None, str | None]:
-    """Run gmgn-cli ... --raw. Returns (data, err_kind). err: auth|rate|other."""
+def _cooldown_until() -> float:
+    try:
+        o = json.loads(_COOLDOWN_PATH.read_text(encoding="utf-8"))
+        return float(o.get("until") or 0)
+    except Exception:
+        return 0.0
+
+
+def gmgn_on_cooldown() -> bool:
+    return time.time() < _cooldown_until()
+
+
+def gmgn_should_skip() -> bool:
+    """True when we must not call gmgn-cli (cooldown or resume pad)."""
+    return gmgn_on_cooldown()
+
+
+def gmgn_cooldown_remaining() -> float:
+    return max(0.0, _cooldown_until() - time.time())
+
+
+def arm_gmgn_cooldown(err: str = "", extra: float | None = None) -> float:
+    # Pad past GMGN's stated reset — calling at the edge re-extends the IP ban.
+    if extra is None:
+        extra = float(os.environ.get("GMGN_COOLDOWN_PAD_SEC") or "180")
+    until = _parse_reset_until(err) or (time.time() + 300.0)
+    until = max(until, time.time() + 60.0) + extra
+    try:
+        _COOLDOWN_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = _COOLDOWN_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"until": until, "armed_at": time.time()}, indent=2), encoding="utf-8")
+        tmp.replace(_COOLDOWN_PATH)
+    except OSError:
+        pass
+    left = until - time.time()
+    print(f"gmgn cooldown armed {left:.0f}s (no more calls until reset)", flush=True)
+    return until
+
+
+def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 0) -> tuple[dict | None, str | None]:
+    """Run gmgn-cli ... --raw. Returns (data, err_kind). err: auth|rate|other.
+
+    On 429/RATE_LIMIT_BANNED: arm a shared file cooldown and do NOT retry.
+    Retrying extends the IP ban.
+    """
     write_gmgn_dotenv()
+    if gmgn_on_cooldown():
+        return None, "rate"
     key = (os.environ.get("GMGN_API_KEY") or "").strip()
     if not key or len(key) < 16:
         return None, "auth"
@@ -104,6 +170,8 @@ def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 1) -> tup
 
     attempt = 0
     while True:
+        if gmgn_on_cooldown():
+            return None, "rate"
         attempt += 1
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env={**os.environ})
@@ -120,6 +188,7 @@ def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 1) -> tup
             kind = "auth"
         elif "RATE_LIMIT" in err_u or "429" in err:
             kind = "rate"
+            arm_gmgn_cooldown(err)
         elif proc.returncode != 0:
             kind = "other"
             safe = re.sub(r"(GMGN_API_KEY|apikey|api[_-]?key)[=:\s]+\S+", r"\1=***", err, flags=re.I)
@@ -139,15 +208,12 @@ def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 1) -> tup
                     data = parsed
                 else:
                     kind = "other"
-        if kind == "rate" and attempt <= retries:
-            wait = _parse_reset_wait(err)
-            print(f"gmgn-cli rate; sleep {wait:.0f}s then retry {attempt}/{retries}", flush=True)
-            time.sleep(wait)
-            continue
-        # Cache successes and non-rate failures briefly so we don't hammer
+        # Never retry rate limits — that extends IP bans.
+        if kind == "rate":
+            _CACHE[cache_key] = (time.time(), None, kind)
+            return None, kind
         _CACHE[cache_key] = (time.time(), data, kind)
         return data, kind
-
 
 def fetch_token_info(chain: str, ca: str) -> tuple[dict | None, str | None]:
     return gmgn_cli_json(["token", "info", "--chain", chain, "--address", ca])
@@ -395,10 +461,101 @@ def checklist_no_danger(items: list[dict]) -> tuple[bool, list[str]]:
     return (len(fails) == 0, fails)
 
 
+def _dex_market(chain: str, ca: str) -> dict | None:
+    """Free DexScreener snapshot so marks/alerts keep moving when GMGN is banned."""
+    import urllib.request
+    import subprocess as _sp
+    url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    data = None
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception:
+        data = None
+    if data is None:
+        try:
+            raw = _sp.check_output(
+                ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", "8", url],
+                text=True,
+                timeout=12,
+            )
+            data = json.loads(raw or "{}")
+        except Exception:
+            return None
+    pairs = (data or {}).get("pairs") or []
+    if not pairs:
+        return None
+    slug = (chain or "").lower()
+    preferred = [x for x in pairs if (x.get("chainId") or "").lower() in (slug, "arc", "arcadium")]
+    pool = preferred or pairs
+
+    def liq_of(x):
+        try:
+            return float(((x.get("liquidity") or {}).get("usd")) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    pair = max(pool, key=liq_of)
+    try:
+        price = float(pair.get("priceUsd")) if pair.get("priceUsd") is not None else None
+    except (TypeError, ValueError):
+        price = None
+    mcap = pair.get("marketCap") or pair.get("fdv")
+    liq = (pair.get("liquidity") or {}).get("usd")
+    try:
+        mcap = float(mcap) if mcap is not None else None
+    except (TypeError, ValueError):
+        mcap = None
+    try:
+        liq = float(liq) if liq is not None else None
+    except (TypeError, ValueError):
+        liq = None
+    if not price and not liq:
+        return None
+    return {
+        "ok": True,
+        "reason": None,
+        "liq_usd": liq,
+        "mcap_usd": mcap,
+        "fdv": mcap,
+        "price_usd": price,
+        "url": pair.get("url"),
+        "pair": pair.get("pairAddress"),
+        "chainId": pair.get("chainId"),
+        "symbol": (pair.get("baseToken") or {}).get("symbol"),
+        "source": "dexscreener",
+        "fetch_failed": False,
+    }
+
+
 def market_snapshot(chain: str, ca: str) -> dict:
-    """Market dict sourced only from GMGN token info."""
+    """DexScreener first. GMGN only if GMGN_MARKET=1 and not on cooldown."""
+    dex = _dex_market(chain, ca)
+    use_gmgn = (os.environ.get("GMGN_MARKET") or "0").strip() in ("1", "true", "yes")
+    if dex and not use_gmgn:
+        return dex
+    if gmgn_on_cooldown() or not use_gmgn:
+        if dex:
+            return dex
+        return {
+            "ok": False,
+            "reason": "gmgn_cooldown" if gmgn_on_cooldown() else "dex_empty",
+            "liq_usd": None,
+            "mcap_usd": None,
+            "fdv": None,
+            "price_usd": None,
+            "url": None,
+            "pair": None,
+            "source": "dexscreener",
+            "fetch_failed": True,
+        }
     info, err = fetch_token_info(chain, ca)
     if not info:
+        dex = _dex_market(chain, ca)
+        if dex:
+            return dex
         return {
             "ok": False,
             "reason": f"gmgn_{err or 'fail'}",
@@ -436,7 +593,7 @@ def _dex_pair_created_ts(ca: str, chain: str) -> float | None:
     import urllib.request
     try:
         url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
-        req = urllib.request.Request(url, headers={"User-Agent": "meme-signal-bot/age"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"})
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode())
     except Exception:

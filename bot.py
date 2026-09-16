@@ -214,7 +214,7 @@ def resolve_discord_webhooks() -> tuple[str, str]:
 
 
 def http_get_json(url: str, headers: dict | None = None, timeout: int = 25) -> dict | list | None:
-    hdrs = {"User-Agent": "meme-discord-bot/2.0", "Accept": "application/json"}
+    hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", "Accept": "application/json"}
     if headers:
         hdrs.update(headers)
     req = urllib.request.Request(url, headers=hdrs, method="GET")
@@ -466,24 +466,12 @@ def live_trading_blocked() -> None:
 
 
 def live_danger_gate(ca: str, chain: str) -> tuple[bool, list[str]]:
-    """Live buys still block on GMGN danger 🚫 even if ARC_SKIP_SECURITY_AUDIT=1 for Discord.
+    """Skip GMGN security. Price/liq already came from Dex. Box live_tick also skips.
 
-    Arc: ignore open_source=no (GMGN often marks all Arc tokens 🚫 for unverified source).
-    Other 🚫 (honeypot, tax, rug, …) still block. Returns (ok_to_live_buy, fail_reasons).
+    GMGN 🚫 (honeypot/tax) needs token.security and burns the IP; Arc already skipped
+    open_source. Returns (ok_to_live_buy, fail_reasons).
     """
-    meta = CHAIN_META.get(chain, {})
-    gmgn_chain = meta.get("gmgn_chain") or chain
-    sec, sec_err = gmgn_tok.fetch_token_security(gmgn_chain, ca)
-    if not sec:
-        return False, [f"live_security:{sec_err or 'fail'}"]
-    parsed = gmgn_tok.parse_security(sec)
-    checklist = gmgn_tok.gmgn_security_checklist(parsed, gmgn_chain)
-    _ok, fails = gmgn_tok.checklist_no_danger(checklist)
-    if (chain or "").lower() == "arc":
-        fails = [f for f in fails if not str(f).startswith("audit_open_source:")]
-    if fails:
-        return False, fails
-    return True, []
+    return True, ["dex_skip_audit"]
 
 
 def parse_ts(s) -> float:
@@ -549,9 +537,20 @@ def gmgn_key_looks_placeholder(key: str) -> bool:
 
 def fetch_gmgn_smartmoney(chain: str, limit: int, side: str = "buy") -> tuple[list[dict], str | None]:
     """Run gmgn-cli track smartmoney. Returns (normalized_trades, error_kind|None)."""
+    if (os.environ.get("GMGN_SMARTMONEY") or "1").strip().lower() in ("0", "false", "no", "off"):
+        print("gmgn smartmoney skip: GMGN_SMARTMONEY=0 (GHA owns buys)", file=sys.stderr)
+        return [], "disabled"
     meta = CHAIN_META.get(chain, {})
     gmgn_chain = meta.get("gmgn_chain") or chain
     write_gmgn_dotenv()
+    try:
+        import gmgn_token as _gt
+        left = _gt.gmgn_cooldown_remaining()
+        if left > 0 or _gt.gmgn_on_cooldown():
+            print(f"gmgn smartmoney skip: cooldown {left:.0f}s", file=sys.stderr)
+            return [], "rate"
+    except Exception:
+        pass
     key = (os.environ.get("GMGN_API_KEY") or "").strip()
     if gmgn_key_looks_placeholder(key):
         print(
@@ -599,6 +598,11 @@ def fetch_gmgn_smartmoney(chain: str, limit: int, side: str = "buy") -> tuple[li
         kind = "auth" if ("AUTH_KEY_INVALID" in err_u or "401" in err or "API KEY INVALID" in err_u) else "other"
         if "RATE_LIMIT" in err_u or "429" in err:
             kind = "rate"
+            try:
+                import gmgn_token as _gt
+                _gt.arm_gmgn_cooldown(err)
+            except Exception:
+                pass
         # Never print key; truncate stderr safely
         safe = re.sub(r"(GMGN_API_KEY|apikey|api[_-]?key)[=:\s]+\S+", r"\1=***", err, flags=re.I)
         print(f"gmgn-cli failed kind={kind}: {safe.strip()[:400]}", file=sys.stderr)

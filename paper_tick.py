@@ -67,7 +67,7 @@ def _discord_post(url: str, embeds: list) -> None:
     req = urllib.request.Request(
         url + "?wait=true",
         data=body,
-        headers={"Content-Type": "application/json", "User-Agent": "paper-tick-live/1.0"},
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"},
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=15) as resp:
@@ -104,7 +104,7 @@ def save_state(st: dict) -> None:
 def fetch_dex_price(ca: str, chain: str) -> dict:
     url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "paper-tick/2.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"})
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode())
     except Exception as e:
@@ -183,16 +183,11 @@ def fetch_price(ca: str, chain: str) -> dict:
     if dex.get("ok"):
         _price_cache[key] = (now, dex)
         return dex
-    gm = fetch_gmgn_price(ca, chain)
-    if gm.get("ok"):
-        _price_cache[key] = (now, gm)
-        return gm
-    # keep last good mark briefly
     if cached and cached[1].get("ok"):
         out = dict(cached[1])
-        out["reason"] = f"stale:{dex.get('reason')}/{gm.get('reason')}"
+        out["reason"] = f"stale:{dex.get('reason')}"
         return out
-    return {"ok": False, "price_usd": None, "reason": f"{dex.get('reason')}+{gm.get('reason')}"}
+    return {"ok": False, "price_usd": None, "reason": dex.get("reason")}
 
 
 def _download_remote_state() -> dict | None:

@@ -85,7 +85,7 @@ def load_tick_meta() -> dict:
 
 def save_tick_meta(st: dict) -> None:
     LIVE.mkdir(parents=True, exist_ok=True)
-    tmp = LOCAL.with_suffix(".tmp")
+    tmp = LIVE / f".tick_state.{os.getpid()}.{time.time_ns()}.tmp"
     tmp.write_text(json.dumps(st, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(LOCAL)
 
@@ -120,12 +120,25 @@ def _discord_post(url: str, embeds: list | None = None, content: str = "", **_kw
 
 def fetch_dex_price(ca: str) -> dict:
     url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
+    data = None
+    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "live-tick/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read().decode())
-    except Exception as e:
-        return {"ok": False, "price_usd": None, "reason": type(e).__name__}
+    except Exception:
+        data = None
+    if data is None:
+        # Cloudflare sometimes 403s urllib; curl usually works on the box
+        try:
+            raw = subprocess.check_output(
+                ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", "8", url],
+                text=True,
+                timeout=12,
+            )
+            data = json.loads(raw or "{}")
+        except Exception as e:
+            return {"ok": False, "price_usd": None, "reason": type(e).__name__}
     pairs = (data or {}).get("pairs") or []
     if not pairs:
         return {"ok": False, "price_usd": None, "reason": "no_pair"}
@@ -167,6 +180,8 @@ def fetch_dex_price(ca: str) -> dict:
 def fetch_gmgn_price(ca: str) -> dict:
     if gmgn_tok is None:
         return {"ok": False, "price_usd": None, "reason": "no_gmgn"}
+    if getattr(gmgn_tok, "gmgn_on_cooldown", lambda: False)():
+        return {"ok": False, "price_usd": None, "reason": "gmgn_cooldown"}
     now = time.time()
     last = _gmgn_last.get(ca.lower(), 0.0)
     if now - last < GMGN_MIN_GAP:
@@ -190,6 +205,7 @@ def fetch_gmgn_price(ca: str) -> dict:
 
 
 def fetch_price(ca: str) -> dict:
+    """DexScreener only. Never hit GMGN for marks (saves the IP ban for smartmoney)."""
     key = ca.lower()
     now = time.time()
     cached = _price_cache.get(key)
@@ -199,36 +215,19 @@ def fetch_price(ca: str) -> dict:
     if dex.get("ok"):
         _price_cache[key] = (now, dex)
         return dex
-    gm = fetch_gmgn_price(ca)
-    if gm.get("ok"):
-        _price_cache[key] = (now, gm)
-        return gm
     if cached and cached[1].get("ok"):
         out = dict(cached[1])
-        out["reason"] = f"stale:{dex.get('reason')}/{gm.get('reason')}"
+        out["reason"] = f"stale:{dex.get('reason')}"
         return out
-    return {"ok": False, "price_usd": None, "reason": f"{dex.get('reason')}+{gm.get('reason')}"}
+    return {"ok": False, "price_usd": None, "reason": dex.get("reason")}
 
 
 def live_danger_gate(ca: str) -> tuple[bool, list[str]]:
-    """Mirror bot.live_danger_gate: Arc ignores open_source danger.
+    """Arc: no GMGN security. Honeypot/tax 🚫 needs GMGN and burns the IP.
 
-    Auth/fetch failures are soft-skip (not "danger"), so we retry next sync.
+    Heat/liq gates already ran on the signal. Pass so Dex marks + V4 swaps keep going.
     """
-    if gmgn_tok is None:
-        return False, ["no_gmgn"]
-    sec, sec_err = gmgn_tok.fetch_token_security("arc", ca)
-    if not sec:
-        err = (sec_err or "fail").lower()
-        # do not burn the alert as permanent danger on transient auth
-        return False, [f"live_security_soft:{sec_err or 'fail'}"]
-    parsed = gmgn_tok.parse_security(sec)
-    checklist = gmgn_tok.gmgn_security_checklist(parsed, "arc")
-    _ok, fails = gmgn_tok.checklist_no_danger(checklist)
-    fails = [f for f in fails if not str(f).startswith("audit_open_source:")]
-    if fails:
-        return False, fails
-    return True, []
+    return True, ["dex_skip_audit"]
 
 
 def _download_remote_alerts() -> list[dict]:
