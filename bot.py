@@ -1076,9 +1076,15 @@ def fetch_nansen_dex_trades(api_key: str, chain: str, page: int, per_page: int, 
 
 
 def refine_wallets(watch_path: Path, min_realized: float | None = None) -> int:
-    """Rewrite watchlist: drop losers / banned labels (FOUNDATION refine)."""
+    """Rewrite watchlist: drop losers / banned labels / weak one-hit wallets."""
     if min_realized is None:
         min_realized = float(os.environ.get("WATCH_MIN_REALIZED_USD") or "0")
+    # Extra Arc quality gates (実績が薄い財布を落とす)
+    min_single_pnl = float(os.environ.get("WATCH_MIN_SINGLE_TOKEN_PNL") or "100")
+    min_tokens = int(os.environ.get("WATCH_MIN_TOKENS_SEEN") or "1")
+    drop_onchain_only = (os.environ.get("WATCH_DROP_ONCHAIN_ONLY") or "1").strip().lower() in (
+        "1", "true", "yes",
+    )
     if not watch_path.exists():
         print(f"refine-wallets skip: missing {watch_path}")
         return 0
@@ -1106,6 +1112,34 @@ def refine_wallets(watch_path: Path, min_realized: float | None = None) -> int:
             else:
                 reasons["winrate_or_floor"] = reasons.get("winrate_or_floor", 0) + 1
             continue
+        rp = _wallet_realized(o)
+        try:
+            n_tok = int(o.get("n_tokens_seen") or len(o.get("symbols_seen") or []) or 0)
+        except (TypeError, ValueError):
+            n_tok = 0
+        tags = {str(x) for x in (o.get("tags") or [])}
+        srcs = {str(x) for x in (o.get("source_endpoints") or o.get("sources") or [])}
+        early = any(str(x).startswith("early") or str(x).startswith("early_live") for x in tags | srcs)
+        # One-hit weak: only 1 token and small realized
+        if n_tok <= 1 and rp < min_single_pnl and not early:
+            dropped += 1
+            reasons["single_weak"] = reasons.get("single_weak", 0) + 1
+            continue
+        if min_tokens > 1 and n_tok < min_tokens and rp < min_single_pnl * 2 and not early:
+            dropped += 1
+            reasons["few_tokens"] = reasons.get("few_tokens", 0) + 1
+            continue
+        # On-chain scraper noise without profit tag
+        if drop_onchain_only:
+            profitish = bool(o.get("profit_tagged")) or any(
+                "profit" in str(x).lower() or "smart" in str(x).lower() or "early" in str(x).lower()
+                for x in tags | srcs
+            )
+            onchainish = any(str(x).startswith("onchain") for x in tags | srcs)
+            if onchainish and not profitish and rp < min_single_pnl:
+                dropped += 1
+                reasons["onchain_weak"] = reasons.get("onchain_weak", 0) + 1
+                continue
         o = dict(o)
         o["pass_pnl"] = True
         o["refined_at"] = datetime.now(timezone.utc).isoformat()

@@ -3,7 +3,7 @@
 Risk (LIVE_* env; 0 = unlimited for caps):
 - concurrent opens: LIVE_MAX_OPEN (default 5)
 - size 20% (30% if n>=3) of LIVE_BANKROLL_USD, capped by on-chain USDC
-- +100% half-take / -40% stop (processor-side; arc has no condition-orders)
+- 2x/3x/5x leave moon bag → 100x moon TP; 1.25x floor until moon; trail 40% of peak; -40% pre-half
 - weekly entry / loss caps off by default
 - LIVE_ONE_PER_CHAIN=0 default
 """
@@ -20,6 +20,11 @@ import live_exec
 
 LIVE_HALF_TAKE_MULT = 2.0
 LIVE_STOP_MULT = 0.60
+LIVE_TP2_MULT = float(os.environ.get("LIVE_TP2_MULT") or "3.0")
+LIVE_TP3_MULT = float(os.environ.get("LIVE_TP3_MULT") or "5.0")
+LIVE_POST_HALF_STOP_MULT = float(os.environ.get("LIVE_POST_HALF_STOP_MULT") or "1.25")
+LIVE_MOON_TRAIL_FRAC = float(os.environ.get("LIVE_MOON_TRAIL_FRAC") or "0.40")
+LIVE_TP100_MULT = float(os.environ.get("LIVE_TP100_MULT") or "100.0")
 LIVE_SIZE_PCT_DEFAULT = 20
 LIVE_SIZE_PCT_STRONG = 30
 DEFAULT_BANKROLL_USD = 80.0
@@ -173,7 +178,7 @@ def active_positions(state: dict) -> list[dict]:
     return [
         p
         for p in (state.get("live_positions") or [])
-        if (p.get("status") or "") in ("open", "half_taken")
+        if (p.get("status") or "") in ("open", "half_taken", "moon_bag")
     ]
 
 
@@ -538,7 +543,7 @@ def process_live_positions(
 
     for pos in positions:
         status = pos.get("status") or "open"
-        if status not in ("open", "half_taken"):
+        if status not in ("open", "half_taken", "moon_bag"):
             continue
         ca = pos.get("ca")
         entry = float(pos.get("entry_price") or 0)
@@ -750,8 +755,8 @@ def process_live_positions(
                 discord_post,
                 title=f"🟡 半分利確 · ${pos.get('symbol') or '?'}",
                 description=(
-                    f"**{mult:.2f}倍** · このPnL **{_fmt_money(pnl)}**\n"
-                    f"残り ~${float(pos.get('remaining_usd') or 0):,.2f}\n"
+                    f"**{mult:.2f}倍** · 半分利確で原資回収 · PnL **{_fmt_money(pnl)}**\n"
+                    f"残り ~${float(pos.get('remaining_usd') or 0):,.2f} → 3倍/5倍のあとムーン袋\n"
                     f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
                     f"`{ca}`"
                 ),
@@ -775,6 +780,308 @@ def process_live_positions(
             )
             print(f"live half_take {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}", flush=True)
             continue
+
+        # After 原資回収 (half_taken): 3x / 5x scale-out + 1.25x floor
+        if pos.get("half_taken") or status in ("half_taken", "moon_bag"):
+            peak = float(pos.get("peak_mult") or 0)
+            if mult > peak:
+                pos["peak_mult"] = mult
+
+            if (not pos.get("tp3_taken")) and mult >= LIVE_TP3_MULT:
+                # Sell half of remaining; leave rest as moon bag
+                data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 50)
+                if err or data is None:
+                    if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                        _close_already_flat(
+                            state, book, live, pos,
+                            now=now, price=price, entry=entry, mult=mult, rem=rem,
+                            reason="already_flat_tp3",
+                            webhook=webhook, discord_post=discord_post,
+                        )
+                        stats["stop"] += 1
+                        continue
+                    stats["fail"] += 1
+                    append_live_book(
+                        book,
+                        {"event": "tp3_failed", "ca": ca, "symbol": pos.get("symbol"), "reason": err or "swap_fail", "mult": mult},
+                    )
+                    print(f"live tp3 fail {ca[:10]}… {err}", flush=True)
+                    continue
+                half = rem / 2.0
+                exit_value = half * mult
+                pnl = exit_value - half
+                live["cash_usd"] = float(live.get("cash_usd") or 0) + exit_value
+                live["realized_pnl_usd"] = float(live.get("realized_pnl_usd") or 0) + pnl
+                pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+                pos["remaining_usd"] = rem - half
+                pos["remaining_pct"] = float(pos.get("remaining_pct") or 0) / 2.0
+                pos["tp3_taken"] = True
+                pos["tp3_taken_at"] = now
+                pos["tp3_taken_price"] = price
+                pos["moon_bag"] = True
+                pos["status"] = "moon_bag"
+                pos["swap_tp3"] = live_exec.summarize_swap_result(data)
+                stats["half"] += 1
+                _notify(
+                    webhook,
+                    discord_post,
+                    title=f"🟢 5倍利確+ムーン袋 · ${pos.get('symbol') or '?'}",
+                    description=(
+                        f"**{mult:.2f}倍** · 半分利確、残りはムーンバッグ\n"
+                        f"このPnL **{_fmt_money(pnl)}** · ムーン袋 ~${float(pos.get('remaining_usd') or 0):,.2f}\n"
+                        f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
+                        f"`{ca}`"
+                    ),
+                    color=0x2ECC71,
+                    state=state,
+                )
+                append_live_book(
+                    book,
+                    {
+                        "event": "tp3_moon_bag",
+                        "ca": ca,
+                        "symbol": pos.get("symbol"),
+                        "entry_price": entry,
+                        "exit_price": price,
+                        "mult": mult,
+                        "pnl_usd": pnl,
+                        "remaining_usd": pos["remaining_usd"],
+                        "swap": pos["swap_tp3"],
+                    },
+                )
+                print(f"live tp3_moon {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f} bag={pos['remaining_usd']:.2f}", flush=True)
+                continue
+
+            if (not pos.get("tp2_taken")) and mult >= LIVE_TP2_MULT:
+                data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 50)
+                if err or data is None:
+                    if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                        _close_already_flat(
+                            state, book, live, pos,
+                            now=now, price=price, entry=entry, mult=mult, rem=rem,
+                            reason="already_flat_tp2",
+                            webhook=webhook, discord_post=discord_post,
+                        )
+                        stats["stop"] += 1
+                        continue
+                    stats["fail"] += 1
+                    append_live_book(
+                        book,
+                        {"event": "tp2_failed", "ca": ca, "symbol": pos.get("symbol"), "reason": err or "swap_fail", "mult": mult},
+                    )
+                    print(f"live tp2 fail {ca[:10]}… {err}", flush=True)
+                    continue
+                half = rem / 2.0
+                exit_value = half * mult
+                pnl = exit_value - half
+                live["cash_usd"] = float(live.get("cash_usd") or 0) + exit_value
+                live["realized_pnl_usd"] = float(live.get("realized_pnl_usd") or 0) + pnl
+                pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+                pos["remaining_usd"] = rem - half
+                pos["remaining_pct"] = float(pos.get("remaining_pct") or 0) / 2.0
+                pos["tp2_taken"] = True
+                pos["tp2_taken_at"] = now
+                pos["tp2_taken_price"] = price
+                pos["status"] = "half_taken"
+                pos["swap_tp2"] = live_exec.summarize_swap_result(data)
+                stats["half"] += 1
+                _notify(
+                    webhook,
+                    discord_post,
+                    title=f"🟢 3倍利確 · ${pos.get('symbol') or '?'}",
+                    description=(
+                        f"**{mult:.2f}倍** · 残り半分利確 · PnL **{_fmt_money(pnl)}**\n"
+                        f"ムーン袋 ~${float(pos.get('remaining_usd') or 0):,.2f}\n"
+                        f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
+                        f"`{ca}`"
+                    ),
+                    color=0x27AE60,
+                    state=state,
+                )
+                append_live_book(
+                    book,
+                    {
+                        "event": "tp2",
+                        "ca": ca,
+                        "symbol": pos.get("symbol"),
+                        "entry_price": entry,
+                        "exit_price": price,
+                        "mult": mult,
+                        "pnl_usd": pnl,
+                        "remaining_usd": pos["remaining_usd"],
+                        "swap": pos["swap_tp2"],
+                    },
+                )
+                print(f"live tp2 {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}", flush=True)
+                continue
+
+            # Moon bag rides; 100x take-profit, else trail from peak
+            if pos.get("moon_bag") or status == "moon_bag":
+                peak_m = float(pos.get("peak_mult") or mult)
+                if mult > peak_m:
+                    pos["peak_mult"] = mult
+                    peak_m = mult
+
+                if (not pos.get("tp100_taken")) and mult >= LIVE_TP100_MULT:
+                    data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 100)
+                    if err or data is None:
+                        if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                            _close_already_flat(
+                                state, book, live, pos,
+                                now=now, price=price, entry=entry, mult=mult, rem=rem,
+                                reason="already_flat_tp100",
+                                webhook=webhook, discord_post=discord_post,
+                            )
+                            stats["stop"] += 1
+                            continue
+                        stats["fail"] += 1
+                        print(f"live tp100 fail {ca[:10]}… {err}", flush=True)
+                        continue
+                    exit_value = rem * mult
+                    pnl = exit_value - rem
+                    live["cash_usd"] = float(live.get("cash_usd") or 0) + exit_value
+                    live["realized_pnl_usd"] = float(live.get("realized_pnl_usd") or 0) + pnl
+                    pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+                    pos["status"] = "tp100_closed"
+                    pos["tp100_taken"] = True
+                    pos["closed_at"] = now
+                    pos["remaining_usd"] = 0
+                    pos["remaining_pct"] = 0
+                    pos["swap_tp100"] = live_exec.summarize_swap_result(data)
+                    stats["half"] += 1
+                    _notify(
+                        webhook,
+                        discord_post,
+                        title=f"💎 100倍利確 · ${pos.get('symbol') or '?'}",
+                        description=(
+                            f"**{mult:.2f}倍** · ムーン袋を利確 · PnL **{_fmt_money(pnl)}**\n"
+                            f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
+                            f"`{ca}`"
+                        ),
+                        color=0x3498DB,
+                        state=state,
+                    )
+                    append_live_book(
+                        book,
+                        {
+                            "event": "tp100",
+                            "ca": ca,
+                            "symbol": pos.get("symbol"),
+                            "entry_price": entry,
+                            "exit_price": price,
+                            "mult": mult,
+                            "pnl_usd": pnl,
+                            "swap": pos["swap_tp100"],
+                        },
+                    )
+                    print(f"live tp100 {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}", flush=True)
+                    continue
+
+                trail = peak_m * LIVE_MOON_TRAIL_FRAC
+                if peak_m >= LIVE_TP3_MULT and mult <= trail:
+                    data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 100)
+                    if err or data is None:
+                        if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                            _close_already_flat(
+                                state, book, live, pos,
+                                now=now, price=price, entry=entry, mult=mult, rem=rem,
+                                reason="already_flat_moon_trail",
+                                webhook=webhook, discord_post=discord_post,
+                            )
+                            stats["stop"] += 1
+                            continue
+                        stats["fail"] += 1
+                        print(f"live moon_trail fail {ca[:10]}… {err}", flush=True)
+                        continue
+                    exit_value = rem * mult
+                    pnl = exit_value - rem
+                    live["cash_usd"] = float(live.get("cash_usd") or 0) + exit_value
+                    live["realized_pnl_usd"] = float(live.get("realized_pnl_usd") or 0) + pnl
+                    pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+                    pos["status"] = "moon_trailed"
+                    pos["closed_at"] = now
+                    pos["remaining_usd"] = 0
+                    pos["remaining_pct"] = 0
+                    pos["swap_moon_trail"] = live_exec.summarize_swap_result(data)
+                    stats["stop"] += 1
+                    _notify(
+                        webhook,
+                        discord_post,
+                        title=f"🟣 ムーン袋トレール · ${pos.get('symbol') or '?'}",
+                        description=(
+                            f"**{mult:.2f}倍** · peak {peak_m:.2f}x → trail {trail:.2f}x\n"
+                            f"PnL **{_fmt_money(pnl)}**\n"
+                            f"`{ca}`"
+                        ),
+                        color=0x9B59B6,
+                        state=state,
+                    )
+                    append_live_book(
+                        book,
+                        {"event": "moon_trail", "ca": ca, "symbol": pos.get("symbol"), "mult": mult, "peak": peak_m, "pnl_usd": pnl},
+                    )
+                    print(f"live moon_trail {ca[:10]}… mult={mult:.2f} peak={peak_m:.2f}", flush=True)
+                    continue
+                stats["open"] += 1
+                continue
+
+            if mult <= LIVE_POST_HALF_STOP_MULT:
+                data, err = live_exec.swap_sell_token_to_usdc(pos_chain, ca, 100)
+                if err or data is None:
+                    if err == "already_flat" or "tokenBal=0" in str(err or ""):
+                        _close_already_flat(
+                            state, book, live, pos,
+                            now=now, price=price, entry=entry, mult=mult, rem=rem,
+                            reason="already_flat_post_half",
+                            webhook=webhook, discord_post=discord_post,
+                        )
+                        stats["stop"] += 1
+                        continue
+                    stats["fail"] += 1
+                    append_live_book(
+                        book,
+                        {"event": "post_half_stop_failed", "ca": ca, "symbol": pos.get("symbol"), "reason": err or "swap_fail", "mult": mult},
+                    )
+                    print(f"live post_half_stop fail {ca[:10]}… {err}", flush=True)
+                    continue
+                exit_value = rem * mult
+                pnl = exit_value - rem
+                live["cash_usd"] = float(live.get("cash_usd") or 0) + exit_value
+                live["realized_pnl_usd"] = float(live.get("realized_pnl_usd") or 0) + pnl
+                pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+                pos["status"] = "post_half_stopped"
+                pos["closed_at"] = now
+                pos["remaining_usd"] = 0
+                pos["remaining_pct"] = 0
+                pos["swap_post_half_stop"] = live_exec.summarize_swap_result(data)
+                stats["stop"] += 1
+                _notify(
+                    webhook,
+                    discord_post,
+                    title=f"🟠 回収後防衛 · ${pos.get('symbol') or '?'}",
+                    description=(
+                        f"**{mult:.2f}倍** · 原資回収後の残りを防衛決済 · PnL **{_fmt_money(pnl)}**\n"
+                        f"口座実現PnL **{_fmt_money(float(live.get('realized_pnl_usd') or 0))}**\n"
+                        f"`{ca}`"
+                    ),
+                    color=0xE67E22,
+                    state=state,
+                )
+                append_live_book(
+                    book,
+                    {
+                        "event": "post_half_stop",
+                        "ca": ca,
+                        "symbol": pos.get("symbol"),
+                        "entry_price": entry,
+                        "exit_price": price,
+                        "mult": mult,
+                        "pnl_usd": pnl,
+                        "swap": pos["swap_post_half_stop"],
+                    },
+                )
+                print(f"live post_half_stop {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}", flush=True)
+                continue
 
         stats["open"] += 1
 

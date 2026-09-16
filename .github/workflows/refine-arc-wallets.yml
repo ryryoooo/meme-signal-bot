@@ -1,0 +1,53 @@
+name: refine-arc-wallets
+
+on:
+  schedule:
+    # Tue/Fri 11:00 JST = 02:00 UTC
+    - cron: "0 2 * * 2,5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: refine-arc-wallets
+  cancel-in-progress: false
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Refine Arc quality watchlist
+        env:
+          CHAIN: arc
+          WATCHLIST_PATH: arc-wallets/wallets_quality.jsonl
+          WATCH_MIN_REALIZED_USD: "0"
+          WATCH_MIN_SINGLE_TOKEN_PNL: "100"
+          WATCH_DROP_ONCHAIN_ONLY: "1"
+          WATCH_MIN_WINRATE: "0.40"
+          WATCH_MIN_TRADES_FOR_WR: "10"
+        run: |
+          python3 bot.py --refine-wallets
+          if [ -f arc-wallets/wallets.jsonl ]; then
+            WATCHLIST_PATH=arc-wallets/wallets.jsonl python3 bot.py --refine-wallets || true
+          fi
+
+      - name: Commit if changed
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add arc-wallets/wallets_quality.jsonl arc-wallets/wallets.jsonl || true
+          if git diff --cached --quiet; then
+            echo "no wallet changes"
+          else
+            git commit -m "chore: refine Arc wallets (drop weak/no-track-record)"
+            git push
+          fi
