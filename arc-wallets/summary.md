@@ -1,6 +1,6 @@
 # Arc wallets (bot watchlist)
 
-- Updated JST: 2026-09-16T15:39:09.858591+09:00
+- Updated JST: 2026-09-16T15:40:43.745923+09:00
 - Quality GMGN-tagged: **96**
 - Activity-only: **600**
 - Total exported: **696**

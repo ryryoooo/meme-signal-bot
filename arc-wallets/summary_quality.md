@@ -1,7 +1,7 @@
 # Arc wallets — quality filter (bot export)
 
-- JST: 2026-09-16T15:39:09.858591+09:00
-- UTC: 2026-09-16T06:39:09.858591+00:00
+- JST: 2026-09-16T15:40:43.745923+09:00
+- UTC: 2026-09-16T06:40:43.745923+00:00
 - Raw unique pool: **5488**
 - **Quality (GMGN-tagged / profit signals): 96**
 - **Activity-only (on-chain top): 600** (cap 600)

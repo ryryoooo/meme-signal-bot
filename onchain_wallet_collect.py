@@ -118,6 +118,22 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
+
+
+def party_addr(v) -> str | None:
+    """Normalize address from str or nested {address|hash}."""
+    if isinstance(v, str):
+        a = v.lower()
+        return a if addr_ok(a) else None
+    if isinstance(v, dict):
+        a = (v.get("address") or v.get("hash") or "")
+        if isinstance(a, dict):
+            a = a.get("address") or a.get("hash") or ""
+        if isinstance(a, str):
+            a = a.lower()
+            return a if addr_ok(a) else None
+    return None
+
 def find_first(paths: list[Path]) -> Path | None:
     for p in paths:
         if p.is_file():
@@ -224,13 +240,8 @@ def arcscan_paginate(path: str, max_pages: int = 4, limit: int = 100) -> list[di
 def extract_addrs_from_arc_transfer(item: dict, bags: dict[str, dict]) -> None:
     # shapes vary: from/to as str or nested
     for key in ("from", "to", "from_address", "to_address", "sender", "recipient"):
-        v = item.get(key)
-        a = None
-        if isinstance(v, str):
-            a = v.lower()
-        elif isinstance(v, dict):
-            a = (v.get("address") or v.get("hash") or "").lower()
-        if not addr_ok(a):
+        a = party_addr(item.get(key))
+        if not a:
             continue
         rec = bags[a]
         rec["address"] = a
@@ -263,8 +274,11 @@ def collect_arc_inline() -> dict:
 
     accounts = arcscan_paginate("/v1/explore/accounts", max_pages=3, limit=100)
     for it in accounts:
-        a = (it.get("address") or it.get("hash") or "").lower()
-        if not addr_ok(a):
+        a = party_addr(it.get("address") or it.get("hash") or it)
+        if not a:
+            # account rows sometimes nest under "account"
+            a = party_addr(it.get("account"))
+        if not a:
             continue
         rec = bags[a]
         rec["address"] = a
