@@ -86,14 +86,22 @@ def active_positions(state: dict) -> list[dict]:
     ]
 
 
-def can_open_paper(state: dict) -> tuple[bool, str]:
+def can_open_paper(state: dict, chain: str | None = None) -> tuple[bool, str]:
     paper = ensure_paper_state(state)
     _rollover_week(paper)
     if paper.get("week_stopped"):
         return False, "week_stopped_3_losses"
     if int(paper.get("week_entries") or 0) >= PAPER_MAX_ENTRIES_WEEK:
         return False, "week_max_entries"
-    if active_positions(state):
+    active = active_positions(state)
+    if active:
+        # 実戦: チェーン別に1本まで（RHとArcを並行可）
+        one_per = str(os.environ.get("PAPER_ONE_PER_CHAIN") or "1").strip().lower() in ("1", "true", "yes")
+        if one_per and chain:
+            ch = (chain or "").lower()
+            if any((p.get("chain") or "").lower() == ch for p in active):
+                return False, "already_in_position"
+            return True, "ok"
         return False, "already_in_position"
     return True, "ok"
 
@@ -115,7 +123,7 @@ def open_paper_position(
     """Open virtual position. Returns None if blocked by risk rules."""
     paper = ensure_paper_state(state)
     _rollover_week(paper)
-    ok, reason = can_open_paper(state)
+    ok, reason = can_open_paper(state, chain=chain)
     if not ok:
         append_paper_book(
             book_path,

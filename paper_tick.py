@@ -31,6 +31,7 @@ STATE = LIVE / "state.json"
 BOOK = LIVE / "paper_book.jsonl"
 LOG = LIVE / "tick.log"
 REPO = os.environ.get("PAPER_REPO") or "ryryoooo/meme-signal-bot"
+WORKFLOWS = [w.strip() for w in (os.environ.get("PAPER_SYNC_WORKFLOWS") or "meme-signal,meme-signal-arc").split(",") if w.strip()]
 INTERVAL = float(os.environ.get("PAPER_TICK_SEC") or "5")
 SYNC_EVERY = float(os.environ.get("PAPER_SYNC_SEC") or "90")
 CHAIN = os.environ.get("CHAIN") or "robinhood"
@@ -39,6 +40,38 @@ GMGN_MIN_GAP = float(os.environ.get("PAPER_GMGN_GAP_SEC") or "20")
 _gmgn_last: dict[str, float] = {}
 _price_cache: dict[str, tuple[float, dict]] = {}
 _PRICE_TTL = 8.0
+
+
+
+def _load_discord_webhooks():
+    try:
+        from load_secrets import load as load_secrets
+        load_secrets(["DISCORD_PAPER_WEBHOOK_URL", "DISCORD_ARC_PAPER", "DISCORD_WEBHOOK_URL", "DISCORD_ARC_WEBHOOK_URL"])
+    except Exception:
+        pass
+
+
+def _paper_webhook(chain: str) -> str | None:
+    _load_discord_webhooks()
+    ch = (chain or "").lower()
+    if ch == "arc":
+        u = (os.environ.get("DISCORD_ARC_PAPER") or os.environ.get("DISCORD_PAPER_WEBHOOK_URL") or "").strip()
+        if u:
+            return u
+    return (os.environ.get("DISCORD_PAPER_WEBHOOK_URL") or os.environ.get("DISCORD_WEBHOOK_URL") or "").strip() or None
+
+
+def _discord_post(url: str, embeds: list) -> None:
+    import urllib.request
+    body = json.dumps({"content": "", "embeds": embeds}).encode()
+    req = urllib.request.Request(
+        url + "?wait=true",
+        data=body,
+        headers={"Content-Type": "application/json", "User-Agent": "paper-tick-live/1.0"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        resp.read()
 
 
 def log(msg: str) -> None:
@@ -165,23 +198,28 @@ def fetch_price(ca: str, chain: str) -> dict:
 def _download_remote_state() -> dict | None:
     """Prefer newest artifact that still has alerts / opens / posted log rows."""
     try:
-        out = subprocess.check_output(
-            [
-                "gh",
-                "run",
-                "list",
-                "-R",
-                REPO,
-                "--workflow=meme-signal",
-                "--limit",
-                "8",
-                "--json",
-                "databaseId",
-            ],
-            text=True,
-            timeout=30,
-        )
-        runs = json.loads(out)
+        runs = []
+        for wf_name in WORKFLOWS:
+            try:
+                out = subprocess.check_output(
+                    [
+                        "gh",
+                        "run",
+                        "list",
+                        "-R",
+                        REPO,
+                        f"--workflow={wf_name}",
+                        "--limit",
+                        "5",
+                        "--json",
+                        "databaseId",
+                    ],
+                    text=True,
+                    timeout=30,
+                )
+                runs.extend(json.loads(out))
+            except Exception:
+                continue
     except Exception as e:
         log(f"sync skip: {type(e).__name__}")
         return None
@@ -307,6 +345,7 @@ def sync_from_gha_alerts(local: dict) -> dict:
                         "alert_liq": row.get("liq"),
                         "posted_at": posted_at,
                         "n": row.get("n") or 2,
+                        "chain": row.get("chain") or CHAIN,
                     }
                 )
         except Exception as e:
@@ -368,6 +407,9 @@ def sync_from_gha_alerts(local: dict) -> dict:
         if age > 6 * 3600:
             seen.add(ca)
             continue
+        alert_chain = (alert.get("chain") or CHAIN or "robinhood").lower()
+        discord_on = str(os.environ.get("PAPER_DISCORD") or "1").strip().lower() in ("1", "true", "yes")
+        wh = _paper_webhook(alert_chain) if discord_on else None
         pos = paper_mod.open_paper_position(
             local,
             BOOK,
@@ -375,11 +417,11 @@ def sync_from_gha_alerts(local: dict) -> dict:
             symbol=alert.get("symbol"),
             entry_price=price,
             n=int(alert.get("n") or 2),
-            chain=CHAIN,
+            chain=alert_chain,
             mcap=alert.get("alert_mcap"),
             liq=alert.get("alert_liq"),
-            webhook=None,
-            discord_post=None,
+            webhook=wh,
+            discord_post=_discord_post if wh else None,
         )
         seen.add(ca)
         if pos:
@@ -417,13 +459,16 @@ def main() -> int:
             (p.get("ca") or "").lower(): p.get("status")
             for p in (st.get("paper_positions") or [])
         }
+        # 実戦仕様: 半分利確/ストップを紙チャンネルへ通知
+        discord_on = str(os.environ.get("PAPER_DISCORD") or "1").strip().lower() in ("1", "true", "yes")
+        wh = _paper_webhook(CHAIN) if discord_on else None
         stats = paper_mod.process_paper_positions(
             st,
             BOOK,
             CHAIN,
             lambda ca, ch: fetch_price(ca, ch or CHAIN),
-            webhook=None,
-            discord_post=None,
+            webhook=wh,
+            discord_post=_discord_post if wh else None,
         )
         closed = list(st.get("tick_closed_cas") or [])
         for p in st.get("paper_positions") or []:
