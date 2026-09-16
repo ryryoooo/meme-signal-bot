@@ -1,0 +1,943 @@
+{
+  "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+  "symbol": "MsMinara",
+  "buy_tx": "0x472e5d5166c9cb505304ec384120feec3faad0385a2ca448c24a0e05af8131fc",
+  "buy_ts": 1789553933,
+  "block": 21141899,
+  "entry_price": 1.791515e-05,
+  "max_avg_cost": 2.6872725e-05,
+  "fetched_at": "2026-09-16T10:48:17.709112+00:00",
+  "stats": {
+    "raw": 100,
+    "no_addr": 0,
+    "self": 0,
+    "infra": 0,
+    "bad_tag": 37,
+    "late": 7,
+    "dust": 4,
+    "low_profit": 3,
+    "avg_cost_high": 0,
+    "kept": 49
+  },
+  "survivors": [
+    {
+      "address": "0x6247644bf6c5a096494cdd0ec6ab986462314b5b",
+      "realized_profit": 308.81551852477077,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 78.408,
+      "avg_cost": 5.053405585228075e-06,
+      "start_holding_at": 1789552887.0,
+      "sell_volume_cur": 387.2454495124222,
+      "tags": [
+        "TOP1"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x92cb400f1037492d03f97000081c1ad55cc168e0",
+      "realized_profit": 299.9259063899093,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 392.04,
+      "avg_cost": 8.483517950134108e-06,
+      "start_holding_at": 1789553580.0,
+      "sell_volume_cur": 692.0727099068415,
+      "tags": [
+        "fresh_wallet",
+        "TOP2"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x9140d187486aa3459e7057bbdbd140e414bdf16f",
+      "realized_profit": 210.59047893951126,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 384.238404,
+      "avg_cost": 9.138022805494631e-06,
+      "start_holding_at": 1789553581.0,
+      "sell_volume_cur": 594.963278874764,
+      "tags": [
+        "TOP4"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xd389ff0895d741a2a875e66bc4dccc200266b7e9",
+      "realized_profit": 120.41560927594765,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 147.015,
+      "avg_cost": 1.079264716519119e-05,
+      "start_holding_at": 1789553711.0,
+      "sell_volume_cur": 271.68132150806923,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP8"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x5d09a0ee4d1f2344c862e9d810a74f2bc965af09",
+      "realized_profit": 112.6627844037756,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 58.806,
+      "avg_cost": 4.703543400152538e-06,
+      "start_holding_at": 1789552871.0,
+      "sell_volume_cur": 171.50962248417213,
+      "tags": [
+        "TOP9"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xc9b2f7f702e6c403c82185f0d555d503e5890b1d",
+      "realized_profit": 100.48845133486827,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 8.237227803925994e-06,
+      "start_holding_at": 1789553588.0,
+      "sell_volume_cur": 198.55146318284582,
+      "tags": [
+        "fresh_wallet",
+        "TOP10"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x38f6379456ee9bf44ec5198017f9cc2b1350af8f",
+      "realized_profit": 65.50724493357804,
+      "unrealized_profit": 31.6606191064391,
+      "buy_volume_cur": 196.02,
+      "avg_cost": 4.665038490035424e-06,
+      "start_holding_at": 1789552874.0,
+      "sell_volume_cur": 199.64824368138466,
+      "tags": [
+        "gmgn",
+        "top_holder",
+        "TOP12"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x81eab38f8344f9ad1a9fa8f100081f83497fdddc",
+      "realized_profit": 60.98849069063569,
+      "unrealized_profit": -0.05315449671080656,
+      "buy_volume_cur": 196.02,
+      "avg_cost": 1.0355608601393394e-05,
+      "start_holding_at": 1789553045.0,
+      "sell_volume_cur": 261.4847514011895,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP13"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x3fd9e7989678d7dbaf0dadcfa3bbe746e46e2866",
+      "realized_profit": 59.85316634719808,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 9.159144361699125e-06,
+      "start_holding_at": 1789553033.0,
+      "sell_volume_cur": 160.4991365454142,
+      "tags": [
+        "gmgn",
+        "TOP15"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x5d3d2664b1d120a5b6bd64006b9cffb077ea904f",
+      "realized_profit": 55.49708532349308,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 49.005,
+      "avg_cost": 9.38081079411307e-06,
+      "start_holding_at": 1789553034.0,
+      "sell_volume_cur": 105.57287433448703,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP18"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x6d5c6c2a3b399bff7c12a95a7eeddf795ddf549a",
+      "realized_profit": 54.88752836992382,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 8.52752026816489e-06,
+      "start_holding_at": 1789553605.0,
+      "sell_volume_cur": 152.93803953004738,
+      "tags": [
+        "fresh_wallet",
+        "TOP20"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x92120167e9737726bf6f4f27c12e7316d407e45c",
+      "realized_profit": 51.058115007847576,
+      "unrealized_profit": 1.8755282060173784,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 6.719737418479175e-06,
+      "start_holding_at": 1789553566.0,
+      "sell_volume_cur": 100.09931030680404,
+      "tags": [
+        "fresh_wallet",
+        "top_holder",
+        "TOP21"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xd2b876f9496911f64a31c6cb4d8f3dbf8c485e7c",
+      "realized_profit": 51.05246299930994,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 147.015,
+      "avg_cost": 1.940200460959241e-05,
+      "start_holding_at": 1789553932.0,
+      "sell_volume_cur": 198.10035554723333,
+      "tags": [
+        "fresh_wallet",
+        "TOP22"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x4af2561ba7b7b7a61c975b6560bd1d94df657563",
+      "realized_profit": 50.76970807424494,
+      "unrealized_profit": 7.28467018518775,
+      "buy_volume_cur": 49.005,
+      "avg_cost": 5.203861471482194e-06,
+      "start_holding_at": 1789552905.0,
+      "sell_volume_cur": 78.82080095873954,
+      "tags": [
+        "gmgn",
+        "TOP24"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x9364b93a7316d3b34641cba4daa0748f58d1230a",
+      "realized_profit": 43.8068758981603,
+      "unrealized_profit": 8.90609499260852,
+      "buy_volume_cur": 49.005,
+      "avg_cost": 5.095392278012789e-06,
+      "start_holding_at": 1789552899.0,
+      "sell_volume_cur": 68.96848073873251,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP27"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xdf7a3b44d7f352708ec465f64780b1b5ce6ed5d9",
+      "realized_profit": 41.057541518328875,
+      "unrealized_profit": 92.97431349793254,
+      "buy_volume_cur": 196.02,
+      "avg_cost": 4.5690334307386866e-06,
+      "start_holding_at": 1789552870.0,
+      "sell_volume_cur": 60.67263923920449,
+      "tags": [
+        "top_holder",
+        "TOP28"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xd27e11a980488c4b5741163aeb960dbb7e511faa",
+      "realized_profit": 40.663902803012434,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 129.3732,
+      "avg_cost": 9.228686380869763e-06,
+      "start_holding_at": 1789553661.0,
+      "sell_volume_cur": 170.11433557683995,
+      "tags": [
+        "TOP29"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x125735cd88ab500f157c3e2064b804bf13ebbc82",
+      "realized_profit": 40.25539049530408,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 78.408,
+      "avg_cost": 1.3030646753031736e-05,
+      "start_holding_at": 1789553782.0,
+      "sell_volume_cur": 120.70414293433916,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP30"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xe0cb3d9542a786c60605dd55efb9ef79490a3d6c",
+      "realized_profit": 39.9766707524234,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 9.90095879154901e-06,
+      "start_holding_at": 1789553045.0,
+      "sell_volume_cur": 140.4454888282116,
+      "tags": [
+        "gmgn",
+        "TOP31"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x22bbb652fe47140ec2075acb866a503426be6cd7",
+      "realized_profit": 37.81685235271375,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 147.015,
+      "avg_cost": 2.003879668675333e-05,
+      "start_holding_at": 1789553932.0,
+      "sell_volume_cur": 184.86480908839644,
+      "tags": [
+        "TOP32"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xcc475ea8d95bf43f25473640b1f901de2a7f2d8c",
+      "realized_profit": 32.996024770004986,
+      "unrealized_profit": -18.917171489039482,
+      "buy_volume_cur": 122.5125,
+      "avg_cost": 9.47368538131317e-06,
+      "start_holding_at": 1789553041.0,
+      "sell_volume_cur": 82.03505740939438,
+      "tags": [
+        "fresh_wallet",
+        "top_holder",
+        "TOP33"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x7aa026897adfb922e5e4f3c700a31aa47d00419d",
+      "realized_profit": 32.92209891284911,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 49.5,
+      "avg_cost": 9.496463387639812e-06,
+      "start_holding_at": 1789553675.0,
+      "sell_volume_cur": 82.4776536034232,
+      "tags": [
+        "TOP35"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x7dd444bd0f1a04bfc26838fbb1f9315c503d1177",
+      "realized_profit": 28.55104595809744,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 147.015,
+      "avg_cost": 8.83426405100837e-06,
+      "start_holding_at": 1789553032.0,
+      "sell_volume_cur": 178.90071503262868,
+      "tags": [
+        "gmgn",
+        "TOP39"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x355a1b0565ecda49cce39f30b72ae719723b00d4",
+      "realized_profit": 26.380156689529745,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 9.423347428974043e-06,
+      "start_holding_at": 1789553036.0,
+      "sell_volume_cur": 126.67691256422783,
+      "tags": [
+        "gmgn",
+        "TOP41"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x5421c7192357b4186d98e5476d362bdf4d0c7b30",
+      "realized_profit": 22.192644918030958,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 1.2017184227635031e-05,
+      "start_holding_at": 1789553047.0,
+      "sell_volume_cur": 122.46515094088645,
+      "tags": [
+        "gmgn",
+        "TOP44"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x6fd29e1fe3aacd1624801ed9ec858c48442f399e",
+      "realized_profit": 18.229278653946924,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 53.9055,
+      "avg_cost": 8.354843327588208e-06,
+      "start_holding_at": 1789553029.0,
+      "sell_volume_cur": 73.4455529477765,
+      "tags": [
+        "gmgn",
+        "TOP47"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xd34eeb70c927844677ca2ffa258636e052be776b",
+      "realized_profit": 17.617778589480206,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 196.02,
+      "avg_cost": 1.1299179342713125e-05,
+      "start_holding_at": 1789553046.0,
+      "sell_volume_cur": 213.7023314738456,
+      "tags": [
+        "TOP48"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x92dae7a6470caad4e1729e2b16327604a96f7014",
+      "realized_profit": 16.59015987134562,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 49.005,
+      "avg_cost": 8.598408054242891e-06,
+      "start_holding_at": 1789553031.0,
+      "sell_volume_cur": 65.63320623685784,
+      "tags": [
+        "TOP50"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x65241674b2c4871b637f92fc59c26f8f2766d286",
+      "realized_profit": 10.722836230045122,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 29.403,
+      "avg_cost": 1.1091096186987025e-05,
+      "start_holding_at": 1789553730.0,
+      "sell_volume_cur": 40.87199382936714,
+      "tags": [
+        "gmgn",
+        "TOP55"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x6cd456ddb18b621b2dd04c9827c27215625b4452",
+      "realized_profit": 10.520964952893198,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 19.602,
+      "avg_cost": 9.306844422937871e-06,
+      "start_holding_at": 1789553495.0,
+      "sell_volume_cur": 30.247215616635902,
+      "tags": [
+        "fresh_wallet",
+        "TOP56"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x4bf778c466ca3cf469e83c38531429549457232c",
+      "realized_profit": 9.28473515075974,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 2.0578024531461838e-05,
+      "start_holding_at": 1789553932.0,
+      "sell_volume_cur": 109.40219968697508,
+      "tags": [
+        "gmgn",
+        "TOP57"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xa3160653eb51c78736b6d06d6656c2b63eb42997",
+      "realized_profit": 9.203863643069564,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 49.005,
+      "avg_cost": 2.090498835045004e-05,
+      "start_holding_at": 1789553932.0,
+      "sell_volume_cur": 58.245362068186296,
+      "tags": [
+        "TOP58"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xb7581f180e0a4999db3cc86f71ad0397ee2a8cf4",
+      "realized_profit": 8.61491293253985,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 24.5025,
+      "avg_cost": 9.870329898849804e-06,
+      "start_holding_at": 1789553201.0,
+      "sell_volume_cur": 33.14681329253985,
+      "tags": [
+        "fresh_wallet",
+        "TOP60"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xdae045095941eb88c2045d7a8259490429e3159c",
+      "realized_profit": 8.077592527907548,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 19.602,
+      "avg_cost": 8.984024213036665e-06,
+      "start_holding_at": 1789553032.0,
+      "sell_volume_cur": 28.191612448921187,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP62"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x8331dda98df271319b342e181242d4462f8f6364",
+      "realized_profit": 7.404706894153734,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.8802,
+      "avg_cost": 1.235329846073328e-05,
+      "start_holding_at": 1789553805.0,
+      "sell_volume_cur": 17.328349851658857,
+      "tags": [
+        "TOP64"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xc7ea78f5749ea19b19c652fad63f0d13449d7864",
+      "realized_profit": 4.7932066218732805,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 1.2176661165553155e-05,
+      "start_holding_at": 1789553863.0,
+      "sell_volume_cur": 14.64329492187328,
+      "tags": [
+        "TOP69"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x01ae3a0516715c5ac49c7043f004b26edabea517",
+      "realized_profit": 4.6329917216301615,
+      "unrealized_profit": -0.10700698122075814,
+      "buy_volume_cur": 4.9005,
+      "avg_cost": 7.268576524119993e-06,
+      "start_holding_at": 1789553499.0,
+      "sell_volume_cur": 7.110971591800677,
+      "tags": [
+        "TOP70"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x56b9529232042d4e052e369f82d8f839b028132b",
+      "realized_profit": 4.622068734160897,
+      "unrealized_profit": -1.338512423848195,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 9.585936426897383e-06,
+      "start_holding_at": 1789553680.0,
+      "sell_volume_cur": 9.537306374160897,
+      "tags": [
+        "TOP71"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xd9183b807b769a344ae075e098ccbb65a434fa91",
+      "realized_profit": 4.531919323547418,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 1.2496881572802378e-05,
+      "start_holding_at": 1789553221.0,
+      "sell_volume_cur": 14.361787693031491,
+      "tags": [
+        "TOP72"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x22cbc5ce0b9a0b54b32782b21c48bd5b008ce689",
+      "realized_profit": 3.6597471816749714,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 9.660412474740597e-06,
+      "start_holding_at": 1789553697.0,
+      "sell_volume_cur": 13.517202274281994,
+      "tags": [
+        "TOP73"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x008a7f04fc0cfb6ab531cbccd503608c0d4b22be",
+      "realized_profit": 3.3930768475533992,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 34.3035,
+      "avg_cost": 8.47975562156998e-06,
+      "start_holding_at": 1789553030.0,
+      "sell_volume_cur": 38.48397411689657,
+      "tags": [
+        "gmgn",
+        "TOP74"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x6f65c8f51c25bde4bf28254e3b3908310a5525f6",
+      "realized_profit": 3.2326935992162595,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 1.35638851958874e-05,
+      "start_holding_at": 1789553788.0,
+      "sell_volume_cur": 13.074074113691037,
+      "tags": [
+        "TOP75"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x37b368b33c47dde74597830af5360ab196f9a0fb",
+      "realized_profit": 2.981780410932772,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 34.3035,
+      "avg_cost": 1.8138349646901257e-05,
+      "start_holding_at": 1789553899.0,
+      "sell_volume_cur": 37.378505240494434,
+      "tags": [
+        "TOP77"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xd6f3a68c3c75cc45cfd3aa2553e5a1b5364945ec",
+      "realized_profit": 2.554972399402026,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 2.0651686738605922e-05,
+      "start_holding_at": 1789553889.0,
+      "sell_volume_cur": 12.604241338654708,
+      "tags": [
+        "gmgn",
+        "TOP82"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x7689b99ed5759fbc5fac9180815cd73bdb13b8cd",
+      "realized_profit": 2.1976417625103366,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 4.9401,
+      "avg_cost": 8.375038075922264e-06,
+      "start_holding_at": 1789553417.0,
+      "sell_volume_cur": 7.185153084953504,
+      "tags": [
+        "TOP84"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x2586cffa4df6e02d4e87a1edffe059380f033ecb",
+      "realized_profit": 2.1447572691924517,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 1.2519433711426096e-05,
+      "start_holding_at": 1789553048.0,
+      "sell_volume_cur": 100.19541257565245,
+      "tags": [
+        "TOP85"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0x394d3d7e0a0c3692c911a05f156b4f653a99a9ce",
+      "realized_profit": 1.0573180532346338,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.01,
+      "avg_cost": 1.9798368156279672e-05,
+      "start_holding_at": 1789553908.0,
+      "sell_volume_cur": 99.10258365037306,
+      "tags": [
+        "fresh_wallet",
+        "TOP86"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xe1a5d989cd8a366044639a335804e152b02d571f",
+      "realized_profit": 1.0124698585874738,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 9.801,
+      "avg_cost": 9.04174337866264e-06,
+      "start_holding_at": 1789553136.0,
+      "sell_volume_cur": 10.861024053261302,
+      "tags": [
+        "TOP87"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    },
+    {
+      "address": "0xa830539aa7e9fe21c312e6cc304babb34e666666",
+      "realized_profit": 1.0116482046823847,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 79.002,
+      "avg_cost": 1.1505201846188177e-05,
+      "start_holding_at": 1789553915.0,
+      "sell_volume_cur": 80.13182919296916,
+      "tags": [
+        "TOP88"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MsMinara",
+      "token": "0x7bf48c6a73f60e25ea53e7fa66573bdc9de2e3bf",
+      "our_buy_ts": 1789553933,
+      "our_entry_price": 1.791515e-05
+    }
+  ]
+}

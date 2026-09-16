@@ -1,0 +1,363 @@
+{
+  "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+  "symbol": "MICA",
+  "buy_tx": "0x876a47fe4f1d370324320a52800ed9082704755660b24073951bc38bb82131e1",
+  "buy_ts": 1789554234,
+  "block": 21142493,
+  "entry_price": 0.00031336303,
+  "max_avg_cost": 0.00047004454499999996,
+  "fetched_at": "2026-09-16T10:48:30.535294+00:00",
+  "stats": {
+    "raw": 100,
+    "no_addr": 0,
+    "self": 0,
+    "infra": 0,
+    "bad_tag": 82,
+    "late": 0,
+    "dust": 0,
+    "low_profit": 0,
+    "avg_cost_high": 0,
+    "kept": 18
+  },
+  "survivors": [
+    {
+      "address": "0x141543d97fffed2d4ac17ab2182204429d673767",
+      "realized_profit": 4009.6036692872713,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 198.5,
+      "avg_cost": 1.3104853782429552e-05,
+      "start_holding_at": 1789553105.0,
+      "sell_volume_cur": 4208.142547201589,
+      "tags": [
+        "TOP17"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x275acc50a2062608604c1755162ac71cad502c77",
+      "realized_profit": 3354.5039640204936,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 1473.8625,
+      "avg_cost": 8.822458155688947e-05,
+      "start_holding_at": 1789553743.0,
+      "sell_volume_cur": 4828.492539760404,
+      "tags": [
+        "TOP20"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x33ba61b4530f36befc324b211eacaa877dbe7801",
+      "realized_profit": 2521.591277359066,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 2259.9225,
+      "avg_cost": 0.00021809038822151913,
+      "start_holding_at": 1789554106.0,
+      "sell_volume_cur": 4852.755690237409,
+      "tags": [
+        "gmgn",
+        "TOP23"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x6c2325da64aaa47c6ae26bf3e81e9e70f42d5c23",
+      "realized_profit": 1262.345953359271,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 493.2725,
+      "avg_cost": 0.00011132726201605154,
+      "start_holding_at": 1789553705.0,
+      "sell_volume_cur": 1755.6342330626471,
+      "tags": [
+        "TOP27"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x00905e8545e1b20aaa6817039fd6790038e6d0ef",
+      "realized_profit": 1107.2053467994294,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 491.2875,
+      "avg_cost": 9.729020706631635e-05,
+      "start_holding_at": 1789552852.0,
+      "sell_volume_cur": 1598.5696916034494,
+      "tags": [
+        "fresh_wallet",
+        "gmgn",
+        "TOP30"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x183c52c9aa1896e0ba558644982c2fc425f6258d",
+      "realized_profit": 1091.159872305416,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 687.8025,
+      "avg_cost": 5.7286290052368686e-05,
+      "start_holding_at": 1789554161.0,
+      "sell_volume_cur": 1804.1014394025565,
+      "tags": [
+        "gmgn",
+        "TOP31"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xa023df3581b93cf3cb2330b419c0444b34239a51",
+      "realized_profit": 984.337804175553,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 294.7725,
+      "avg_cost": 5.934748439096613e-05,
+      "start_holding_at": 1789552844.0,
+      "sell_volume_cur": 1295.0728040194267,
+      "tags": [
+        "gmgn",
+        "TOP35"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xde9c0b07a05ca55bec5f2feaf9219d3942f94e5d",
+      "realized_profit": 961.3187245318912,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 582.69645225,
+      "avg_cost": 5.3861052533691716e-05,
+      "start_holding_at": 1789554162.0,
+      "sell_volume_cur": 1544.3516807281312,
+      "tags": [
+        "fresh_wallet",
+        "TOP37"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xffe50d0914f9bdebb2e431886ca196086ac41ecf",
+      "realized_profit": 933.3461012502421,
+      "unrealized_profit": 6.228019960325181,
+      "buy_volume_cur": 245.64375,
+      "avg_cost": 4.134855985027044e-05,
+      "start_holding_at": 1789552830.0,
+      "sell_volume_cur": 1180.85473364131,
+      "tags": [
+        "gmgn",
+        "TOP38"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xea9e737d841f66df2b25ddf7f0c80fca3428fbcc",
+      "realized_profit": 769.1691480020135,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 245.64375,
+      "avg_cost": 9.175298525143493e-05,
+      "start_holding_at": 1789553977.0,
+      "sell_volume_cur": 1014.8718416545247,
+      "tags": [
+        "TOP41"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xb61719b2145ec727dc3b262f56c9250ae9f9e0e8",
+      "realized_profit": 669.2848356143343,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 294.7725,
+      "avg_cost": 0.00015816184929549348,
+      "start_holding_at": 1789553123.0,
+      "sell_volume_cur": 964.1410847802819,
+      "tags": [
+        "TOP51"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x4d9644d05fe2123b4eafa8d7fd31b0ea430726f3",
+      "realized_profit": 432.63037717009007,
+      "unrealized_profit": 27.76269953393264,
+      "buy_volume_cur": 245.64375,
+      "avg_cost": 4.290366422837365e-05,
+      "start_holding_at": 1789552830.0,
+      "sell_volume_cur": 624.9754097429419,
+      "tags": [
+        "kol",
+        "gmgn",
+        "TOP76"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x3472ccf6209925204b9cf352171ee150904fda7e",
+      "realized_profit": 415.77194543913987,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 491.2875,
+      "avg_cost": 0.00020626228904690997,
+      "start_holding_at": 1789552891.0,
+      "sell_volume_cur": 921.2377642552757,
+      "tags": [
+        "gmgn",
+        "TOP82"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x3aea946dde67b5a304b9ce9d90895192d8e924b6",
+      "realized_profit": 361.6632069075464,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 1179.09,
+      "avg_cost": 0.00033415833439882876,
+      "start_holding_at": 1789554150.0,
+      "sell_volume_cur": 1568.5683909932586,
+      "tags": [
+        "gmgn",
+        "TOP90"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xb8a20451b5de1e60849b0b01c3e82de61123b29b",
+      "realized_profit": 312.00228462013354,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 393.03,
+      "avg_cost": 0.0001583324656161144,
+      "start_holding_at": 1789554219.0,
+      "sell_volume_cur": 716.1949298751541,
+      "tags": [
+        "gmgn",
+        "TOP96"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x70d9cfb5f78132410379550dbe14bf5e3ce3fb30",
+      "realized_profit": 310.2232441024554,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 196.515,
+      "avg_cost": 9.736890234635911e-05,
+      "start_holding_at": 1789552865.0,
+      "sell_volume_cur": 513.9790445568773,
+      "tags": [
+        "gmgn",
+        "TOP97"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0xb3f1dfd86b5a42394065cda4eb3d06d5cd180176",
+      "realized_profit": 303.52858187249285,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 491.2875,
+      "avg_cost": 7.433424398146799e-05,
+      "start_holding_at": 1789553887.0,
+      "sell_volume_cur": 807.8894728619533,
+      "tags": [
+        "smart_degen",
+        "gmgn",
+        "TOP98"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    },
+    {
+      "address": "0x116b89451093469f41878c633fa61ce475d49dfc",
+      "realized_profit": 276.39074676052036,
+      "unrealized_profit": 0.0,
+      "buy_volume_cur": 98.2575,
+      "avg_cost": 6.729626492481837e-05,
+      "start_holding_at": 1789553879.0,
+      "sell_volume_cur": 374.7458105524446,
+      "tags": [
+        "TOP108"
+      ],
+      "early_time": true,
+      "early_cost": true,
+      "symbol": "MICA",
+      "token": "0x297f1a5d13ecc5ba2dc2fe2ad5d016603001f682",
+      "our_buy_ts": 1789554234,
+      "our_entry_price": 0.00031336303
+    }
+  ]
+}

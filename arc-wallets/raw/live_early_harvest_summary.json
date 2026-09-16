@@ -1,0 +1,182 @@
+{
+  "fetched_at": "2026-09-16T10:50:00+00:00",
+  "our_wallet": "0x822afdcc7f1ec829f4456a3921ff54b4a6dbcfae",
+  "watchlist_size": 1693,
+  "started_from": 1498,
+  "net_added": 195,
+  "per_token": {
+    "DIG": {
+      "candidates": 100,
+      "after_vet": 82,
+      "stats": {
+        "raw": 100,
+        "no_addr": 0,
+        "self": 0,
+        "infra": 0,
+        "bad_tag": 11,
+        "late": 5,
+        "dust": 0,
+        "low_profit": 0,
+        "avg_cost_high": 0,
+        "kept": 82,
+        "transfer_in_removed": 2
+      },
+      "buy_ts": 1789553046,
+      "block": 21140148,
+      "samples": [
+        "0x93ccf925eefecfbe042140278a52c47f934b3782",
+        "0x546a89ba4d98394940662f6dd8534c8db2c9aa99",
+        "0xa83b73f5644cde337b61da79589f10ea15548811",
+        "0xbc8b332303343019531780a78d3622d9317d4cee",
+        "0xe038276c32bba65582efa328520553acf35cd86e"
+      ]
+    },
+    "PayLink": {
+      "candidates": 100,
+      "after_vet": 40,
+      "stats": {
+        "raw": 100,
+        "no_addr": 0,
+        "self": 0,
+        "infra": 0,
+        "bad_tag": 39,
+        "late": 15,
+        "dust": 2,
+        "low_profit": 4,
+        "avg_cost_high": 0,
+        "kept": 40
+      },
+      "buy_ts": 1789553333,
+      "block": 21140715,
+      "samples": [
+        "0xf2ccfc83bbd2785e526fa29f5637dc97c2f4c496",
+        "0xe4266814707eb8896aef464983e45ad6b445d0d2",
+        "0x847f6a49c572f58fe17cda082ee4a253b18a9335",
+        "0x38d306f94e3618c08ed8af1f0729fcb51e6ad674",
+        "0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b"
+      ]
+    },
+    "MsMinara": {
+      "candidates": 100,
+      "after_vet": 49,
+      "stats": {
+        "raw": 100,
+        "no_addr": 0,
+        "self": 0,
+        "infra": 0,
+        "bad_tag": 37,
+        "late": 7,
+        "dust": 4,
+        "low_profit": 3,
+        "avg_cost_high": 0,
+        "kept": 49
+      },
+      "buy_ts": 1789553933,
+      "block": 21141899,
+      "samples": [
+        "0x6247644bf6c5a096494cdd0ec6ab986462314b5b",
+        "0x92cb400f1037492d03f97000081c1ad55cc168e0",
+        "0x9140d187486aa3459e7057bbdbd140e414bdf16f",
+        "0xd389ff0895d741a2a875e66bc4dccc200266b7e9",
+        "0x5d09a0ee4d1f2344c862e9d810a74f2bc965af09"
+      ]
+    },
+    "MICA": {
+      "candidates": 100,
+      "after_vet": 18,
+      "stats": {
+        "raw": 100,
+        "no_addr": 0,
+        "self": 0,
+        "infra": 0,
+        "bad_tag": 82,
+        "late": 0,
+        "dust": 0,
+        "low_profit": 0,
+        "avg_cost_high": 0,
+        "kept": 18
+      },
+      "buy_ts": 1789554234,
+      "block": 21142493,
+      "samples": [
+        "0x141543d97fffed2d4ac17ab2182204429d673767",
+        "0x275acc50a2062608604c1755162ac71cad502c77",
+        "0x33ba61b4530f36befc324b211eacaa877dbe7801",
+        "0x6c2325da64aaa47c6ae26bf3e81e9e70f42d5c23",
+        "0x00905e8545e1b20aaa6817039fd6790038e6d0ef"
+      ]
+    },
+    "HTTP": {
+      "candidates": 100,
+      "after_vet": 38,
+      "stats": {
+        "raw": 100,
+        "no_addr": 0,
+        "self": 1,
+        "infra": 0,
+        "bad_tag": 43,
+        "late": 4,
+        "dust": 0,
+        "low_profit": 14,
+        "avg_cost_high": 0,
+        "kept": 38
+      },
+      "buy_ts": 1789555134,
+      "block": 21144269,
+      "samples": [
+        "0x3f4b14fa34bed2da9cdda18ecbe13b233eefd2c7",
+        "0xa26845b92558f69f64b25c56ccf94e5ef052f5b7",
+        "0xb1366c5d98b84845e3d35fe8b67553afa764d41c",
+        "0xa8c988d2e359f42260a5f8b4096692e08eaeb07a",
+        "0x79a71d47b233e6f138b651b748af9ffe0ce7e854"
+      ]
+    },
+    "ORB": {
+      "candidates": 100,
+      "after_vet": 10,
+      "stats": {
+        "raw": 100,
+        "no_addr": 0,
+        "self": 0,
+        "infra": 0,
+        "bad_tag": 89,
+        "late": 1,
+        "dust": 0,
+        "low_profit": 0,
+        "avg_cost_high": 0,
+        "kept": 10
+      },
+      "buy_ts": 1789555493,
+      "block": 21144979,
+      "samples": [
+        "0xda2c8a0c028b61b036248e8ac113c2267aae842b",
+        "0x9c8ff2cb10eb8306c98765ae3f9b2e8a4c6233ee",
+        "0x5cd108bdab855975139831c067556cabd335091d",
+        "0x8bd8f5a909d0f4d6b6a9dc8eecaabe484ca40bb6",
+        "0xc0167b5caea9a6fa718f0bcfa88eb03503830afd"
+      ]
+    }
+  },
+  "early_live_on_list": {
+    "MsMinara": 49,
+    "MICA": 18,
+    "DIG": 82,
+    "PayLink": 40,
+    "HTTP": 38,
+    "ORB": 10
+  },
+  "notes": "Minara dust 0xa163... skipped (already early2x:Minara; prioritize 5 live + ORB from live_state). Transfer-in cleaned from DIG.",
+  "infra_removed_from_watchlist": [
+    "0x4fca4a51ab4f23a7447b3284fbd7d73289a89fb1",
+    "0x8366a39cc670b4001a1121b8f6a443a643e40951"
+  ],
+  "newly_added_approx": {
+    "DIG": 69,
+    "PayLink": 33,
+    "MsMinara": 41,
+    "MICA": 15,
+    "HTTP": 34,
+    "ORB": 5,
+    "total": 197
+  }
+}
