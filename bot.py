@@ -2163,6 +2163,15 @@ def run_once(args: argparse.Namespace) -> int:
         return 0
 
     # Watchlist-strict: only post when ≥2 makers in filtered watchlist
+    wl_hits = [
+        t for t in trades
+        if (t.get("trader_address") or "").lower() in watch_set
+    ]
+    print(
+        f"watchlist hits in feed={len(wl_hits)}/{len(trades)} "
+        f"uniq_makers={len({(t.get('trader_address') or '').lower() for t in wl_hits})}",
+        flush=True,
+    )
     signals_wl = detect_signals(trades, watch_set, window, min_wallets, min_usd)
     source_mode = "watchlist"
     if signals_wl:

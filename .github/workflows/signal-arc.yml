@@ -101,8 +101,8 @@ jobs:
           CHAIN: arc
           ARC_SKIP_SECURITY_AUDIT: "1"
           WINDOW_SECONDS: "900"
-          MIN_WALLETS: "2"
-          MIN_TRADE_USD: "100"
+          MIN_WALLETS: "1"
+          MIN_TRADE_USD: "150"
           MIN_CLUSTER_USD: "200"
           MIN_LIQ_USD: "1500"
           MIN_MCAP_USD: "4000"
