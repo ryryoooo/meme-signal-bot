@@ -1,0 +1,86 @@
+name: harvest-token-wallets
+
+on:
+  workflow_dispatch:
+    inputs:
+      token:
+        description: Token contract address
+        required: true
+        type: string
+      chain:
+        description: arc or robinhood
+        required: true
+        default: arc
+        type: choice
+        options:
+          - arc
+          - robinhood
+      symbol:
+        description: Token symbol label
+        required: false
+        default: token
+        type: string
+      min_profit:
+        description: Min realized profit USD
+        required: false
+        default: "1"
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: harvest-token-wallets-${{ github.event.inputs.chain }}
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
+      - name: Configure GMGN env
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
+
+      - name: Harvest profitable traders → watchlist
+        env:
+          CHAIN: ${{ github.event.inputs.chain }}
+          MIN_PROFIT_USD: ${{ github.event.inputs.min_profit }}
+          TOKEN_SYMBOL: ${{ github.event.inputs.symbol }}
+        run: |
+          python3 scripts/harvest_token_profit_wallets.py \
+            --chain "$CHAIN" \
+            --token "${{ github.event.inputs.token }}" \
+            --symbol "${{ github.event.inputs.symbol }}" \
+            --min-profit "$MIN_PROFIT_USD" \
+            --limit 100
+
+      - name: Commit watchlist if changed
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add arc-wallets/ rh-wallets/ scripts/ || true
+          if git diff --cached --quiet; then
+            echo "no watchlist changes"
+          else
+            git commit -m "harvest: add ${{ github.event.inputs.symbol }} profit wallets (${{ github.event.inputs.chain }})"
+            git push
+          fi
