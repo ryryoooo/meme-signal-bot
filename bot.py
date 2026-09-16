@@ -535,7 +535,14 @@ def gmgn_key_looks_placeholder(key: str) -> bool:
     )
 
 
-def fetch_gmgn_smartmoney(chain: str, limit: int, side: str = "buy") -> tuple[list[dict], str | None]:
+def _state_gmgn_cool_until(state: dict | None) -> float:
+    try:
+        return float((state or {}).get("gmgn_cooldown_until") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def fetch_gmgn_smartmoney(chain: str, limit: int, side: str = "buy", state: dict | None = None) -> tuple[list[dict], str | None]:
     """Run gmgn-cli track smartmoney. Returns (normalized_trades, error_kind|None)."""
     if (os.environ.get("GMGN_SMARTMONEY") or "1").strip().lower() in ("0", "false", "no", "off"):
         print("gmgn smartmoney skip: GMGN_SMARTMONEY=0 (GHA owns buys)", file=sys.stderr)
@@ -545,6 +552,10 @@ def fetch_gmgn_smartmoney(chain: str, limit: int, side: str = "buy") -> tuple[li
     write_gmgn_dotenv()
     try:
         import gmgn_token as _gt
+        # Restore account ban from cached state (GHA runners are ephemeral)
+        st_until = _state_gmgn_cool_until(state)
+        if st_until > time.time():
+            _gt.sync_cooldown_from_state(st_until)
         left = _gt.gmgn_cooldown_remaining()
         if left > 0 or _gt.gmgn_on_cooldown():
             print(f"gmgn smartmoney skip: cooldown {left:.0f}s", file=sys.stderr)
@@ -1925,9 +1936,18 @@ def collect_trades(
         source_name = "nansen"
     else:
         limit = int(os.environ.get("GMGN_LIMIT", str(args.per_page or 100)))
-        trades, gmgn_err = fetch_gmgn_smartmoney(chain, limit=limit, side="buy")
+        trades, gmgn_err = fetch_gmgn_smartmoney(chain, limit=limit, side="buy", state=state)
+        try:
+            import gmgn_token as _gt
+            left = _gt.gmgn_cooldown_remaining()
+            if left > 0:
+                state["gmgn_cooldown_until"] = time.time() + left
+                state["gmgn_cooldown_err"] = gmgn_err
+        except Exception:
+            pass
         if trades:
             source_name = "gmgn"
+            state.pop("gmgn_cooldown_until", None)
         else:
             print(f"GMGN unavailable (err={gmgn_err}); trying on-chain fallback", file=sys.stderr)
             oc = fetch_onchain_fallback(watch_set, chain, min_usd=0)
@@ -2025,6 +2045,13 @@ def run_once(args: argparse.Namespace) -> int:
     )
 
     state = load_state(state_path)
+    try:
+        import gmgn_token as _gt
+        _gt.sync_cooldown_from_state(_state_gmgn_cool_until(state))
+        if _gt.gmgn_on_cooldown():
+            print(f"gmgn state cooldown {_gt.gmgn_cooldown_remaining():.0f}s", flush=True)
+    except Exception:
+        pass
     paper_mod.ensure_paper_state(state)
 
     if chain == "robinhood" and env_bool("XBTSCOUT_ENABLED", True):

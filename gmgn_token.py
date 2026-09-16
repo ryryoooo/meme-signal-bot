@@ -115,6 +115,26 @@ def _cooldown_until() -> float:
         return 0.0
 
 
+def sync_cooldown_from_state(until: float) -> None:
+    """Persist account ban across GHA runners via state-arc.json."""
+    try:
+        until = float(until or 0)
+    except (TypeError, ValueError):
+        return
+    if until <= time.time():
+        return
+    cur = _cooldown_until()
+    if until <= cur:
+        return
+    try:
+        _COOLDOWN_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = _COOLDOWN_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"until": until, "armed_at": time.time()}, indent=2), encoding="utf-8")
+        tmp.replace(_COOLDOWN_PATH)
+    except OSError:
+        pass
+
+
 def gmgn_on_cooldown() -> bool:
     return time.time() < _cooldown_until()
 
