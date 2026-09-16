@@ -4,849 +4,594 @@
     "realized_profit": 1991.88610458,
     "avg_cost": 4.429589306128424e-06,
     "start_holding_at": 1789542452.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x2422fe8a1ccb19189d9536583452cda95acbc7b6",
     "realized_profit": 1093.9780395401212,
     "avg_cost": 9.636429496198115e-06,
     "start_holding_at": 1789542501.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xe71a7317b57d97dc560b0ae141727adeaac3c9ff",
     "realized_profit": 657.50983006,
     "avg_cost": 5.295962142555669e-06,
     "start_holding_at": 1789542460.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x7ff15bbff5aedb4e53e19e4a0011741fe492880c",
     "realized_profit": 546.6089246869801,
     "avg_cost": 6.9214906206613676e-06,
     "start_holding_at": 1789542492.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x20e40a076d1853974f2252b1049bf4a7c44225ee",
     "realized_profit": 486.972685086107,
     "avg_cost": 2.581332557956092e-05,
     "start_holding_at": 1789542986.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x08453053257a99c3513d87aa93724d9e9c8a63fa",
     "realized_profit": 480.3831556228596,
     "avg_cost": 6.103221605033054e-06,
     "start_holding_at": 1789542478.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xd34e5fceacaf045cba7ec923b6bb51edb9a42019",
     "realized_profit": 377.10123594019933,
     "avg_cost": 5.723266014556257e-06,
     "start_holding_at": 1789542473.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x0ed5f491e675e51b337671390ac50d54c0e4139b",
     "realized_profit": 296.69527443891934,
     "avg_cost": 2.2798950771875666e-05,
     "start_holding_at": 1789544534.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x8c0c5dfc71826334df468889a1dfdef07bd1906f",
     "realized_profit": 296.62483511917304,
     "avg_cost": 1.3404259900397721e-05,
     "start_holding_at": 1789542501.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x67896a3b899242857804b17fca145b74da876aac",
     "realized_profit": 262.8675154223276,
     "avg_cost": 2.1262576767790084e-05,
     "start_holding_at": 1789542495.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xc358b2080c7c564338b3bfdc466fe9872457b663",
     "realized_profit": 257.4515344957559,
     "avg_cost": 6.061516800312426e-06,
     "start_holding_at": 1789542457.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x2ef6394e63cec3438a10d980890edc7e461bcaf1",
     "realized_profit": 256.761385391,
     "avg_cost": 7.223663771526469e-06,
     "start_holding_at": 1789542490.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xb7581f180e0a4999db3cc86f71ad0397ee2a8cf4",
     "realized_profit": 247.78063946,
     "avg_cost": 5.003725136893007e-06,
     "start_holding_at": 1789542458.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xe5ec32301cfc03f2bd9a92d227ec56826fbcfbdd",
     "realized_profit": 247.49587127104323,
     "avg_cost": 7.427237960393543e-06,
     "start_holding_at": 1789542494.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xde9f6673cb26a5aa229b048be51bbd31e2369a1f",
     "realized_profit": 239.89601284,
     "avg_cost": 1.1409282738917721e-05,
     "start_holding_at": 1789542501.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x253c467bcfd7783598ee970696093ec26d2c58d5",
     "realized_profit": 220.73197164,
     "avg_cost": 2.185645712220561e-05,
     "start_holding_at": 1789542683.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x8f0fec6ce89db22036ea78b5a8dbc6dad14a75b8",
     "realized_profit": 220.007471276832,
     "avg_cost": 2.043459662569217e-05,
     "start_holding_at": 1789542507.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x5fdc5bb6a17ff07db6ad4f28aca21bd4eedd5f80",
     "realized_profit": 194.39420133,
     "avg_cost": 4.4414358961832735e-06,
     "start_holding_at": 1789542455.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xabba8a3447c55f438eb0297e6de50304e7f003f6",
     "realized_profit": 188.08207511326071,
     "avg_cost": 2.307893276519235e-05,
     "start_holding_at": 1789550608.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x0e114a4e666c5dd9d6d5aec11aaae0a6fe2a3e03",
     "realized_profit": 188.68550269707427,
     "avg_cost": 2.2819595962637705e-05,
     "start_holding_at": 1789542502.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x3d88a7ec2bc591bd7c9c38cc0baf1e8a8c1539c1",
     "realized_profit": 187.22501884149153,
     "avg_cost": 7.2218504018973605e-06,
     "start_holding_at": 1789542492.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x003d7296707353e9cec0b4f35640bab1fdaa0d68",
     "realized_profit": 163.27753503072,
     "avg_cost": 2.0365077360416042e-05,
     "start_holding_at": 1789542507.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x098fdbbda02597fede14cc481b428c30320931b8",
     "realized_profit": 162.37891231695676,
     "avg_cost": 7.6286957445899256e-06,
     "start_holding_at": 1789542494.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x9a39218d6f6d1649b9944c204e9c80ef25f8b08a",
     "realized_profit": 161.82072709532338,
     "avg_cost": 2.3607029920077605e-05,
     "start_holding_at": 1789542685.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xbb781fafc79bbcea7a84fbe28ec6759497f64845",
     "realized_profit": 163.64446403846605,
     "avg_cost": 1.867580371258151e-05,
     "start_holding_at": 1789542801.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x1e75c34183ad3d0fd0a6b403f078a415bc37eaa7",
     "realized_profit": 147.103934271744,
     "avg_cost": 1.9094327037518188e-05,
     "start_holding_at": 1789542507.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x447d965a66e419c4a0a912eaad50a2ca9faf954b",
     "realized_profit": 136.731111189,
     "avg_cost": 2.180497574163637e-05,
     "start_holding_at": 1789542677.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x5879f7d4710dc15c5e5fe49f08f9237199b52cec",
     "realized_profit": 129.04637865471068,
     "avg_cost": 2.2447118537600285e-05,
     "start_holding_at": 1789542600.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xa06c0fe564a24514f2e58d9d36df533bac223f8d",
     "realized_profit": 127.8592399,
     "avg_cost": 1.6219399968775542e-05,
     "start_holding_at": 1789542735.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xef014156097dd2788272808609d1636cd9de733a",
     "realized_profit": 127.358252203,
     "avg_cost": 2.5939473564996957e-05,
     "start_holding_at": 1789543270.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xec6f2d05c0f2e7081cf827460e91a17feb702458",
     "realized_profit": 126.9852696,
     "avg_cost": 2.5393514724738508e-05,
     "start_holding_at": 1789542509.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x77ff70d7952acf6f1f8e43da0e7edeb350dc82f4",
     "realized_profit": 118.72327984490813,
     "avg_cost": 1.68847942695688e-05,
     "start_holding_at": 1789542507.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x81d50e19dd641bb7db0e2e69c2b7c765c511f67a",
     "realized_profit": 110.70028838,
     "avg_cost": 1.9180341042420696e-05,
     "start_holding_at": 1789542667.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xa83b73f5644cde337b61da79589f10ea15548811",
     "realized_profit": 109.63457443,
     "avg_cost": 2.054051890423924e-05,
     "start_holding_at": 1789542520.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xeed30faa050e32bbe49d412138dafe031d1437ae",
     "realized_profit": 104.38217969699367,
     "avg_cost": 2.4748654111283615e-05,
     "start_holding_at": 1789545763.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x00004d5687eef42e5cc30f4f2120413d03bcdead",
     "realized_profit": 102.87787334,
     "avg_cost": 2.9421652131984005e-05,
     "start_holding_at": 1789542533.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x40e6071fcf15806f833b81a144d23b066fe601c2",
     "realized_profit": 96.77877818504096,
     "avg_cost": 1.7541847291022645e-05,
     "start_holding_at": 1789542794.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x39fb765b3eaecaa32644f7e99297a8ea283bf6d9",
     "realized_profit": 94.09881164,
     "avg_cost": 5.549319036558654e-06,
     "start_holding_at": 1789542470.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xb554739ad21b0f7bc3f0eedc5453e84a2a88d81c",
     "realized_profit": 93.77366452749791,
     "avg_cost": 2.495010135065442e-05,
     "start_holding_at": 1789542533.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xb73dab7952df006363b2b6d3ab1f75479785461a",
     "realized_profit": 92.04872618,
     "avg_cost": 5.877068122511784e-06,
     "start_holding_at": 1789542474.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x4d07ced84a890df27297e9ef7bdf93124d014f5d",
     "realized_profit": 89.93437429680912,
     "avg_cost": 2.4865543482773918e-05,
     "start_holding_at": 1789545054.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x25d0fb30404495dfe9bfa2e91c2fd510373fee49",
     "realized_profit": 87.96890767,
     "avg_cost": 1.8822334910082482e-05,
     "start_holding_at": 1789542505.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xf77011e5c66815fafed85b8b19e85e45611ed7a5",
     "realized_profit": 86.28903306,
     "avg_cost": 2.8720305353998623e-05,
     "start_holding_at": 1789542544.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xa333bb53605e76b1daee50dc4298e76014f16b12",
     "realized_profit": 85.54843344,
     "avg_cost": 1.8429298158244926e-05,
     "start_holding_at": 1789542505.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x603acef19d5b40721f55f10f913f40a23a28be2a",
     "realized_profit": 84.42811407,
     "avg_cost": 1.7476294290074765e-05,
     "start_holding_at": 1789542718.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xfcc00685588784b4adc9ff4cd2ade317d545734e",
     "realized_profit": 83.91320132,
     "avg_cost": 1.8768043907464216e-05,
     "start_holding_at": 1789542505.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x5e9702aaecde341c8a1e822f143972b3a7eb5378",
     "realized_profit": 83.33833958,
     "avg_cost": 1.9161852399683317e-05,
     "start_holding_at": 1789542505.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xb113cd6aeb1b9d57c588f1e46b68e4726d003cd9",
     "realized_profit": 78.632748262,
     "avg_cost": 2.1812841831685955e-05,
     "start_holding_at": 1789542532.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xe9cb04e5c3c876d9ed30b53468a408583da45a00",
     "realized_profit": 75.232411128,
     "avg_cost": 2.091132031755356e-05,
     "start_holding_at": 1789542507.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x734ceefdb6f3a7768ab79d8b3580be10549b6d02",
     "realized_profit": 73.74735868833345,
     "avg_cost": 2.055077691959179e-05,
     "start_holding_at": 1789542792.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x8d80527934ed8e7beb0e9b6b33874f0b176ab273",
     "realized_profit": 72.41960496,
     "avg_cost": 2.2836770317366893e-05,
     "start_holding_at": 1789542598.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x14eed9bd625a09b9d03ca2ea5694405c04bd4e14",
     "realized_profit": 72.25221487,
     "avg_cost": 2.369904381072708e-05,
     "start_holding_at": 1789542675.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xc13f1298fbc2c7c1fa6015abab5ed78cb546c75b",
     "realized_profit": 62.703578698,
     "avg_cost": 2.273694778269174e-05,
     "start_holding_at": 1789542532.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xedfcae3c1b0c4d4c8e484a0e9707a18b685627f6",
     "realized_profit": 60.8235706,
     "avg_cost": 3.132205077323525e-05,
     "start_holding_at": 1789542538.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x0e6c035a5e9d48a574437d339a5fbaca6c87c725",
     "realized_profit": 57.691366118908675,
     "avg_cost": 2.3255891536286467e-05,
     "start_holding_at": 1789542637.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xbe1babc4c390cadfbe4c5f1b87ecbe98271f9ed0",
     "realized_profit": 57.54196558,
     "avg_cost": 1.9753767905733757e-05,
     "start_holding_at": 1789542508.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x933aeeb11ac3c3a72bc3ff5a3aa571ac23372b48",
     "realized_profit": 57.16163456871648,
     "avg_cost": 2.029295154901564e-05,
     "start_holding_at": 1789544553.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xae8e09900cbd8669cddb95eb74db5f3e4b15d644",
     "realized_profit": 56.18425975,
     "avg_cost": 2.1634705918654145e-05,
     "start_holding_at": 1789542745.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x192fe070dab17ae2e7ad34b09853b824f850031e",
     "realized_profit": 55.9383521,
     "avg_cost": 1.8394191037165708e-05,
     "start_holding_at": 1789542776.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x17bb3f846ef1dd12d42a25475f75f2225f24039b",
     "realized_profit": 52.12539387,
     "avg_cost": 2.6486272391864988e-05,
     "start_holding_at": 1789542514.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x344f4f974161e30df31da2b1e0db66b5f8604aaa",
     "realized_profit": 50.277106511523975,
     "avg_cost": 2.181345773184308e-05,
     "start_holding_at": 1789548927.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x02064e35e286d0da832f6f27b7731797aa709927",
     "realized_profit": 49.79524232,
     "avg_cost": 2.6406357434739278e-05,
     "start_holding_at": 1789542511.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x9f4e9fd2c439d96f44961f126a43c129b6ac42ec",
     "realized_profit": 49.7534237,
     "avg_cost": 3.0102385304117436e-05,
     "start_holding_at": 1789542538.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x4f59ee0f1f5104418428ab68dba2f8af4eb488c7",
     "realized_profit": 49.63078032,
     "avg_cost": 1.9652557294646968e-05,
     "start_holding_at": 1789542519.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x0de739ad1ee77130d1b9380f4dfd500849ef0555",
     "realized_profit": 49.58784602,
     "avg_cost": 2.550096341539978e-05,
     "start_holding_at": 1789542511.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x7a624508609f4bda8c296d9a736af0f7b9904841",
     "realized_profit": 93.927474978,
     "avg_cost": 2.651545345473015e-05,
     "start_holding_at": 1789542854.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x491c658dd7ff42607c8cedecc432497994e321ee",
     "realized_profit": 46.94884040600163,
     "avg_cost": 2.3417525132123102e-05,
     "start_holding_at": 1789542635.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x39dc0f1ed05a9ae125e0025fc92059cf06ffb864",
     "realized_profit": 46.6215893325369,
     "avg_cost": 2.477245661291507e-05,
     "start_holding_at": 1789542691.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x207c3ea79169b45fd01155067c21e5866517ebe1",
     "realized_profit": 46.54483357271778,
     "avg_cost": 2.1528073426326293e-05,
     "start_holding_at": 1789542508.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x48a1ad01ff097237d3d3c4a1c6f804aad1ee03b3",
     "realized_profit": 45.362045071396466,
     "avg_cost": 2.2572994957601924e-05,
     "start_holding_at": 1789542683.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x1dbc8d2ff89bd4f3f8bd8e963e1a8709e245e49d",
     "realized_profit": 44.71684773318889,
     "avg_cost": 3.249127933103618e-05,
     "start_holding_at": 1789542539.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xe4369325fec26a78614f374139201557ba8111c2",
     "realized_profit": 42.75894901,
     "avg_cost": 2.675449605715825e-05,
     "start_holding_at": 1789542547.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xf4f9f35505793c679e1757190504f7a4602e9fe4",
     "realized_profit": 41.161969679346036,
     "avg_cost": 3.1996800059584063e-05,
     "start_holding_at": 1789542550.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xcee14dec4ef214cddc35d288228a7ac97473bf19",
     "realized_profit": 40.80875197021664,
     "avg_cost": 2.2238315576233188e-05,
     "start_holding_at": 1789545077.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xf6902ce3ac7dc053c0e26a75241cdcaddd1663aa",
     "realized_profit": 39.8144434648,
     "avg_cost": 2.9224882139209068e-05,
     "start_holding_at": 1789542543.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x26f2716a726b89f1a8f7fcee2016e4337018bdf3",
     "realized_profit": 39.737685769775034,
     "avg_cost": 1.778054673245559e-05,
     "start_holding_at": 1789542726.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x1817b19aac9fd61c122385134b6307acc93ea61c",
     "realized_profit": 39.19678344,
     "avg_cost": 3.075767416510599e-05,
     "start_holding_at": 1789542549.0,
-    "early_cost": false,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x3772eb2b29d5ddcaa6b3e7cd8419c50fbb96dc2c",
     "realized_profit": 38.62741055789849,
     "avg_cost": 2.2215029135518478e-05,
     "start_holding_at": 1789543345.0,
-    "early_cost": true,
-    "early_time": false,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x8ed23fbfbe8e29132dbb10e646b4e090bd1327aa",
     "realized_profit": 37.996985492423,
     "avg_cost": 2.176178992312267e-05,
     "start_holding_at": 1789542509.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xd27e11a980488c4b5741163aeb960dbb7e511faa",
     "realized_profit": 36.20583537928987,
     "avg_cost": 2.029361159896698e-05,
     "start_holding_at": 1789542724.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x237cf619653c8ffa1c2f27f075e8961611e2902c",
     "realized_profit": 33.84193348,
     "avg_cost": 2.5924719087745496e-05,
     "start_holding_at": 1789542512.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0xa6462ba577ea4c78ced52f94186742abfa9b66b3",
     "realized_profit": 33.712460712,
     "avg_cost": 2.559531873590503e-05,
     "start_holding_at": 1789542592.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x5728d6cd59f175bab9369612f6b8f75dc8391ef2",
     "realized_profit": 33.51241825010264,
     "avg_cost": 2.5215975065929333e-05,
     "start_holding_at": 1789542514.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x7ed254a4b4bd143e19e598bd384d20844a780b87",
     "realized_profit": 33.2663550347,
     "avg_cost": 2.1408025164280716e-05,
     "start_holding_at": 1789542509.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   },
   {
     "address": "0x1cc14a875bf6366fd8bbb7ddf0aff6bef74a82c8",
     "realized_profit": 32.866624315,
     "avg_cost": 2.1057159410318562e-05,
     "start_holding_at": 1789542509.0,
-    "early_cost": true,
-    "early_time": true,
-    "symbol": "TOAST",
-    "token": "0x2a31ac13edc594f93117f626944a6f0b79267001"
+    "symbol": "TOAST"
   }
 ]

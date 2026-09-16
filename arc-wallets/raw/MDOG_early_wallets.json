@@ -1,0 +1,415 @@
+[
+  {
+    "address": "0x8de64c637088264227c23981291235e4221739c7",
+    "realized_profit": 23617.823822438942,
+    "avg_cost": 6.584921330405581e-06,
+    "start_holding_at": 1789547898.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xbe87176c44a013dc541c48660d7417bcbac91431",
+    "realized_profit": 14752.501695559402,
+    "avg_cost": 4.4023911223717155e-06,
+    "start_holding_at": 1789547888.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xbb53a0c8e4b254295e805461fb3790bbb72ca1ec",
+    "realized_profit": 9875.579637966466,
+    "avg_cost": 9.277160377579617e-06,
+    "start_holding_at": 1789547898.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x8f0fec6ce89db22036ea78b5a8dbc6dad14a75b8",
+    "realized_profit": 8991.089125855564,
+    "avg_cost": 5.920221508073686e-05,
+    "start_holding_at": 1789550981.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xe9cb04e5c3c876d9ed30b53468a408583da45a00",
+    "realized_profit": 2061.6196255351,
+    "avg_cost": 5.82116957866195e-05,
+    "start_holding_at": 1789548005.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x3f8bc1ad3354122caaf593259e0a67478a6e8266",
+    "realized_profit": 1249.9191005150258,
+    "avg_cost": null,
+    "start_holding_at": 1789547956.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08",
+    "realized_profit": 2338.4222744551303,
+    "avg_cost": 8.256513054140941e-05,
+    "start_holding_at": 1789548005.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x7f4d036153c1acb0f180407e8e5c6cd0f972234e",
+    "realized_profit": 2090.455667118647,
+    "avg_cost": 7.821006627606078e-05,
+    "start_holding_at": 1789548006.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x5ba651031f2d9b3d0afa20bad5fcfe1f6105d9f3",
+    "realized_profit": 5277.093274657038,
+    "avg_cost": 7.913304151720027e-06,
+    "start_holding_at": 1789547896.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x003d7296707353e9cec0b4f35640bab1fdaa0d68",
+    "realized_profit": 5124.195964486257,
+    "avg_cost": 5.9898816508531456e-05,
+    "start_holding_at": 1789550981.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xdbe2522de1b5d37f6f87ca54d5d67683602aab12",
+    "realized_profit": 4775.580935747624,
+    "avg_cost": 0.00013993726649027443,
+    "start_holding_at": 1789548640.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x1e75c34183ad3d0fd0a6b403f078a415bc37eaa7",
+    "realized_profit": 2388.021152768373,
+    "avg_cost": 7.621234760935346e-05,
+    "start_holding_at": 1789548006.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x33ba61b4530f36befc324b211eacaa877dbe7801",
+    "realized_profit": 4132.219293731404,
+    "avg_cost": 9.061596367945256e-05,
+    "start_holding_at": 1789550480.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xf7eee3583f0de811ba9d2a257ad392158bb80164",
+    "realized_profit": 3473.2950148142636,
+    "avg_cost": 2.2472670129435613e-05,
+    "start_holding_at": 1789547905.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xd394c55847a2f41332c6828eef7a70239353a532",
+    "realized_profit": 3164.4557108498166,
+    "avg_cost": 8.416014421840445e-06,
+    "start_holding_at": 1789547896.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x728dbe636c00d4ffd7e70f203c4482403efabbf3",
+    "realized_profit": 3156.6782578277443,
+    "avg_cost": 9.889143619646477e-05,
+    "start_holding_at": 1789548168.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xa7a6f22f76f0886babd9fec1d91d5367136d43fa",
+    "realized_profit": 2760.2204175450115,
+    "avg_cost": 4.1971795695386806e-05,
+    "start_holding_at": 1789547911.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xa799a12e5b971211c00759b16176c6482485cc53",
+    "realized_profit": 1518.2821314868797,
+    "avg_cost": 2.770985697631164e-05,
+    "start_holding_at": 1789548010.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x78c382ba287ef26b843cf8d18939f24521b46f19",
+    "realized_profit": 1494.2272369434195,
+    "avg_cost": 0.00020751649385105406,
+    "start_holding_at": 1789548041.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x183c52c9aa1896e0ba558644982c2fc425f6258d",
+    "realized_profit": 2456.940685967898,
+    "avg_cost": 2.286137360445419e-05,
+    "start_holding_at": 1789547940.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xe2d8d2db590283cfd7e51a8fcd2890ac76f76845",
+    "realized_profit": 2387.5799538190035,
+    "avg_cost": 1.993541665594382e-05,
+    "start_holding_at": 1789547901.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x5f2320fc2b08a146d26eb91b39e6160b5ea611de",
+    "realized_profit": 2103.334077387713,
+    "avg_cost": 0.00019909241806900495,
+    "start_holding_at": 1789548071.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x73af38b2100d7e5019e0e6f1b03c0ea067a58f0d",
+    "realized_profit": 460.4704099847223,
+    "avg_cost": 8.896945048054499e-05,
+    "start_holding_at": 1789548045.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x0dc44e35103946f0d11aa03fbcabab0b88b05494",
+    "realized_profit": 1838.4355275833138,
+    "avg_cost": 0.00021728666192070344,
+    "start_holding_at": 1789548058.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xba5d6771b5a270c14c953d1918f42f5f59fefb69",
+    "realized_profit": 1863.0237499791392,
+    "avg_cost": 0.00021008531701498668,
+    "start_holding_at": 1789548071.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x12d813b0c78bb3e4022bcfcb7c004a40766f5a9f",
+    "realized_profit": 1174.1576193193312,
+    "avg_cost": 9.12412926458121e-05,
+    "start_holding_at": 1789548150.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xaeaf2012a20feb3b917e70e095b787f95074bc67",
+    "realized_profit": 2092.5030006130582,
+    "avg_cost": 2.69290364710579e-05,
+    "start_holding_at": 1789547931.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x21d87ebfc966bd75ce670ea1c218e4eba26b6f57",
+    "realized_profit": 2027.3456419803542,
+    "avg_cost": 3.460346429317179e-05,
+    "start_holding_at": 1789547912.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xa05ec35f7d1eba823cff2ed26aeaed419683742f",
+    "realized_profit": 1995.2305709969376,
+    "avg_cost": 0.0002537839096950572,
+    "start_holding_at": 1789548052.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xaaeaa9c30d9c5a253dd86cf56c550526aade3698",
+    "realized_profit": 1554.1258095076064,
+    "avg_cost": 0.0002681222990096781,
+    "start_holding_at": 1789548030.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xa9821b5feee8a2c920150b8e50860bb750a37e58",
+    "realized_profit": 1554.6410755080863,
+    "avg_cost": 0.00028974455292971654,
+    "start_holding_at": 1789548030.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xa0597e674df7566f4df4131494b3da7680c5987f",
+    "realized_profit": 800.1119746736663,
+    "avg_cost": 0.00011614707280594996,
+    "start_holding_at": 1789548886.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x2214b9e029b8b22a8a32f9fd4aaa3b12ebb0b475",
+    "realized_profit": 1280.3738818529514,
+    "avg_cost": 0.0002774656085129703,
+    "start_holding_at": 1789548157.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x236268ad54d356590e6d89a37b2d3d2499a0d7f5",
+    "realized_profit": 1518.5393503692414,
+    "avg_cost": 0.00022426564345124817,
+    "start_holding_at": 1789548072.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xc0c80cdcd7b9dc054903358f7b7fb841f15b1164",
+    "realized_profit": 1428.0310759238896,
+    "avg_cost": 0.00020891527353079445,
+    "start_holding_at": 1789548067.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xb1fe8d7274efcad6571f11465709a7df0521b2a9",
+    "realized_profit": 643.6091547472927,
+    "avg_cost": 9.099960601207476e-05,
+    "start_holding_at": 1789548019.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x27aff1b7b2d0cb3d567983dcd1c3e41cce9f61bb",
+    "realized_profit": 293.4912626585914,
+    "avg_cost": 0.00010183492740201053,
+    "start_holding_at": 1789548167.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x7eb37922bf50a8ef5675760acf876e5f8da740e6",
+    "realized_profit": 1412.356649495656,
+    "avg_cost": 4.368047969482769e-05,
+    "start_holding_at": 1789547980.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x64ee464343d7bd1d91fc2302403f5d72f6f1e35c",
+    "realized_profit": 1406.6162286654353,
+    "avg_cost": 8.757301096259709e-05,
+    "start_holding_at": 1789548045.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x947d1cc2462f63b0c851f5c65d15a5a2446e898b",
+    "realized_profit": 1109.427203402464,
+    "avg_cost": 7.734973860825359e-05,
+    "start_holding_at": 1789548015.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xa64c6369c0d4c61aeee1f8997bcfb4022f2c614b",
+    "realized_profit": 667.1643754538359,
+    "avg_cost": 9.844112576881405e-05,
+    "start_holding_at": 1789548031.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x81d50e19dd641bb7db0e2e69c2b7c765c511f67a",
+    "realized_profit": 326.322214459735,
+    "avg_cost": 0.00015009127463836227,
+    "start_holding_at": 1789548051.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x62540ba925fcca8e64e7a64034d67fdbc8b95e7f",
+    "realized_profit": 770.7897523148529,
+    "avg_cost": 0.00010979460221842946,
+    "start_holding_at": 1789548035.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xca1a2fb7f3179d887504966b25d1606978adcd42",
+    "realized_profit": 631.5892260715372,
+    "avg_cost": 0.00010194274197874051,
+    "start_holding_at": 1789548031.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x42a6c172afe3cdd48ffefac40e32527189fb0335",
+    "realized_profit": 1092.3121754133365,
+    "avg_cost": 1.805784835154919e-05,
+    "start_holding_at": 1789547947.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xe1e3252b8b2f9bf2a8335389ba8ee62e6ea29407",
+    "realized_profit": 1052.8795315336147,
+    "avg_cost": 0.00011995367350660882,
+    "start_holding_at": 1789548072.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x5d6a9b8b8869b34e21c263d75774905c178b94ea",
+    "realized_profit": 907.4195908988177,
+    "avg_cost": 0.0001807353070237843,
+    "start_holding_at": 1789548043.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x3097ad08546ec879d67c84c898458993424e05c5",
+    "realized_profit": 961.6848410620652,
+    "avg_cost": 8.291661557545362e-05,
+    "start_holding_at": 1789548052.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x59387e9376f52f8cf5e7d0a39926dffc8a7a6564",
+    "realized_profit": 243.94268265976748,
+    "avg_cost": 4.637388859289382e-05,
+    "start_holding_at": 1789547947.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x28d0fb65fe20fd805ba474fc374f32e3fa9ecd8f",
+    "realized_profit": 861.2412436637046,
+    "avg_cost": 0.0001179907382180084,
+    "start_holding_at": 1789548097.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x7061f31b892f175024ded1951fb15a460c1a3842",
+    "realized_profit": 857.4513686388223,
+    "avg_cost": 3.144360718377067e-05,
+    "start_holding_at": 1789547935.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x48df62fdde2fb44536146c414ac0602d99111111",
+    "realized_profit": 846.3139344862964,
+    "avg_cost": 0.0001053995421929601,
+    "start_holding_at": 1789548690.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x3d3aa6f420e3faeea1575d97ef32a82778089424",
+    "realized_profit": 824.8996403628604,
+    "avg_cost": 2.3105956326708734e-05,
+    "start_holding_at": 1789547984.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xb803c758d1afa1f8bf3289c0da65ee2865e6972e",
+    "realized_profit": 603.0456298559354,
+    "avg_cost": 0.00017988307865409313,
+    "start_holding_at": 1789548079.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xab6d2de4de9660a478ba703b587bb4ace6d8da6b",
+    "realized_profit": 550.1481855536965,
+    "avg_cost": 2.1416056307120987e-05,
+    "start_holding_at": 1789547903.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x54fc65945bb1902eecbb30feb6bebc85fbacba90",
+    "realized_profit": 691.4822024490751,
+    "avg_cost": 1.6000839180763425e-05,
+    "start_holding_at": 1789547928.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0xcd066f2d79527c0567cde634f72c074f65ec6015",
+    "realized_profit": 278.25421527472747,
+    "avg_cost": 0.00019983049164829336,
+    "start_holding_at": 1789548055.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x6d22c2c8d553a06f2ec23419e14cf666d7a96666",
+    "realized_profit": 662.0713853252736,
+    "avg_cost": 0.0002207238574597095,
+    "start_holding_at": 1789548076.0,
+    "symbol": "MDOG"
+  },
+  {
+    "address": "0x347afd8c760f9d77e74cf849a1311078a21928ee",
+    "realized_profit": 258.75365548624234,
+    "avg_cost": 7.199081132540393e-05,
+    "start_holding_at": 1789548047.0,
+    "symbol": "MDOG"
+  }
+]

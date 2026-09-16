@@ -1,0 +1,695 @@
+[
+  {
+    "address": "0xb3a97cb86adaf0ec619c7ec58ce06a6a63d72862",
+    "realized_profit": 4999.1492550843,
+    "avg_cost": 7.2633896187335805e-06,
+    "start_holding_at": 1789541516.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x9467eb74732bdeb3a14a2cbd0029427eaec58f85",
+    "realized_profit": 3248.448678520319,
+    "avg_cost": 7.113736736406064e-06,
+    "start_holding_at": 1789542080.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x275ac1d865be67bd0b6eb72f4c1628524e25397d",
+    "realized_profit": 2518.8460556648392,
+    "avg_cost": 4.3290837561261255e-06,
+    "start_holding_at": 1789541444.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xb8c5c540cec42a9013ae25716fe166754c2a5c11",
+    "realized_profit": 2555.0101066738616,
+    "avg_cost": 2.729412509252525e-06,
+    "start_holding_at": 1789541405.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xfe0b112040f19e073d88c9f8a225f65fc1b47c28",
+    "realized_profit": 2061.814253868434,
+    "avg_cost": null,
+    "start_holding_at": 1789541782.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x93aeff55d6a311b45204592563d3643134db227a",
+    "realized_profit": 1993.3908114755898,
+    "avg_cost": 2.0675786490956272e-05,
+    "start_holding_at": 1789542684.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x54fc65945bb1902eecbb30feb6bebc85fbacba90",
+    "realized_profit": 1721.4955690106372,
+    "avg_cost": 5.10771472457172e-06,
+    "start_holding_at": 1789541410.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x1e966906ac5daac557b124f9b575ec2a4fd8e55a",
+    "realized_profit": 1703.756884116398,
+    "avg_cost": 4.931794028126125e-06,
+    "start_holding_at": 1789541451.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xfe1313ac9cf14b6000ff961a706b3893107c2a7d",
+    "realized_profit": 1657.4341872779273,
+    "avg_cost": 2.4355355584388282e-05,
+    "start_holding_at": 1789542775.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xb266ffd611743f866a8600c0d4c45db4218c0a45",
+    "realized_profit": 1440.751446847079,
+    "avg_cost": 1.1508961453053257e-05,
+    "start_holding_at": 1789542310.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x8776994c61e042e4fcf3ec99cbcdea356a631647",
+    "realized_profit": 1418.2659997347137,
+    "avg_cost": 1.1466996926737429e-05,
+    "start_holding_at": 1789542310.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x4d88ef8b16d78ed70de7b6aa8ee1cb31f9834271",
+    "realized_profit": 1326.68897846,
+    "avg_cost": 0.0001027164057712802,
+    "start_holding_at": 1789543272.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x6f0ff8728ba74831a88192ee36a254c99ca54404",
+    "realized_profit": 1320.5851992351418,
+    "avg_cost": 2.5026533092946706e-05,
+    "start_holding_at": 1789542785.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x3472ccf6209925204b9cf352171ee150904fda7e",
+    "realized_profit": 1305.3326523856413,
+    "avg_cost": 3.653423019248014e-05,
+    "start_holding_at": 1789542850.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x9db43bb875e10bad12cdf798b14f279e3775ddff",
+    "realized_profit": 1302.5584785111919,
+    "avg_cost": 1.5423670295621072e-05,
+    "start_holding_at": 1789542402.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "realized_profit": 1229.7521134406554,
+    "avg_cost": 0.00015677488047734114,
+    "start_holding_at": 1789542309.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xcd7dbf142062163a05dc3a5c61662bb931efdb7f",
+    "realized_profit": 1154.465652708826,
+    "avg_cost": 1.1528450207958811e-05,
+    "start_holding_at": 1789542313.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x333759a1a95688b4cde2aee8f0540c5722145a9d",
+    "realized_profit": 1144.6557130316048,
+    "avg_cost": 4.292131646724101e-05,
+    "start_holding_at": 1789542925.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xa7a6f22f76f0886babd9fec1d91d5367136d43fa",
+    "realized_profit": 1129.7062832525,
+    "avg_cost": 2.7065825153632497e-05,
+    "start_holding_at": 1789544078.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x71bf86b5861d183e30023791c94ec8bc00bea986",
+    "realized_profit": 1126.0515579789426,
+    "avg_cost": 8.217433263710126e-06,
+    "start_holding_at": 1789541569.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x24c634b9a6b90f659a0c39221278d204a41f48de",
+    "realized_profit": 1118.5028916590597,
+    "avg_cost": 7.887653538332525e-06,
+    "start_holding_at": 1789542158.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x562188035b5ac0e17af4e1cc373031e30af69997",
+    "realized_profit": 1066.4420392174222,
+    "avg_cost": 4.4955860430337095e-06,
+    "start_holding_at": 1789541408.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x1903fd5910ec849c987395d6ab4580060ee8a3a9",
+    "realized_profit": 996.6524923958298,
+    "avg_cost": 4.813074985716159e-06,
+    "start_holding_at": 1789541408.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xe0eba8ffb914168d6f42e21ef02bbd988b074d3f",
+    "realized_profit": 990.00988822,
+    "avg_cost": 3.3076353042445965e-05,
+    "start_holding_at": 1789543006.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xea22e913dff24ba2cb3518e7202941780f5b273c",
+    "realized_profit": 985.7501186922854,
+    "avg_cost": 2.9198719480461405e-05,
+    "start_holding_at": 1789542595.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x91e9266eecca402d0ba16824380f7bab8b04e3e3",
+    "realized_profit": 2561.072810250157,
+    "avg_cost": 9.523800398043492e-05,
+    "start_holding_at": 1789549061.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x9fce94776811cbe4dd114fef67c58958b46f75d0",
+    "realized_profit": 894.807277118044,
+    "avg_cost": 7.766830697353301e-05,
+    "start_holding_at": 1789543420.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x0a0fd30b04f890ff40e28cdbb91fda9ec8405946",
+    "realized_profit": 863.8355972811705,
+    "avg_cost": 7.729374860161105e-05,
+    "start_holding_at": 1789543420.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x5f9bc316d8473d8c6634bd26f3e0932cd6bf0718",
+    "realized_profit": 853.093740758218,
+    "avg_cost": 7.342526453808554e-05,
+    "start_holding_at": 1789543138.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xe5ec32301cfc03f2bd9a92d227ec56826fbcfbdd",
+    "realized_profit": 845.48040424,
+    "avg_cost": 1.5588692833541556e-05,
+    "start_holding_at": 1789542418.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xac564af26945e4db68aa2b19f268dadb6134f7ea",
+    "realized_profit": 832.5453343070205,
+    "avg_cost": 7.642550924982312e-05,
+    "start_holding_at": 1789543420.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x755b795cc6d2565f9083b8c55d5e414e6089a484",
+    "realized_profit": 933.1232032130332,
+    "avg_cost": 0.00010710584774447869,
+    "start_holding_at": 1789543529.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xd441a2cab94b86ffc770e678ec2d7ce85010289e",
+    "realized_profit": 735.3911701604185,
+    "avg_cost": 4.3989872472422225e-05,
+    "start_holding_at": 1789543026.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xc3dd91e1ffdea2fcdb504debd55828e086289091",
+    "realized_profit": 648.7996005530954,
+    "avg_cost": 3.2039107725315745e-05,
+    "start_holding_at": 1789543005.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xfa50de214e13302e01bdf635d5204ff26b84ea60",
+    "realized_profit": 634.2772753725592,
+    "avg_cost": 3.9972875307968945e-05,
+    "start_holding_at": 1789542948.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xc1461917326914356a3e784392cb7d030a442bb6",
+    "realized_profit": 629.4046638965368,
+    "avg_cost": 8.90122235867854e-05,
+    "start_holding_at": 1789543280.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x5af242137556bb4ea2dda917f89b1f63371b3404",
+    "realized_profit": 622.1294499972175,
+    "avg_cost": 0.00010676427538961982,
+    "start_holding_at": 1789545206.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xaeaf2012a20feb3b917e70e095b787f95074bc67",
+    "realized_profit": 618.7678727160319,
+    "avg_cost": 6.882619040316335e-06,
+    "start_holding_at": 1789541453.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xf082757ba59ce663f9ccb84f471e3d7896c3b7a9",
+    "realized_profit": 618.202218063562,
+    "avg_cost": 5.598247667018691e-05,
+    "start_holding_at": 1789542506.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xd6be9b492468db585db1dfe7d08f5bba2f9ab125",
+    "realized_profit": 608.4987860677496,
+    "avg_cost": 0.00010786098213642269,
+    "start_holding_at": 1789543261.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xcc14f6857b1ebf01ec95bc7f377e58f866c3dd99",
+    "realized_profit": 602.42265291,
+    "avg_cost": 8.153031412695422e-06,
+    "start_holding_at": 1789542175.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xf8611bca3a62b7d403c7d50ca54a600685599528",
+    "realized_profit": 599.817322792116,
+    "avg_cost": 9.582300012933876e-06,
+    "start_holding_at": 1789541610.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x782ea183b69c96531b7e2fd3f466135e7221d759",
+    "realized_profit": 524.134242029248,
+    "avg_cost": 3.7930367024353785e-05,
+    "start_holding_at": 1789543029.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x18db8a7084b7116356df821102bf9cb058a02276",
+    "realized_profit": 871.5563757557937,
+    "avg_cost": 0.00016459793590159518,
+    "start_holding_at": 1789543396.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x2214b9e029b8b22a8a32f9fd4aaa3b12ebb0b475",
+    "realized_profit": 716.3997382954587,
+    "avg_cost": 9.932059970518923e-05,
+    "start_holding_at": 1789543003.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x7465cfc3ea43cfdd1143491d23e70f3014eddddd",
+    "realized_profit": 538.3678803288906,
+    "avg_cost": 1.0378887750606175e-05,
+    "start_holding_at": 1789542333.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xacc794d5d38093e23f9d32174e7032116b097909",
+    "realized_profit": 532.798656981424,
+    "avg_cost": 1.613519122160371e-05,
+    "start_holding_at": 1789542512.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x5623869389e9624c81fef641c9dca75fac6784cb",
+    "realized_profit": 549.0831577798353,
+    "avg_cost": 7.813986532566047e-05,
+    "start_holding_at": 1789544127.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x81eab38f8344f9ad1a9fa8f100081f83497fdddc",
+    "realized_profit": 482.7958199779099,
+    "avg_cost": 4.283692840743773e-05,
+    "start_holding_at": 1789543059.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x1e14834ce8582624f48bd334abfb77ac29999999",
+    "realized_profit": 482.28647376416774,
+    "avg_cost": 8.996580148491824e-05,
+    "start_holding_at": 1789544038.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x3c3dced6933cd58bb8fb8a376eda7f53b9e20610",
+    "realized_profit": 465.73805414956104,
+    "avg_cost": 4.083348447556277e-05,
+    "start_holding_at": 1789542892.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x7117a1b11ba42e547130f8101c72fff8430b50a2",
+    "realized_profit": 428.73118134329735,
+    "avg_cost": 6.326085675362673e-05,
+    "start_holding_at": 1789543167.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xf7fc1228cc46db347a02718902756d7bc69bb7d0",
+    "realized_profit": 457.24592624097477,
+    "avg_cost": 5.6778762379328034e-05,
+    "start_holding_at": 1789543394.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x9ce21742713511ccb2376990d05b50ceb4795974",
+    "realized_profit": 442.5937974159862,
+    "avg_cost": 2.9498697441215323e-05,
+    "start_holding_at": 1789542906.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xdeafcd815c253d0d7825d6a3c1e1d2753752bbfd",
+    "realized_profit": 438.9530749573671,
+    "avg_cost": 7.506795311741776e-05,
+    "start_holding_at": 1789545188.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x2dd6b42a6ef0645da33b3d320016982a7ed44193",
+    "realized_profit": 419.2007279508649,
+    "avg_cost": 0.0001139310340996046,
+    "start_holding_at": 1789543927.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x42d73da3daca18374ee1ab8d700351350a3b0064",
+    "realized_profit": 458.17400421,
+    "avg_cost": 2.7208366779367004e-05,
+    "start_holding_at": 1789550025.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x7bfb95fdf67671e9c53ec24b6e0d14413dd3ccc6",
+    "realized_profit": 412.41983648,
+    "avg_cost": 0.00010092352618215152,
+    "start_holding_at": 1789543641.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x20bbef64cbd8758b73d6857dab7bcc3ad046645f",
+    "realized_profit": 410.61866657182776,
+    "avg_cost": 0.00012514954250194692,
+    "start_holding_at": 1789549417.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xba73ce800753d9fba6a0fd54e3ffa7dffbc1a9ee",
+    "realized_profit": 399.34016469413734,
+    "avg_cost": 8.82232026368086e-05,
+    "start_holding_at": 1789544059.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x987efbd98a5432ab279a759eee62bf411d2e94cc",
+    "realized_profit": 397.9022726938749,
+    "avg_cost": 0.00010750018354559605,
+    "start_holding_at": 1789543283.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x01cf616693dc8e3ef21f985acf21d2bca646136a",
+    "realized_profit": 389.76515021747116,
+    "avg_cost": 9.8374493472767e-05,
+    "start_holding_at": 1789543431.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x2fa0eb1f75c46962a43bb50187f653f3c9a0c0b1",
+    "realized_profit": 378.7837703,
+    "avg_cost": 5.163203305138612e-05,
+    "start_holding_at": 1789543062.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x1f54d9faae0b34c39e9ced80112731bb138fd060",
+    "realized_profit": 377.22644064,
+    "avg_cost": 6.866854350779795e-05,
+    "start_holding_at": 1789543992.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x81d50e19dd641bb7db0e2e69c2b7c765c511f67a",
+    "realized_profit": 369.4675243,
+    "avg_cost": 6.763773493643634e-05,
+    "start_holding_at": 1789543151.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x9c483bdefca13cb60adbc9353da7b4f78b156e74",
+    "realized_profit": 359.9487977461199,
+    "avg_cost": 7.850495583673336e-05,
+    "start_holding_at": 1789543156.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x476a13dd7a2a6297d65f167a392e4011a7918aef",
+    "realized_profit": 353.7354304258554,
+    "avg_cost": 0.00012742445285658327,
+    "start_holding_at": 1789546897.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x7b3622a619ff9cc3d928f6b8c2bb42bab6e5a5b6",
+    "realized_profit": 350.62160594213907,
+    "avg_cost": 9.003082679726302e-05,
+    "start_holding_at": 1789544059.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x60daf31c911b8c1f805ae7623880552bb02d2631",
+    "realized_profit": 382.5795505822246,
+    "avg_cost": 9.681049903817895e-05,
+    "start_holding_at": 1789545131.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xb1ef77ccaf6c647cd61215fb31af6b0404cda26f",
+    "realized_profit": 340.4133994586348,
+    "avg_cost": 6.297230783496099e-05,
+    "start_holding_at": 1789543150.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x3900a151d5bd97743fa7c139ccc5a2c0b31534b0",
+    "realized_profit": 837.909676485,
+    "avg_cost": 8.968861394548802e-05,
+    "start_holding_at": 1789543235.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x62d22661a5baf28ea09a9b4e698bedcbb7e5a8a1",
+    "realized_profit": 333.0159800205445,
+    "avg_cost": 2.4530699860163407e-05,
+    "start_holding_at": 1789542772.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x38a54ea0fbb895e6cfd95cfda739cf9dce489bb5",
+    "realized_profit": 329.9189884673186,
+    "avg_cost": 1.2902984125213868e-05,
+    "start_holding_at": 1789542360.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x3875cf68c36c223bbe9046eb60dd97376d90d498",
+    "realized_profit": 329.16264356813895,
+    "avg_cost": 7.487645441387481e-05,
+    "start_holding_at": 1789543418.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x80d35559b85e230925b1f858d36701b3e3cfb9a6",
+    "realized_profit": 328.5524836404502,
+    "avg_cost": 5.445005204632244e-05,
+    "start_holding_at": 1789543168.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xa37e4eec45d2478316a65b845971f586ea4ff8e1",
+    "realized_profit": 325.0699899993801,
+    "avg_cost": 0.00011445895418427363,
+    "start_holding_at": 1789543791.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x6eba8e5e14312050f9f741062abcfee91ff99d10",
+    "realized_profit": 323.178871,
+    "avg_cost": 4.253003442306111e-05,
+    "start_holding_at": 1789543124.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xb4f4ad4ab810a14475b9daa1b5786e6caf75542b",
+    "realized_profit": 322.88806872,
+    "avg_cost": 4.1477670991153274e-05,
+    "start_holding_at": 1789543037.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x5894e3b975595f01d0a6ae3424158f5257849c3f",
+    "realized_profit": 314.0728497958536,
+    "avg_cost": 0.00014436273305807587,
+    "start_holding_at": 1789544071.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x253c467bcfd7783598ee970696093ec26d2c58d5",
+    "realized_profit": 311.13115858,
+    "avg_cost": 0.00010919673054610518,
+    "start_holding_at": 1789543436.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x157184c53fbfa0b4864c715510104041fa3c6ca2",
+    "realized_profit": 301.1168049783377,
+    "avg_cost": 3.452982983355974e-05,
+    "start_holding_at": 1789542741.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xa01b1395e4963477cd6641f81596fe9228883d3d",
+    "realized_profit": 302.6413670157221,
+    "avg_cost": 1.2067062679749483e-05,
+    "start_holding_at": 1789542319.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x9e8e7c779e7f062233c4eb9e2e0ded0f97c6794d",
+    "realized_profit": 297.9124345348594,
+    "avg_cost": 5.301766757505163e-05,
+    "start_holding_at": 1789543168.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x8906f14864fc0655b5b044a81aef4ae45133f23c",
+    "realized_profit": 452.0055497145752,
+    "avg_cost": 0.00012049741879982319,
+    "start_holding_at": 1789544252.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x8e4e2a5625ac5f8c9c29a5d04ae84328455b4262",
+    "realized_profit": 293.03504484,
+    "avg_cost": 9.203100441196897e-05,
+    "start_holding_at": 1789544032.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xbf3fd31672adcdac81700ec399985179562fc68f",
+    "realized_profit": 289.68658145775,
+    "avg_cost": 3.563660759946639e-05,
+    "start_holding_at": 1789543009.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xbe44b46bc317724e2b198eaa872d62fd2a3b0a54",
+    "realized_profit": 286.45497896001655,
+    "avg_cost": 3.498139651958288e-05,
+    "start_holding_at": 1789542821.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xa1e1d50508c116a1602484975e186eb374f5f285",
+    "realized_profit": 278.5202030037734,
+    "avg_cost": 0.00010287427713676992,
+    "start_holding_at": 1789543256.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x8dab076e8cf0399942a563f44cf9049d2df29adb",
+    "realized_profit": 269.2967148262682,
+    "avg_cost": 8.074987299311201e-05,
+    "start_holding_at": 1789549944.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x2160f3991c1454b806a9bc15f83b34143b4ba58b",
+    "realized_profit": 244.19186256742046,
+    "avg_cost": 0.0002510059012367192,
+    "start_holding_at": 1789543106.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xba7ec7d0f21b404e896e18b3edc3d9dd8502905f",
+    "realized_profit": 253.13865545911264,
+    "avg_cost": 9.575929638486285e-05,
+    "start_holding_at": 1789544450.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x0bda5ce050662a72f69bd17589437de1d3507d6e",
+    "realized_profit": 247.1238605550253,
+    "avg_cost": 8.662138253652924e-05,
+    "start_holding_at": 1789543355.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x61b651f35deba8d0bdd63a79a21896d6f8096494",
+    "realized_profit": 245.81546783,
+    "avg_cost": 9.551830191588109e-05,
+    "start_holding_at": 1789543986.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xa05ec35f7d1eba823cff2ed26aeaed419683742f",
+    "realized_profit": 243.2237096,
+    "avg_cost": 0.00010974690052576113,
+    "start_holding_at": 1789544113.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x0853a28e1bd93a3e78e5ef88bdcfb06dd9f998bc",
+    "realized_profit": 235.58943177,
+    "avg_cost": 3.701586779911464e-05,
+    "start_holding_at": 1789542951.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0xe202561090e6d8927c3301ee017ec4b72afb1507",
+    "realized_profit": 316.37448969,
+    "avg_cost": 0.00011552486833799347,
+    "start_holding_at": 1789550049.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x4759b87960f6efb858d8be8feb9f7e4643ba1827",
+    "realized_profit": 231.88732536,
+    "avg_cost": 3.6936553341355524e-05,
+    "start_holding_at": 1789542825.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x5df5c96bd21127d8c056ab6156e1b468d1e98ec9",
+    "realized_profit": 227.3787187677939,
+    "avg_cost": 3.788387110016626e-05,
+    "start_holding_at": 1789543184.0,
+    "symbol": "MOCHI"
+  },
+  {
+    "address": "0x20ff275ee89cbf0ece757d1691325b653dd4e756",
+    "realized_profit": 264.5757037641162,
+    "avg_cost": 8.86200517329941e-05,
+    "start_holding_at": 1789544059.0,
+    "symbol": "MOCHI"
+  }
+]

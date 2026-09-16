@@ -1,0 +1,317 @@
+[
+  {
+    "address": "0x7c4ed3bbdea26173937c45033f9fb1b3e87125e7",
+    "realized_profit": 140.9590730025,
+    "avg_cost": 3.4246728668015664e-06,
+    "start_holding_at": 1789540790.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xa0d897d60a295cf357b6d0b7edad8b14b0906e06",
+    "realized_profit": 214.59933161008456,
+    "avg_cost": 5.210627360484267e-06,
+    "start_holding_at": 1789547598.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xb1ce8cddb3737c631d37f4fa625eae7dac6c4014",
+    "realized_profit": 107.96203551825738,
+    "avg_cost": 6.643404614995004e-06,
+    "start_holding_at": 1789547598.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xa61c172ef9bb6a747f3a131d915f15470fcb9daa",
+    "realized_profit": 63.72939687229935,
+    "avg_cost": 7.056059356998696e-06,
+    "start_holding_at": 1789547598.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xaa4e9e8f1e9c03e6de9f5f78680a0f8ae5908709",
+    "realized_profit": 151.65366484,
+    "avg_cost": 4.30730368400253e-06,
+    "start_holding_at": 1789545553.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x844b5cfcf65067a0a0aa2e04f3797e4254dd6a8c",
+    "realized_profit": 147.20543769952636,
+    "avg_cost": 5.54810859572425e-06,
+    "start_holding_at": 1789547598.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xaa264421420a1017e586952d505c703402496de5",
+    "realized_profit": 145.62738342539154,
+    "avg_cost": 4.270566169806191e-06,
+    "start_holding_at": 1785369531.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xab02183d37479fd7fe8e3672ffea5c6ff5d2b3d7",
+    "realized_profit": 127.4410477195376,
+    "avg_cost": 5.8134469394905916e-06,
+    "start_holding_at": 1789547598.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xc53cf391fb87487761bf48c5bc81a9a46969ba8c",
+    "realized_profit": 113.5270290786,
+    "avg_cost": 6.006572939089207e-06,
+    "start_holding_at": 1789548821.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x5bd8d8960555d05b5298f8fe4552fc34810ed9ea",
+    "realized_profit": 103.7722091,
+    "avg_cost": 7.187855479535457e-06,
+    "start_holding_at": 1789544985.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xd21b6410749a0ca62240c862ba67df9b3f35a899",
+    "realized_profit": 57.93863047,
+    "avg_cost": 3.1613661337561537e-06,
+    "start_holding_at": 1789540070.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xf4f883245316a8d3524586abbd91eef9b37f7ab2",
+    "realized_profit": 48.454013440000004,
+    "avg_cost": 6.659126161733511e-06,
+    "start_holding_at": 1789544365.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xbcef0b624f326b49d15879dcf38834c88eccf909",
+    "realized_profit": 75.36041978,
+    "avg_cost": 4.66214206049444e-06,
+    "start_holding_at": 1789545553.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x43d6155d83aa8c8f85cb1d8512a3d12e7eae8761",
+    "realized_profit": 70.52357118299605,
+    "avg_cost": 3.680490483523547e-06,
+    "start_holding_at": 1789543546.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x6f7cab535f1669d9c717ac65943a193b7d8c1595",
+    "realized_profit": 32.476653593379496,
+    "avg_cost": 5.430141813532551e-06,
+    "start_holding_at": 1789544748.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x55fa3f245bd5c0f959569dfa10d586183b721b83",
+    "realized_profit": 60.291800892983275,
+    "avg_cost": 7.01714291700119e-06,
+    "start_holding_at": 1789545953.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x8b54982efb0d30df9eac59b3badde4ea951d20ca",
+    "realized_profit": 42.39889865378909,
+    "avg_cost": 4.7629821909134394e-06,
+    "start_holding_at": 1789544353.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x546a68b0e7e8a9c454ef7086e651f6d68c9f593b",
+    "realized_profit": 30.03015518,
+    "avg_cost": 4.047868831528692e-06,
+    "start_holding_at": 1785359170.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x907c6a69f1f65e26ffbdf34c86adc791f0fcc093",
+    "realized_profit": 27.3276944,
+    "avg_cost": 6.854101577910069e-06,
+    "start_holding_at": 1789545920.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x3c21b7a1b49b528522bce8caad4084bbcf2509c9",
+    "realized_profit": 23.51918826188269,
+    "avg_cost": 4.0823628523010664e-06,
+    "start_holding_at": 1785359180.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x571476dfaf4032a96c32ac9623ff4285dc5f83c3",
+    "realized_profit": 23.372068207556584,
+    "avg_cost": 3.247006393545883e-06,
+    "start_holding_at": 1789535154.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xfc8542671363e26ce4b6d23013a15fdf66140b06",
+    "realized_profit": 23.232028476929372,
+    "avg_cost": 3.2605519141544052e-06,
+    "start_holding_at": 1789535154.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xbf530f1bfb23bf332d1f1e41be026a5895fcced4",
+    "realized_profit": 21.71664772,
+    "avg_cost": 3.3587438256251177e-06,
+    "start_holding_at": 1785359254.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xfd176c412f25bdd318bc44b47f6b29c8a91e808d",
+    "realized_profit": 21.15175929,
+    "avg_cost": 4.987043190335492e-06,
+    "start_holding_at": 1789544354.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xa2d462005623630cc157e3b17d83c3892fcba5ff",
+    "realized_profit": 17.44710238,
+    "avg_cost": 6.914969938635723e-06,
+    "start_holding_at": 1789547609.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x9460e07451fa2b6ede1ae12b07d4e74142830819",
+    "realized_profit": 16.702916836,
+    "avg_cost": 3.3570679187021783e-06,
+    "start_holding_at": 1785359167.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x518567a12340b524dfa4af4f510027ca29b40cbd",
+    "realized_profit": 15.04704916,
+    "avg_cost": 5.215669462796922e-06,
+    "start_holding_at": 1789544354.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xe7aacb6b557f7d087bb77f5c61f63eca3d668423",
+    "realized_profit": 14.87689078,
+    "avg_cost": 4.437474470802052e-06,
+    "start_holding_at": 1785359170.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xabd7aa32f3c83b7e54e075085eca70eeb9ba258d",
+    "realized_profit": 14.632708474574642,
+    "avg_cost": 7.092054325190525e-06,
+    "start_holding_at": 1789548598.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xb37f56052ee43876c0daa464cb3897242ab79517",
+    "realized_profit": 11.828967714750405,
+    "avg_cost": 5.945858555675926e-06,
+    "start_holding_at": 1789544985.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x499bd8429d69c59debdeae6d0b48b5413624b8fc",
+    "realized_profit": 10.68343068,
+    "avg_cost": 3.7858837292971516e-06,
+    "start_holding_at": 1785359170.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xbc0adb04aacc305ab7715b23e021185cb8cb5896",
+    "realized_profit": 10.56469237,
+    "avg_cost": 3.206317255062734e-06,
+    "start_holding_at": 1785359245.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x6078ee8a93697c6d67863fcbff77141d9ab358b2",
+    "realized_profit": 8.75878312,
+    "avg_cost": 4.371468294318982e-06,
+    "start_holding_at": 1785369311.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0xa0ed47a5dc1017db87d3807ecd95750b3ea0ff85",
+    "realized_profit": 8.3894488,
+    "avg_cost": 4.025356862193336e-06,
+    "start_holding_at": 1785369311.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x1b62c0e3d91f08809f7124b381fb71c15826c198",
+    "realized_profit": 8.21969102,
+    "avg_cost": 5.068724010079543e-06,
+    "start_holding_at": 1789544489.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x4705616d0a1511edcd4362eab030976cb0b24f9f",
+    "realized_profit": 7.645994444,
+    "avg_cost": 4.520366181888068e-06,
+    "start_holding_at": 1789544351.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x9b4baaf61fed606fec3f59d96aa93670a01a03c5",
+    "realized_profit": 7.621350665,
+    "avg_cost": 5.809454590079003e-06,
+    "start_holding_at": 1789544356.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x987bbfe6c2fa4841ccd0da669998b3ef25235cff",
+    "realized_profit": 7.57624888,
+    "avg_cost": 7.214283739228144e-06,
+    "start_holding_at": 1789547609.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x8decac10b086f829f49c4939a4bbdd878e24260e",
+    "realized_profit": 7.46986073,
+    "avg_cost": 5.835534389793586e-06,
+    "start_holding_at": 1789544767.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x69e8397b4594d90696726a662c52a8795214dce6",
+    "realized_profit": 6.29653016,
+    "avg_cost": 4.638988241806616e-06,
+    "start_holding_at": 1785359170.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x0caf41a110ca135a1a105f0b1f00900649ffb5d3",
+    "realized_profit": 3.82273507,
+    "avg_cost": 6.204614894757336e-06,
+    "start_holding_at": 1789544386.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x7e9e4de155046c02a0b2a395831f4d72ad5036a5",
+    "realized_profit": 2.8632982,
+    "avg_cost": 3.049559337642681e-06,
+    "start_holding_at": 1785359166.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x239a9c5b6e5760180341ce77ada4645fabf78d8a",
+    "realized_profit": 2.8464266978530626,
+    "avg_cost": 4.321521257814331e-06,
+    "start_holding_at": 1785371608.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x1fc832f9158a140817e1520aaf031cd690c6dc84",
+    "realized_profit": 2.2717284,
+    "avg_cost": 3.089016963922646e-06,
+    "start_holding_at": 1785359167.0,
+    "symbol": "pi"
+  },
+  {
+    "address": "0x25fdaa413a396432015d7516abc89d342de04a00",
+    "realized_profit": 1.726499955,
+    "avg_cost": 3.6303874024251862e-06,
+    "start_holding_at": 1785360671.0,
+    "symbol": "pi"
+  }
+]

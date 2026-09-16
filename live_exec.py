@@ -44,6 +44,26 @@ def usd_from_usdc_raw(raw) -> float | None:
 def _parse_balance_usd(data: dict | None) -> float | None:
     if not isinstance(data, dict):
         return None
+    # gmgn-cli portfolio token-balance --raw: {"balances":[{"balance":"82.69",...}]}
+    bals = data.get("balances")
+    if isinstance(bals, list) and bals:
+        for row in bals:
+            if not isinstance(row, dict):
+                continue
+            for key in ("balance", "ui_amount", "uiAmount", "usd_value", "amount"):
+                v = row.get(key)
+                if v is None:
+                    continue
+                try:
+                    f = float(v)
+                except (TypeError, ValueError):
+                    continue
+                # human USDC string like "82.69" (decimal field may be 0)
+                if f > 1e9:
+                    u = usd_from_usdc_raw(f)
+                    if u is not None:
+                        return u
+                return f
     # Common shapes: balance / amount / ui_amount / usd_value / data.balance
     nested = data.get("data") if isinstance(data.get("data"), dict) else data
     for key in ("usd_value", "usd", "balance_usd", "value_usd"):

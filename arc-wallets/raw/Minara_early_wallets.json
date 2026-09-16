@@ -1,0 +1,268 @@
+[
+  {
+    "address": "0x3f8bc1ad3354122caaf593259e0a67478a6e8266",
+    "realized_profit": 9107.093975046848,
+    "avg_cost": null,
+    "start_holding_at": 1789548419.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xbcb156d61790239073d331a2900bc353c13d3a03",
+    "realized_profit": 8062.963178738249,
+    "avg_cost": 2.5927829055442598e-05,
+    "start_holding_at": 1789548618.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x28cab576d0f839e870998a621e028a4ce0d76a86",
+    "realized_profit": 7815.271156637478,
+    "avg_cost": 2.6917976033832014e-05,
+    "start_holding_at": 1789548389.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xca1a2fb7f3179d887504966b25d1606978adcd42",
+    "realized_profit": 8699.964821160214,
+    "avg_cost": 1.6859437643846522e-05,
+    "start_holding_at": 1789548377.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xa64c6369c0d4c61aeee1f8997bcfb4022f2c614b",
+    "realized_profit": 8332.196895139225,
+    "avg_cost": 1.775283451302977e-05,
+    "start_holding_at": 1789548377.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x66add792f908dfbe52c6eb2673227df7bb345de3",
+    "realized_profit": 6348.722421128699,
+    "avg_cost": 1.3613551114109703e-05,
+    "start_holding_at": 1789548375.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x6e3a4a0b36daf99f41c8ce972f3c24af6bf8f8aa",
+    "realized_profit": 15439.525532848878,
+    "avg_cost": 2.3342802499722756e-05,
+    "start_holding_at": 1789551156.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x478ccea111be29dc31708335dfa878c89da7225a",
+    "realized_profit": 13447.58087263786,
+    "avg_cost": 2.1623252414614004e-05,
+    "start_holding_at": 1789548593.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xa7a6f22f76f0886babd9fec1d91d5367136d43fa",
+    "realized_profit": 11492.421337401836,
+    "avg_cost": 1.628011541044343e-05,
+    "start_holding_at": 1789548476.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x0dc44e35103946f0d11aa03fbcabab0b88b05494",
+    "realized_profit": 6885.944754408666,
+    "avg_cost": 8.461551844408053e-05,
+    "start_holding_at": 1789548390.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x6ee7335be9825c9814cf5d8a528cacf8d6037360",
+    "realized_profit": 11053.42146217433,
+    "avg_cost": 2.7370992258845643e-05,
+    "start_holding_at": 1789548388.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x92b02ba05c92b8cb70d203a937bd4fbab67bdfe2",
+    "realized_profit": 4865.859835685377,
+    "avg_cost": 3.420211663258418e-05,
+    "start_holding_at": 1789548420.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x5623869389e9624c81fef641c9dca75fac6784cb",
+    "realized_profit": 2774.66248318879,
+    "avg_cost": 2.602853754769528e-05,
+    "start_holding_at": 1789548532.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x9656f3c2b2c264c4fcb506c5a9735b206787cf34",
+    "realized_profit": 7638.691553718512,
+    "avg_cost": 1.1291861086684943e-05,
+    "start_holding_at": 1789549028.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x0c31cb67c3a752d6556cfc3012bb5ee922ed2afa",
+    "realized_profit": 1243.8447208422679,
+    "avg_cost": 2.0828858870895076e-05,
+    "start_holding_at": 1789549059.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xb2e8c2d90ebc988fde867c1edacc24864216054c",
+    "realized_profit": 6431.2665772185355,
+    "avg_cost": 1.1796329613373518e-05,
+    "start_holding_at": 1789549028.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xe0b9cd044aaffde21f4531e20f9eabc925fd204e",
+    "realized_profit": 4486.8517960286235,
+    "avg_cost": 2.2212630249284317e-05,
+    "start_holding_at": 1789548417.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xf7885e6a728c99ec604597be181e23415449798a",
+    "realized_profit": 4892.894473460596,
+    "avg_cost": 1.8030892381695816e-05,
+    "start_holding_at": 1789548462.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xe147136c65ca5bc2ba5fcc528742e0e119852b16",
+    "realized_profit": 5672.368215854754,
+    "avg_cost": 2.0621868068308358e-05,
+    "start_holding_at": 1789548576.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x3ebab06ccdf923c8a41e579c238344669fecfb4e",
+    "realized_profit": 5575.670591713062,
+    "avg_cost": 2.062001594194754e-05,
+    "start_holding_at": 1789548576.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xb8a92d30117fc9d8c5a02ebdcede1a0f6966965f",
+    "realized_profit": 5203.602754832274,
+    "avg_cost": 2.783239510210676e-05,
+    "start_holding_at": 1789548388.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x03f267da4fb957c379c0e78e25368f73d8eb3113",
+    "realized_profit": 2231.9973907970816,
+    "avg_cost": 2.5166406058206915e-05,
+    "start_holding_at": 1789549500.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x32d5a8bd40c3221230b32f6e7eba1bd68c0d683b",
+    "realized_profit": 3966.466535848257,
+    "avg_cost": 2.5774149071752515e-05,
+    "start_holding_at": 1789548412.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xad4f66d498c8368b5dcbf233cb0957e6ef3bf388",
+    "realized_profit": 2372.2407603834563,
+    "avg_cost": 2.2322893389205568e-05,
+    "start_holding_at": 1789549098.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x99a3211fd9d48db74d38f74bea7a347648182b18",
+    "realized_profit": 828.0299345074765,
+    "avg_cost": 2.3438501662332025e-05,
+    "start_holding_at": 1789548857.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x5a4ef92b389b8b42205b64c8badac9612216589d",
+    "realized_profit": 819.935272636454,
+    "avg_cost": 2.355443682956426e-05,
+    "start_holding_at": 1789548857.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x130e01c9167aa2fef2b726c7647031b37db5515b",
+    "realized_profit": 812.6807404599072,
+    "avg_cost": 2.3653057239118476e-05,
+    "start_holding_at": 1789548857.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x157b0a4f8396fc0f5b48595a39f35b60f8b59806",
+    "realized_profit": 811.2547715225413,
+    "avg_cost": 2.3698557405490873e-05,
+    "start_holding_at": 1789548857.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x07e3cf8c820060b577859b813a48de8eacbdfe91",
+    "realized_profit": 2844.78143120714,
+    "avg_cost": 2.6460100201667013e-05,
+    "start_holding_at": 1789548722.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x5220f416ccc822496236b348e6b4e8b19df1dd1f",
+    "realized_profit": 2098.256894700805,
+    "avg_cost": 1.7238018910585805e-05,
+    "start_holding_at": 1789548432.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x1d0669bf64ef2e7532d32feb4fc6df7eb1d72fc8",
+    "realized_profit": 543.2704801197865,
+    "avg_cost": 2.1810313243869492e-05,
+    "start_holding_at": 1789548383.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x58f65d5e83735bfa876bb6bf69cecbbb36f6728c",
+    "realized_profit": 2753.4144110707985,
+    "avg_cost": 2.567377621690668e-05,
+    "start_holding_at": 1789548581.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xe58f928cd9fcf08631304ae5a17757b6b1a309ef",
+    "realized_profit": 2068.8817522294644,
+    "avg_cost": 1.2870899013757338e-05,
+    "start_holding_at": 1789548483.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x229f753df669bd26eab7a4781e74bc159abbbcec",
+    "realized_profit": 1478.401409060036,
+    "avg_cost": 2.700426369164899e-05,
+    "start_holding_at": 1789548650.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x2b949bd780a3761999634554df870a63b2f09787",
+    "realized_profit": 829.2205374694776,
+    "avg_cost": 2.2228281560000664e-05,
+    "start_holding_at": 1789548775.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0x62824f7de1a4f09fe74b765c7713190e1113136b",
+    "realized_profit": 1570.3153772508258,
+    "avg_cost": 2.513662160957169e-05,
+    "start_holding_at": 1789548387.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xca6f14b85541f79aff1e985e6d6373aa142ef93a",
+    "realized_profit": 1136.0095347953866,
+    "avg_cost": 2.6830706535167322e-05,
+    "start_holding_at": 1789548754.0,
+    "symbol": "Minara"
+  },
+  {
+    "address": "0xbd4b2c5579da0338dd6cca997b1d745cd6f21137",
+    "realized_profit": 2179.8528419052664,
+    "avg_cost": 2.3995945772257873e-05,
+    "start_holding_at": 1789548507.0,
+    "symbol": "Minara"
+  }
+]

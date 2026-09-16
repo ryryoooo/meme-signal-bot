@@ -1,0 +1,688 @@
+[
+  {
+    "address": "0x5638484ba2d2f1d1d35020572b0aa439a9869192",
+    "realized_profit": 1229.1657498294635,
+    "avg_cost": 5.8610195862554924e-05,
+    "start_holding_at": 1789541774.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x07cdaf0140c60a0c34681065abf49bb8d85b8cbe",
+    "realized_profit": 3838.168239060192,
+    "avg_cost": 4.0065650240298824e-05,
+    "start_holding_at": 1789541719.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xd4e297af7e7a60889a4c44e408e5bc73432165f3",
+    "realized_profit": 1052.4562037461667,
+    "avg_cost": 1.2373869041249804e-05,
+    "start_holding_at": 1789541666.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xe0571e71fb90853dfe3af3cfe8bf957eddba5218",
+    "realized_profit": 3467.1572435544567,
+    "avg_cost": 0.00017550997714810672,
+    "start_holding_at": 1789544453.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xaa939cc34e0d2129aaff0f9d8e0340851f18d618",
+    "realized_profit": 2897.9768578096355,
+    "avg_cost": 7.367093429234023e-05,
+    "start_holding_at": 1789541792.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xa233554e08e6cbc937b2e5fa4317eabbd8a0acfa",
+    "realized_profit": 2604.958188755129,
+    "avg_cost": 1.6944594450217704e-05,
+    "start_holding_at": 1789543330.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x98475b41654e55d8763c23fce3df25749cdf5dcd",
+    "realized_profit": 967.8335441052013,
+    "avg_cost": 0.00018470723729740684,
+    "start_holding_at": 1789544902.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x84aa38f3d38fe0421d1a4ffc99808d9d567c7bd0",
+    "realized_profit": 2524.779256608816,
+    "avg_cost": 1.691308475698493e-05,
+    "start_holding_at": 1789542896.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xd32bc1d2aecd4390a3a53fbb5f692891b963a23d",
+    "realized_profit": 2160.692334549639,
+    "avg_cost": 5.445321535134192e-05,
+    "start_holding_at": 1789541757.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x64ee464343d7bd1d91fc2302403f5d72f6f1e35c",
+    "realized_profit": 2175.0500114637193,
+    "avg_cost": 6.872411689462103e-05,
+    "start_holding_at": 1789541786.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x576b7b348968f65d2b868d88cd7318f9f6d363f4",
+    "realized_profit": 879.81898299,
+    "avg_cost": 6.99470770515315e-05,
+    "start_holding_at": 1789541774.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x67909aacdbc18331e4ce23812a97260ec00b59b5",
+    "realized_profit": 2068.1967647209112,
+    "avg_cost": 9.730411909594587e-06,
+    "start_holding_at": 1789541666.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xa9b9b37da16c893d33f18e50caf5f79e5e3d9bfc",
+    "realized_profit": 1971.9874091668707,
+    "avg_cost": 9.314004363547646e-06,
+    "start_holding_at": 1789541656.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x1f791499c7ef1bc278f4dff61ccd7fd3f107c68e",
+    "realized_profit": 1934.5072306289803,
+    "avg_cost": 1.6952907406327486e-05,
+    "start_holding_at": 1789542896.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x4a9f98e70d825ee8443b0b749d8844a5dad2e311",
+    "realized_profit": 1932.42602274843,
+    "avg_cost": 9.64088003112724e-06,
+    "start_holding_at": 1789541656.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x71065f33e4db51e6b10f6d0c93689a5e9cb873dd",
+    "realized_profit": 1881.234718639035,
+    "avg_cost": 1.3127578900162968e-05,
+    "start_holding_at": 1789541669.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x016c8808b008ca7e1ab91e3888c08cb68f679391",
+    "realized_profit": 1762.6374854241872,
+    "avg_cost": 1.4045045355557736e-05,
+    "start_holding_at": 1789541669.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x91e9266eecca402d0ba16824380f7bab8b04e3e3",
+    "realized_profit": 1391.179752976042,
+    "avg_cost": 0.00012810610101684166,
+    "start_holding_at": 1789542708.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xaf144ec0e01200ae9c0132e245850fefea6e0508",
+    "realized_profit": 1648.3108093266185,
+    "avg_cost": 1.4993489484984026e-05,
+    "start_holding_at": 1789541669.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x8c9f9d28788c2b78a3ae85c2db32c4f13a61e75a",
+    "realized_profit": 923.1638752502635,
+    "avg_cost": 6.47547643068072e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xe14df62d81fed928be2ab5d4a9833f0821576f03",
+    "realized_profit": 909.2433857377993,
+    "avg_cost": 6.787283701969198e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x21faf075bbd36f3eaeb651e118ac26363e3704b6",
+    "realized_profit": 912.3118987562907,
+    "avg_cost": 6.818571611936327e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x86ccdde8c5a250196036c8ffb96b72a18f875ab9",
+    "realized_profit": 876.4152980610182,
+    "avg_cost": 6.816689903638796e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x995d38316abc9c0958caca1472b3e4bb27551868",
+    "realized_profit": 712.726706385551,
+    "avg_cost": 0.0001035107916272503,
+    "start_holding_at": 1789542023.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x7a624508609f4bda8c296d9a736af0f7b9904841",
+    "realized_profit": 701.1330888918137,
+    "avg_cost": 3.792411905341538e-05,
+    "start_holding_at": 1789541729.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xa4f4ced3fb2e43f9c3921c46b3dafc7a071a071c",
+    "realized_profit": 1164.63446988,
+    "avg_cost": 7.778160208536423e-06,
+    "start_holding_at": 1789541638.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x9f613b441535aaef5e20e8908f33cc5173849e08",
+    "realized_profit": 954.9855829618015,
+    "avg_cost": 0.00018422859849792205,
+    "start_holding_at": 1789542171.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xf7fc1228cc46db347a02718902756d7bc69bb7d0",
+    "realized_profit": 1136.5564107348976,
+    "avg_cost": 9.905852554154561e-06,
+    "start_holding_at": 1789541638.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x59b9eb239927564954fcfaab7955e5ec5ab04ae1",
+    "realized_profit": 1085.18894945,
+    "avg_cost": 9.219626841888056e-06,
+    "start_holding_at": 1789541666.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xeee6c6c58176aa3fb553e5bd97c6616f21814237",
+    "realized_profit": 407.43990977987653,
+    "avg_cost": 5.6280771875461134e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x297cac09c04895823738f1842cc7dc94771fb9aa",
+    "realized_profit": 386.0126027547126,
+    "avg_cost": 5.700193113455963e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xf4eb3425919462d107b826399c3892e7c2655114",
+    "realized_profit": 156.34746086996654,
+    "avg_cost": 1.69912382656237e-05,
+    "start_holding_at": 1789541679.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xc4210bfd73206c3208ae1f0854ee146ed8f1271b",
+    "realized_profit": 385.01620420569276,
+    "avg_cost": 5.7641595311833364e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x8fb1eb0c7fe2af990f99e36ed79bd7bd7975b311",
+    "realized_profit": 383.4127611482092,
+    "avg_cost": 5.798556821988965e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x1d3ec927cc89557d7854f616e3cc964439bfdb26",
+    "realized_profit": 385.14034863183264,
+    "avg_cost": 5.807972385944794e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x93c883963af898ab7c41ef9250f9eed71506eb52",
+    "realized_profit": 771.1877312953274,
+    "avg_cost": 9.6969720733221e-05,
+    "start_holding_at": 1789542782.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x33cee7971b61de88929ea1b28659ccc6bf5287c2",
+    "realized_profit": 374.33918628144477,
+    "avg_cost": 5.9270578313278816e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x00f58f91febe009329df2a115ccb0c2b1a731433",
+    "realized_profit": 375.0843624504645,
+    "avg_cost": 5.9523041507884795e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xbbd24abe49f5ba765ad57bf17150977ec627932d",
+    "realized_profit": 983.3974537939151,
+    "avg_cost": 4.98612838735337e-06,
+    "start_holding_at": 1789541630.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x2fe4093c894749e596f458764c377bf4f1337b58",
+    "realized_profit": 363.5208783375175,
+    "avg_cost": 5.938156557430648e-05,
+    "start_holding_at": 1789541753.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x755477c9eee7964eec11e1799060732aaae9a034",
+    "realized_profit": 960.0678497199029,
+    "avg_cost": 5.411784378922313e-06,
+    "start_holding_at": 1789541630.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xbbca441aa808ff033dfc04f0b04451b8327ad0c3",
+    "realized_profit": 949.584949674177,
+    "avg_cost": 6.839057856086213e-05,
+    "start_holding_at": 1789541779.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xf0afd758858a1c5fd8126cc43462ffb40bb7e7ca",
+    "realized_profit": 790.5559946222916,
+    "avg_cost": 3.9756089434186026e-05,
+    "start_holding_at": 1789541667.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x63b138f9028e194c51d04acfa36bc4b1bc9dc7e7",
+    "realized_profit": 935.9664553762907,
+    "avg_cost": 7.973920537248202e-05,
+    "start_holding_at": 1789543534.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xf487982ac351fe6d731b8b01408a9380d65473c9",
+    "realized_profit": 926.829819221331,
+    "avg_cost": 6.880571281011137e-05,
+    "start_holding_at": 1789541779.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x6ac4efd45145e60e59455ba74a73c75eddd023f4",
+    "realized_profit": 905.2603930830776,
+    "avg_cost": 7.097127390956369e-05,
+    "start_holding_at": 1789541779.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xd376156436ccb65fc588704eded7d656d2b53633",
+    "realized_profit": 631.0803959487711,
+    "avg_cost": 9.979035459554884e-05,
+    "start_holding_at": 1789542782.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x5b2e63c18ff8ebb5479a379da738aea124b5f988",
+    "realized_profit": 436.3796456894622,
+    "avg_cost": 6.818312727480534e-05,
+    "start_holding_at": 1789541792.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x11ceee7422f7a0d12995747e530bf68c10160723",
+    "realized_profit": 734.9176817735425,
+    "avg_cost": 4.081220953286648e-05,
+    "start_holding_at": 1789541667.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x318502232d759a4517d2fb2cd123f3efb4e48774",
+    "realized_profit": 615.4684293101124,
+    "avg_cost": 0.00010260901692784168,
+    "start_holding_at": 1789542782.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x77e1fce3cfc4743567163d2f28ed2dc7bc967078",
+    "realized_profit": 845.6556453376709,
+    "avg_cost": 7.257107901950424e-05,
+    "start_holding_at": 1789541779.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xa4990d06e247d3741d0711ddc8c4f4c9369e1d20",
+    "realized_profit": 493.3574702123823,
+    "avg_cost": 0.00017566438622726452,
+    "start_holding_at": 1789544650.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xbab7aed15b80ddeeca786d9a37e2edd2dfb02020",
+    "realized_profit": 825.47184244,
+    "avg_cost": 0.00011972763490701832,
+    "start_holding_at": 1789543189.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x33f99c0339f4344ae6022ff297e21beb2ccc8f51",
+    "realized_profit": 825.2765811,
+    "avg_cost": 1.4018909779399035e-05,
+    "start_holding_at": 1789541678.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x704c6dc5ddee6c559619220c4fbcc9112f02c492",
+    "realized_profit": 808.89123778,
+    "avg_cost": null,
+    "start_holding_at": 1789541527.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x2e9f729a8b410c1625854038bf4674d4403b48ff",
+    "realized_profit": 804.5960329867902,
+    "avg_cost": 1.600319724278782e-05,
+    "start_holding_at": 1789542808.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x7ed254a4b4bd143e19e598bd384d20844a780b87",
+    "realized_profit": 773.457706878,
+    "avg_cost": 1.4563869697218785e-05,
+    "start_holding_at": 1789541678.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xc5fbb12b02cac4d46224e0a2200c5753a599e380",
+    "realized_profit": 768.691448396,
+    "avg_cost": 1.4409265961895526e-05,
+    "start_holding_at": 1789541678.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x8ed23fbfbe8e29132dbb10e646b4e090bd1327aa",
+    "realized_profit": 741.978354086,
+    "avg_cost": 1.505603868962906e-05,
+    "start_holding_at": 1789541678.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x1cc14a875bf6366fd8bbb7ddf0aff6bef74a82c8",
+    "realized_profit": 734.765121764,
+    "avg_cost": 1.53201045440701e-05,
+    "start_holding_at": 1789541678.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x4d345d690e95f64d58fe4f35fdda98ca8bdec695",
+    "realized_profit": 593.798851800458,
+    "avg_cost": 0.00016690830713055976,
+    "start_holding_at": 1789548780.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x74d9be163b1446c1a612645de193e32eefdc4bd2",
+    "realized_profit": 554.70891113,
+    "avg_cost": 3.3671430559682314e-06,
+    "start_holding_at": 1789541445.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xecbfd061cc591b3df2302a64663570624150b8f6",
+    "realized_profit": 634.5306712426913,
+    "avg_cost": 0.00011406898067062819,
+    "start_holding_at": 1789542736.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xb4d0cb963a9d724d11c8c9f987f345b4d218d3ff",
+    "realized_profit": 428.4147423122959,
+    "avg_cost": 0.00018070915340423266,
+    "start_holding_at": 1789549492.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x3296219c6167893ca763c6d515df6a542e5cc395",
+    "realized_profit": 621.2052694748977,
+    "avg_cost": 8.45175346948151e-05,
+    "start_holding_at": 1789541892.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x634cd1db757fedb315b45a4edf2bc306383de0d9",
+    "realized_profit": 613.522051865,
+    "avg_cost": 3.273572844757067e-05,
+    "start_holding_at": 1789541751.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xc45a1dc261a4ab0338e7308bb0dfd72465c5c46a",
+    "realized_profit": 490.43937043797916,
+    "avg_cost": 3.3179128584320023e-06,
+    "start_holding_at": 1789541444.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x48f0f0711d43d38e452a71a328c63d4a28cf5ea2",
+    "realized_profit": 252.84289872239606,
+    "avg_cost": 2.6085917041347185e-05,
+    "start_holding_at": 1789541727.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x8a6dc28922c7190768058497ec09e2d5f5912994",
+    "realized_profit": 352.6243488693009,
+    "avg_cost": 8.67303004573594e-05,
+    "start_holding_at": 1789541815.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x2126f283b917d41ff7318a7b2998de406815f5b7",
+    "realized_profit": 376.9456233487099,
+    "avg_cost": 0.00010954549277802488,
+    "start_holding_at": 1789541914.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x2398e6edb795ea753e487930202d9fcd82111614",
+    "realized_profit": 577.0634108809974,
+    "avg_cost": 8.382082401450095e-05,
+    "start_holding_at": 1789542434.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x816de4461cdbb6f6899ede0e60c0006fa13fc9b4",
+    "realized_profit": 183.82191601464592,
+    "avg_cost": 0.00010422474483918315,
+    "start_holding_at": 1789542822.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x5168df37c878a5cd703ce6fb6121fbcaf0c57022",
+    "realized_profit": 534.348932681906,
+    "avg_cost": 1.0498323895076199e-05,
+    "start_holding_at": 1789541630.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x098012494ffa2a8260207a8311977d8190de87a0",
+    "realized_profit": 507.9655375907572,
+    "avg_cost": 9.600338199812452e-05,
+    "start_holding_at": 1789542813.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xf8199913f2a7018d93330a711513513b43433157",
+    "realized_profit": 318.8466664105844,
+    "avg_cost": 0.00019043605761426283,
+    "start_holding_at": 1789542794.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x0b5ba9dddcd9716c664c4deb50f220bb1069dac2",
+    "realized_profit": 469.97821547742,
+    "avg_cost": 4.107142004082552e-05,
+    "start_holding_at": 1789541712.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x483c88966dcb4456a61742d8085a4b990f319cbb",
+    "realized_profit": 467.64436065430914,
+    "avg_cost": 1.667391189862848e-05,
+    "start_holding_at": 1789542808.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x03ad9259a227e44886c6b1c1833c2e79379b976a",
+    "realized_profit": 174.11457737504756,
+    "avg_cost": 9.616716721678935e-05,
+    "start_holding_at": 1789543101.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x04f8efe6b54a71a5fd49cb8da48c154a3ecc2df4",
+    "realized_profit": 379.0606966633559,
+    "avg_cost": 0.0001988240212565867,
+    "start_holding_at": 1789547441.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x12d813b0c78bb3e4022bcfcb7c004a40766f5a9f",
+    "realized_profit": 454.6713538447135,
+    "avg_cost": 0.00013041103010923963,
+    "start_holding_at": 1789543134.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x339292b66326ba852e66499fe08a47382be1fa1b",
+    "realized_profit": 414.3419126,
+    "avg_cost": 1.736249955875564e-05,
+    "start_holding_at": 1789541694.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xa83b73f5644cde337b61da79589f10ea15548811",
+    "realized_profit": 402.910988796,
+    "avg_cost": 0.0001386946428211426,
+    "start_holding_at": 1789542141.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x44bb78373daac6d6ab34c1affd0a69b36ee21f1c",
+    "realized_profit": 401.0239795814376,
+    "avg_cost": 1.633683358885615e-05,
+    "start_holding_at": 1789545217.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x78f239859bb33586a3bc5c6eb04dc2638b798a54",
+    "realized_profit": 400.88563154,
+    "avg_cost": 9.952978802515433e-05,
+    "start_holding_at": 1789541896.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xd5cac42c19412c9e344c8a2e5c63c26b6c95421a",
+    "realized_profit": 388.8626130898754,
+    "avg_cost": 5.9642583532228704e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x4793e9798569a71dea73bd807c78f2e7a0e3cf63",
+    "realized_profit": 383.62279244,
+    "avg_cost": null,
+    "start_holding_at": 1789541527.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x60a9605b6f005197be24cc173a564513e36dc584",
+    "realized_profit": 382.29327807461453,
+    "avg_cost": 2.7390646578775747e-05,
+    "start_holding_at": 1789543173.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xf038a1c5a218c0b00228241a5a99b6d0899cb70e",
+    "realized_profit": 219.65706666887172,
+    "avg_cost": 5.972068334073206e-05,
+    "start_holding_at": 1789541758.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xbaba0c71680e0d01a77c1ebcf89d72cf8161c442",
+    "realized_profit": 363.4258614098742,
+    "avg_cost": 5.857357745862639e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x80993adfab4ef59586be08ca04295caee59df3ba",
+    "realized_profit": 144.54547730429394,
+    "avg_cost": 3.475751788343808e-05,
+    "start_holding_at": 1789541740.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xfd94eaac8d4ef2004a5bb974bf23f276989017ab",
+    "realized_profit": 353.4988386198779,
+    "avg_cost": 6.157081609627393e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x03c288bb93de291f8b5cf4686016912a7d4baf1f",
+    "realized_profit": 352.1897150198767,
+    "avg_cost": 6.060303894010294e-05,
+    "start_holding_at": 1789541763.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x5623869389e9624c81fef641c9dca75fac6784cb",
+    "realized_profit": 140.7161346503241,
+    "avg_cost": 3.549512609669715e-05,
+    "start_holding_at": 1789541740.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x40da1a56c105f62731f3bb740eefe8e945c6ab5c",
+    "realized_profit": 346.1003941444853,
+    "avg_cost": 0.00012398321983996325,
+    "start_holding_at": 1789541911.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x582fd550631030aed489d9d3b0ba472ad5a039b7",
+    "realized_profit": 344.45086957,
+    "avg_cost": 2.515195067975565e-05,
+    "start_holding_at": 1789541724.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x88410dc6e2761411058a5b0fb51d674f520f6332",
+    "realized_profit": 329.88329285,
+    "avg_cost": 0.0001264746837083581,
+    "start_holding_at": 1789543639.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0x8d59d5ad73e6920ba665348d3d141b4ce3c070da",
+    "realized_profit": 321.81212368988156,
+    "avg_cost": 7.832362914098267e-06,
+    "start_holding_at": 1789541637.0,
+    "symbol": "ARC"
+  },
+  {
+    "address": "0xdd9cdddb4a96a0e66d18e4860ca7195ab8d7c7bc",
+    "realized_profit": 318.8248100891611,
+    "avg_cost": 7.147760459417825e-05,
+    "start_holding_at": 1789542709.0,
+    "symbol": "ARC"
+  }
+]
