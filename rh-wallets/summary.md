@@ -1,12 +1,8 @@
-# RH wallets (GMGN CLI + Nansen refresh)
+# RH wallets
 
-- JST: 2026-09-15T20:51:33.727008+09:00
-- Before overall (start of task): **908**
-- After GMGN CLI: **978** (new GMGN **70**)
-- After Nansen refresh: **978** (new Nansen **0**)
-- realized_pnl > 0: **843**
-- Nansen API calls (total this refresh): **28**
-- Credits used (header sum): **140**
-- Credits remaining: **225**
-- Pages/rows by tf (main): {'7': 4, '30': 7, '90': 8, '1': 3, '180': 3} / {'7': 382, '30': 675, '90': 717, '1': 300, '180': 300}
-- Extra 1d/180 finish: calls=3 new_1d=0 new_180=0
+- Updated JST: 2026-09-16T15:38:57.290317+09:00
+- Watchlist wallets.jsonl: **827**
+- On-chain wallets_onchain.jsonl: **281**
+- New on-chain merges this run: **150** (touched existing: 0)
+- Source: Robinhood Blockscout `https://robinhoodchain.blockscout.com/api/v2` (+ etherscan-compat if allowed)
+- Notes: Blockscout /api etherscan-compat reachable; tokentx 0x5d3a1ff2 http=429; tokentx 0x5fc5360d http=429; tokentx 0xf3081494 http=429; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429
