@@ -8,7 +8,7 @@ from pathlib import Path
 SECRETS_PATH = Path("/home/box/sand-data/box-secrets.json")
 MAP = {
     "NANSEN_API_KEY": ("card", "NANSEN_API_KEY"),
-    "GMGN_API_KEY": ("desktop", "GMGN_API_KEY"),
+    "GMGN_API_KEY": ("card", "GMGN_API_KEY"),
     "DISCORD_WEBHOOK_URL": ("card", "DISCORD_WEBHOOK_URL"),
     "DISCORD_PAPER_WEBHOOK_URL": ("card", "DISCORD_PAPER_WEBHOOK_URL"),
     "DISCORD_ARC_WEBHOOK_URL": ("card", "DISCORD_ARC_WEBHOOK_URL"),
@@ -45,6 +45,26 @@ def load(names: list[str] | None = None) -> dict[str, bool]:
                 if isinstance(v, str) and v.strip():
                     val = v
                     break
+        if name == "GMGN_API_KEY":
+            # Prefer real gmgn_… keys; skip desktop junk like "Inst…"
+            candidates = []
+            for sec, k in (("card", "GMGN_API_KEY"), ("desktop", "GMGN_API_KEY")):
+                v = (data.get(sec) or {}).get(k)
+                if isinstance(v, str) and v.strip():
+                    candidates.append(v.strip())
+            env_v = (os.environ.get("GMGN_API_KEY") or "").strip()
+            if env_v:
+                candidates.insert(0, env_v)
+            picked = None
+            for c in candidates:
+                if c.lower().startswith("gmgn") or len(c) >= 20:
+                    # reject obvious placeholders
+                    if c.lower().startswith("inst"):
+                        continue
+                    picked = c
+                    break
+            if picked:
+                val = picked
         ok = isinstance(val, str) and bool(val.strip())
         if ok and name not in os.environ:
             os.environ[name] = val.strip()
