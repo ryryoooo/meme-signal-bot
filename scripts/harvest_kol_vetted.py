@@ -351,24 +351,58 @@ def parse_portfolio_row(row: dict) -> dict:
                 break
         except (TypeError, ValueError):
             pass
-    # buy / sell may be ints or dicts with count
     def _count(val) -> float | None:
         if val is None:
             return None
+        if isinstance(val, bool):
+            return None
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, str):
+            return num(val)
         if isinstance(val, dict):
-            for ck in ("count", "tx", "txs", "num", "n"):
-                n = num(val.get(ck))
+            for ck in (
+                "count", "tx", "txs", "num", "n", "total", "buy", "sell",
+                "30d", "7d", "1d", "all",
+            ):
+                n = _count(val.get(ck))
                 if n is not None:
                     return n
+            # sum numeric leaves
+            nums = [float(v) for v in val.values() if isinstance(v, (int, float))]
+            if nums:
+                return float(sum(nums))
             return None
-        return num(val)
+        if isinstance(val, list) and val:
+            return float(len(val))
+        return None
 
     if nt is None:
-        b = _count(flat.get("buy") or flat.get("buy_tx_count") or flat.get("buy_count"))
-        s = _count(flat.get("sell") or flat.get("sell_tx_count") or flat.get("sell_count"))
+        b = _count(
+            flat.get("buy")
+            or flat.get("buy_tx_count")
+            or flat.get("buy_count")
+            or flat.get("buy_num")
+            or flat.get("buys")
+        )
+        s = _count(
+            flat.get("sell")
+            or flat.get("sell_tx_count")
+            or flat.get("sell_count")
+            or flat.get("sell_num")
+            or flat.get("sells")
+        )
         if b is not None or s is not None:
             nt = int((b or 0) + (s or 0))
-    # history_bought_cost alone is NOT trade count
+        else:
+            for k in ("token_num", "total_num", "trade_num", "history_bought_income"):
+                # token_num = distinct tokens traded — weaker but better than None for Path A floor
+                if k == "history_bought_income":
+                    continue
+                v = _count(flat.get(k))
+                if v is not None and v > 0:
+                    nt = int(v)
+                    break
 
     addr = None
     for k in ("address", "wallet_address", "walletAddress", "maker", "wallet"):
@@ -511,9 +545,34 @@ def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dic
         wr = (out.get(a) or {}).get("win_rate")
         rp = (out.get(a) or {}).get("realized_pnl_usd")
         nt = (out.get(a) or {}).get("n_trades")
+        buy_v = sell_v = None
+        if isinstance(sdata, dict):
+            buy_v = sdata.get("buy")
+            sell_v = sdata.get("sell")
+            if buy_v is None and isinstance(sdata.get("data"), dict):
+                buy_v = sdata["data"].get("buy")
+                sell_v = sdata["data"].get("sell")
+        # last-resort: if n still None but buy/sell are numeric on wire
+        if nt is None:
+            bn = num(buy_v) if not isinstance(buy_v, dict) else None
+            sn = num(sell_v) if not isinstance(sell_v, dict) else None
+            if isinstance(buy_v, dict) or isinstance(sell_v, dict):
+                def _c(v):
+                    if not isinstance(v, dict):
+                        return num(v)
+                    for ck in ("count", "num", "n", "30d", "7d"):
+                        if num(v.get(ck)) is not None:
+                            return num(v.get(ck))
+                    return None
+                bn = _c(buy_v)
+                sn = _c(sell_v)
+            if bn is not None or sn is not None:
+                nt = int((bn or 0) + (sn or 0))
+                out[a]["n_trades"] = nt
         print(
-            f"[{chain}] stats {a[:10]}… wr={wr} rp={rp} n={nt} keys={keys[:8]} "
-            f"(+{len(out) - before})"
+            f"[{chain}] stats {a[:10]}… wr={wr} rp={rp} n={nt} "
+            f"buy={buy_v!r}"[:120] + f" sell={sell_v!r}"[:80]
+            + f" keys={keys[:6]}"
         )
         time.sleep(0.25)
     return out, calls, err_kind
