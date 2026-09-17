@@ -1,0 +1,138 @@
+name: scout-tg-resolve
+
+on:
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: "TG scrape pages (0=resolve-only from disk)"
+        required: false
+        default: "90"
+      bs_pages:
+        description: "Blockscout page depth per token"
+        required: false
+        default: "40"
+      vet_cap:
+        description: "GMGN traders call cap (stop on 429)"
+        required: false
+        default: "120"
+      max_tokens:
+        description: "GMGN max tokens"
+        required: false
+        default: "80"
+      bs_all:
+        description: "Fetch Blockscout for ALL unresolved tokens (1/0)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: scout-tg-resolve
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
+      - name: Configure GMGN env (no echo)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
+
+      - name: Deep scrape + resolve ALL unresolved truncs
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
+          SCOUT_TG_ENABLED: "1"
+          SCOUT_TG_PAGES: ${{ inputs.pages || '90' }}
+          SCOUT_TG_RESOLVE: "1"
+          SCOUT_TG_VET_CAP: ${{ inputs.vet_cap || '120' }}
+          SCOUT_TG_MAX_TOKENS: ${{ inputs.max_tokens || '80' }}
+          SCOUT_TG_BS_PAGES: ${{ inputs.bs_pages || '40' }}
+          SCOUT_TG_BS_ALL: ${{ inputs.bs_all || '1' }}
+          SCOUT_TG_BS_TOKEN_CAP: "-1"
+          SCOUT_TG_BLOCKSCOUT: "1"
+          SCOUT_TG_MULTI_UNION: "1"
+          SCOUT_TG_BS_SLEEP_MS: "450"
+          SCOUT_TG_SKIP_WELL_RESOLVED: "0.95"
+          SCOUT_TG_BS_REUSE_MIN: "100"
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+        run: python3 scripts/harvest_scout_telegram.py
+
+      - name: Rank scout wallets + promote
+        env:
+          SCOUT_RANK_MERGE: "1"
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          REQUIRE_CONSISTENT_PNL: "1"
+          WATCH_MIN_WINRATE: "0.45"
+          WATCH_MIN_TRADES: "15"
+          WATCH_MIN_AVG_PNL_PER_TRADE: "50"
+          WATCH_MIN_REALIZED_HARD: "500"
+        run: python3 scripts/rank_scout_wallets.py
+        continue-on-error: true
+
+      - name: Commit resolve artifacts
+        continue-on-error: true
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            rh-wallets/wallets.jsonl \
+            rh-wallets/wallets_scout_ranked.jsonl \
+            rh-wallets/summary_scout.md \
+            rh-wallets/summary_scout_resolve.md \
+            rh-wallets/raw/scout_tg_*.jsonl \
+            scripts/harvest_scout_telegram.py \
+            .github/workflows/scout-tg-resolve.yml || true
+          if git diff --cached --quiet; then
+            echo "no resolve changes"
+          else
+            git commit -m "chore: scout TG deep resolve (unique-match)"
+            if ! git pull --rebase origin main; then
+              echo "rebase conflict — prefer GHA resolve artifacts"
+              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/summary_scout.md rh-wallets/summary_scout_resolve.md; do
+                if [ -f "$f" ] && git status --porcelain "$f" | grep -q .; then
+                  git checkout --theirs -- "$f" || true
+                  git add "$f" || true
+                fi
+              done
+              git add rh-wallets/raw/ || true
+              GIT_EDITOR=true git rebase --continue || git rebase --abort || true
+            fi
+            git push || git push --rebase origin main || true
+          fi
+
+      - name: Upload resolve artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scout-tg-resolve
+          path: |
+            rh-wallets/wallets.jsonl
+            rh-wallets/wallets_scout_ranked.jsonl
+            rh-wallets/summary_scout.md
+            rh-wallets/summary_scout_resolve.md
+            rh-wallets/raw/scout_tg_*.jsonl
+          if-no-files-found: warn

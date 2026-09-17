@@ -3,14 +3,18 @@
 
 Env:
   SCOUT_TG_ENABLED=1     master switch (default 1 when run directly)
-  SCOUT_TG_PAGES=5       how many ?before= pages to walk
+  SCOUT_TG_PAGES=5       how many ?before= pages to walk (0 = resolve-only, keep disk trunc)
   SCOUT_TG_RESOLVE=1     resolve 0xABCD…WXYZ via local/BS/GMGN
   SCOUT_TG_VET_CAP=40    max GMGN token-traders calls this run (GHA only)
-  SCOUT_TG_MAX_TOKENS=8  max distinct token CAs to query traders for
+  SCOUT_TG_MAX_TOKENS=8  max distinct token CAs for GMGN traders
   SCOUT_TG_BS_PAGES=20   Blockscout holders/transfers/tokentx page depth
+  SCOUT_TG_BS_TOKEN_CAP  Blockscout token cap (-1 = all unresolved tokens)
+  SCOUT_TG_BS_ALL=1      alias: set BS token cap to all unresolved
   SCOUT_TG_BLOCKSCOUT=1  enable Blockscout token-scoped resolve
+  SCOUT_TG_MULTI_UNION=1 union transfer graphs for pairs on ≥2 tokens
   SCOUT_TG_ELITE_ONLY=0  if 1, only resolve 💎 elite truncs
   SCOUT_TG_SKIP_WELL_RESOLVED=0.8  skip GMGN for tokens with >= this fraction resolved
+  SCOUT_TG_BS_SLEEP_MS=400  pause between Blockscout token fetches
   GMGN_DISABLED=1        skip GMGN (box IP ban); local+Blockscout still run
   CHAIN=robinhood
   WATCHLIST_PATH=rh-wallets/wallets.jsonl
@@ -18,17 +22,21 @@ Env:
 Resolve order (unique match only — never invent addresses):
   1) pair-level resolve cache (prefix|suffix → addr) applied across tokens
   2) token-scoped unique match (holders/transfers/traders of that token_ca)
-  3) global unique match against expanded local pool
-  4) optional: 2 global hits but only 1 in token set → accept that one
+  3) multi-token union unique match (pairs seen on ≥2 tokens)
+  4) global unique match against expanded local pool
+  5) optional: 2 global hits but only 1 in token set → accept that one
 
 Writes:
   rh-wallets/raw/scout_tg_posts.jsonl
   rh-wallets/raw/scout_tg_trunc.jsonl
   rh-wallets/raw/scout_tg_hits.jsonl
   rh-wallets/raw/scout_tg_resolve_cache.jsonl
+  rh-wallets/raw/scout_tg_token_pools.jsonl
+  rh-wallets/raw/scout_tg_unresolved.jsonl
+  rh-wallets/summary_scout_resolve.md
   merges resolved full addrs into WATCHLIST_PATH (no wipe)
 
-Deep harvest tip: SCOUT_TG_PAGES=50+ SCOUT_TG_BS_PAGES=20 (stops early on 3 stale pages).
+Deep harvest tip: SCOUT_TG_PAGES=80–100 SCOUT_TG_BS_ALL=1 SCOUT_TG_BS_PAGES=40 (GHA).
 """
 from __future__ import annotations
 
@@ -52,6 +60,9 @@ POSTS_PATH = RAW_DIR / "scout_tg_posts.jsonl"
 TRUNC_PATH = RAW_DIR / "scout_tg_trunc.jsonl"
 HITS_PATH = RAW_DIR / "scout_tg_hits.jsonl"
 RESOLVE_CACHE = RAW_DIR / "scout_tg_resolve_cache.jsonl"
+TOKEN_POOLS_PATH = RAW_DIR / "scout_tg_token_pools.jsonl"
+UNRESOLVED_PATH = RAW_DIR / "scout_tg_unresolved.jsonl"
+RESOLVE_SUMMARY_PATH = ROOT / "rh-wallets" / "summary_scout_resolve.md"
 BASE_URL = "https://t.me/s/scoutrobinhood"
 UA = "Mozilla/5.0 (compatible; ScoutTGHarvester/1.0; +https://github.com/meme-foundation)"
 
@@ -718,7 +729,12 @@ def http_get_json(url: str, timeout: float = 25.0, retries: int = 3) -> tuple[ob
     for attempt in range(max(1, retries)):
         try:
             req = urllib.request.Request(
-                url, headers={"User-Agent": UA, "Accept": "application/json"}
+                url,
+                headers={
+                    "User-Agent": UA,
+                    "Accept": "application/json",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
             )
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
@@ -731,23 +747,89 @@ def http_get_json(url: str, timeout: float = 25.0, retries: int = 3) -> tuple[ob
             if e.code in (400, 404, 422):
                 return None, last_err
             if e.code == 429:
-                time.sleep(0.8 * (attempt + 1))
+                time.sleep(1.5 * (2 ** attempt))
                 continue
-            if e.code in (403, 402, 401):
+            # CF 403 is often transient on GHA — backoff, don't hard-kill host yet
+            if e.code == 403:
+                time.sleep(1.2 * (attempt + 1))
+                continue
+            if e.code in (402, 401):
                 return None, last_err
-            time.sleep(0.35 * (attempt + 1))
+            time.sleep(0.45 * (attempt + 1))
         except Exception as e:
             last_err = type(e).__name__
-            time.sleep(0.35 * (attempt + 1))
+            time.sleep(0.45 * (attempt + 1))
     return None, last_err or "error"
 
 
-# Hosts that returned hard auth/paywall errors this process — skip immediately.
+# Soft host quarantine: only skip after consecutive hard failures (not single CF 403).
+_BS_HOST_FAILS: dict[str, int] = {}
 _BS_DEAD_HOSTS: set[str] = set()
+_BS_HOST_FAIL_LIMIT = 4
 
 
-def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[str]:
-    """Deep holders/transfers + etherscan-compat tokentx. Avoid fragile type= filters."""
+def _bs_note_fail(host: str, err: str | None) -> None:
+    if not err:
+        _BS_HOST_FAILS[host] = 0
+        return
+    if err in ("http_401", "http_402"):
+        _BS_DEAD_HOSTS.add(host)
+        return
+    if err in ("http_403", "http_429", "html"):
+        n = _BS_HOST_FAILS.get(host, 0) + 1
+        _BS_HOST_FAILS[host] = n
+        if n >= _BS_HOST_FAIL_LIMIT:
+            _BS_DEAD_HOSTS.add(host)
+        return
+    # soft: don't kill on transient network
+
+
+def _bs_note_ok(host: str) -> None:
+    _BS_HOST_FAILS[host] = 0
+    _BS_DEAD_HOSTS.discard(host)
+
+
+def load_token_pools() -> dict[str, set[str]]:
+    out: dict[str, set[str]] = {}
+    if not TOKEN_POOLS_PATH.exists():
+        return out
+    for line in TOKEN_POOLS_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            o = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        ca = (o.get("token_ca") or "").lower()
+        addrs = o.get("addresses") or []
+        if not ca.startswith("0x"):
+            continue
+        pool = {a.lower()[:42] for a in addrs if isinstance(a, str) and a.startswith("0x") and len(a) >= 42}
+        if pool:
+            out[ca] = pool | out.get(ca, set())
+    return out
+
+
+def save_token_pools(pools: dict[str, set[str]]) -> None:
+    TOKEN_POOLS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for ca in sorted(pools):
+        addrs = sorted(pools[ca])
+        if not addrs:
+            continue
+        rows.append(
+            {
+                "token_ca": ca,
+                "n": len(addrs),
+                "addresses": addrs,
+                "updated_at": now_iso(),
+            }
+        )
+    write_jsonl(TOKEN_POOLS_PATH, rows)
+
+
+def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple[list[str], str | None]:
+    """Deep holders/transfers + etherscan-compat tokentx. Returns (addrs, last_err)."""
     if max_pages is None:
         max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "20"))
     hosts_v2 = [
@@ -767,10 +849,11 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
         if h and h not in _BS_DEAD_HOSTS
     ]
     if not hosts_v2 and not hosts_es:
-        return []
+        return [], "all_hosts_dead"
 
     addrs: list[str] = []
     seen: set[str] = set()
+    last_err: str | None = None
 
     def _absorb(items: list) -> None:
         for it in items:
@@ -791,15 +874,21 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
                         addrs.append(al)
 
     def _paginate_v2(host: str, kind: str, extra_q: str | None = None) -> bool:
+        nonlocal last_err
         base = f"{host.rstrip('/')}/tokens/{token_ca}/{kind}"
         url = base + (("?" + extra_q) if extra_q else "")
         got = False
         for _page in range(max(1, max_pages)):
-            data, err = http_get_json(url, timeout=20.0, retries=1)
-            if err in ("http_401", "http_402", "http_403"):
-                _BS_DEAD_HOSTS.add(host)
-                return got
-            if err or not isinstance(data, dict):
+            data, err = http_get_json(url, timeout=25.0, retries=3)
+            if err:
+                last_err = err
+                _bs_note_fail(host, err)
+                if host in _BS_DEAD_HOSTS:
+                    return got
+                break
+            _bs_note_ok(host)
+            if not isinstance(data, dict):
+                last_err = "bad_json"
                 break
             items = data.get("items")
             if not isinstance(items, list) or not items:
@@ -813,11 +902,13 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
                 break
             q = urllib.parse.urlencode({k: v for k, v in nxt.items() if v is not None})
             url = base + "?" + q
-            time.sleep(0.22)
+            time.sleep(0.28)
         return got
 
     # 1) v2 holders + transfers (no type filter first — type=token_transfer often 422)
-    for host in hosts_v2:
+    for host in list(hosts_v2):
+        if host in _BS_DEAD_HOSTS:
+            continue
         got_any = False
         if _paginate_v2(host, "holders"):
             got_any = True
@@ -830,9 +921,12 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
         if got_any:
             break
 
-    # 2) etherscan-compat tokentx page offsets
-    if len(addrs) < 20:
-        for host in hosts_es:
+    # 2) etherscan-compat tokentx — always try to deepen / fill empties
+    es_offset = int(os.environ.get("SCOUT_TG_BS_ES_OFFSET", "100"))
+    if len(addrs) < max(50, max_pages * 5):
+        for host in list(hosts_es):
+            if host in _BS_DEAD_HOSTS:
+                continue
             es_got = False
             for page in range(1, max(1, max_pages) + 1):
                 qs = urllib.parse.urlencode(
@@ -841,17 +935,25 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
                         "action": "tokentx",
                         "contractaddress": token_ca,
                         "page": str(page),
-                        "offset": "100",
+                        "offset": str(es_offset),
                         "sort": "desc",
                     }
                 )
-                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=20.0, retries=1)
-                if err in ("http_401", "http_402", "http_403"):
-                    _BS_DEAD_HOSTS.add(host)
+                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=3)
+                if err:
+                    last_err = err
+                    _bs_note_fail(host, err)
+                    if host in _BS_DEAD_HOSTS:
+                        break
                     break
-                if err or not isinstance(data, dict):
+                _bs_note_ok(host)
+                if not isinstance(data, dict):
                     break
                 if str(data.get("status")) != "1":
+                    # message may explain; keep last_err soft
+                    msg = str(data.get("message") or data.get("result") or "")[:80]
+                    if msg:
+                        last_err = f"es_{msg}"
                     break
                 result = data.get("result") or []
                 if not isinstance(result, list) or not result:
@@ -860,11 +962,13 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
                 _absorb(result)
                 if len(addrs) > before:
                     es_got = True
-                time.sleep(0.18)
+                time.sleep(0.22)
             if es_got:
                 break
 
-    return addrs
+    if not addrs and last_err is None:
+        last_err = "empty"
+    return addrs, last_err
 
 
 class ResolveStats:
@@ -873,13 +977,20 @@ class ResolveStats:
         "token_scoped_hits",
         "global_hits",
         "pair_cache_hits",
+        "multi_union_hits",
         "collisions_skipped",
         "two_hit_token_accept",
         "gmgn_calls",
         "bs_tokens",
+        "bs_tokens_nonempty",
+        "bs_api_fail",
         "unresolved_remaining",
         "unique_pairs_total",
         "unique_pairs_resolved",
+        "reason_no_token_pool",
+        "reason_multi_match",
+        "reason_api_fail",
+        "reason_no_match",
     )
 
     def __init__(self) -> None:
@@ -887,13 +998,20 @@ class ResolveStats:
         self.token_scoped_hits = 0
         self.global_hits = 0
         self.pair_cache_hits = 0
+        self.multi_union_hits = 0
         self.collisions_skipped = 0
         self.two_hit_token_accept = 0
         self.gmgn_calls = 0
         self.bs_tokens = 0
+        self.bs_tokens_nonempty = 0
+        self.bs_api_fail = 0
         self.unresolved_remaining = 0
         self.unique_pairs_total = 0
         self.unique_pairs_resolved = 0
+        self.reason_no_token_pool = 0
+        self.reason_multi_match = 0
+        self.reason_api_fail = 0
+        self.reason_no_match = 0
 
     def as_dict(self) -> dict:
         return {k: getattr(self, k) for k in self.__slots__}
@@ -954,6 +1072,8 @@ def resolve_truncs(
             pair_to_addr[pk] = addr
         if bucket == "token":
             stats.token_scoped_hits += 1
+        elif bucket == "multi":
+            stats.multi_union_hits += 1
         elif bucket == "pair_cache":
             stats.pair_cache_hits += 1
         elif bucket == "two_hit":
@@ -989,7 +1109,6 @@ def resolve_truncs(
     skip_frac = float(os.environ.get("SCOUT_TG_SKIP_WELL_RESOLVED", "0.8"))
     cas_ordered = sorted(by_ca.keys(), key=lambda c: ca_score(by_ca[c]))
 
-    token_pools: dict[str, set[str]] = {}
     calls = 0
     err_kind = None
     gmgn_off = env_bool("GMGN_DISABLED", False)
@@ -1007,10 +1126,45 @@ def resolve_truncs(
                 done += 1
         return done / max(1, len(items))
 
+    # load persisted token pools (cross-run)
+    token_pools = load_token_pools()
+    if token_pools:
+        print(f"scout_tg loaded_token_pools={len(token_pools)} addrs={sum(len(v) for v in token_pools.values())}")
+
+    bs_sleep = max(0, int(os.environ.get("SCOUT_TG_BS_SLEEP_MS", "400"))) / 1000.0
+    bs_all = env_bool("SCOUT_TG_BS_ALL", False)
+    bs_cap_env = os.environ.get("SCOUT_TG_BS_TOKEN_CAP")
+    if bs_cap_env is not None and str(bs_cap_env).strip() != "":
+        try:
+            bs_cap = int(bs_cap_env)
+        except ValueError:
+            bs_cap = max(1, max_tokens * 3)
+    elif bs_all:
+        bs_cap = -1
+    else:
+        bs_cap = max(1, max_tokens * 3)
+
     if env_bool("SCOUT_TG_BLOCKSCOUT", True):
-        bs_limit = max(1, max_tokens * 3)  # deepen: more tokens via BS than GMGN
-        for ca in cas_ordered[:bs_limit]:
-            # refresh pending for this CA
+        # Prefer tokens that still have unresolved truncs; optional: skip well-pooled
+        pending_cas = []
+        for ca in cas_ordered:
+            pending = [
+                t
+                for t in by_ca[ca]
+                if (t.get("trunc_key") or "") not in resolved_keys
+                and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr
+            ]
+            if pending:
+                pending_cas.append(ca)
+        if bs_cap < 0:
+            bs_targets = pending_cas
+        else:
+            bs_targets = pending_cas[: max(1, bs_cap)]
+        print(
+            f"scout_tg blockscout targets={len(bs_targets)}/{len(pending_cas)} "
+            f"cap={bs_cap} pages={os.environ.get('SCOUT_TG_BS_PAGES', '20')}"
+        )
+        for i, ca in enumerate(bs_targets):
             pending = [
                 t
                 for t in by_ca[ca]
@@ -1019,14 +1173,33 @@ def resolve_truncs(
             ]
             if not pending:
                 continue
-            addrs = fetch_blockscout_addrs(ca)
-            stats.bs_tokens += 1
-            pool = set(addrs)
-            token_pools[ca] = pool | token_pools.get(ca, set())
-            if not addrs:
-                print(f"scout_tg blockscout empty {ca[:10]}…")
+            # reuse rich pool if already deep
+            prior = token_pools.get(ca) or set()
+            min_reuse = int(os.environ.get("SCOUT_TG_BS_REUSE_MIN", "80"))
+            force = env_bool("SCOUT_TG_BS_FORCE", False)
+            if prior and len(prior) >= min_reuse and not force:
+                addrs = list(prior)
+                err = None
+                print(f"scout_tg blockscout reuse {ca[:10]}… n={len(addrs)} pending={len(pending)}")
+            else:
+                addrs, err = fetch_blockscout_addrs(ca)
+                stats.bs_tokens += 1
+                if err and err not in ("empty",) and not addrs:
+                    stats.bs_api_fail += 1
+            pool = set(addrs) | prior
+            if pool:
+                token_pools[ca] = pool
+            if addrs:
+                stats.bs_tokens_nonempty += 1
+            if not addrs and not prior:
+                print(f"scout_tg blockscout empty {ca[:10]}… err={err}")
+                if bs_sleep:
+                    time.sleep(bs_sleep)
                 continue
-            print(f"scout_tg blockscout {ca[:10]}… n={len(addrs)} pending={len(pending)}")
+            print(
+                f"scout_tg blockscout {ca[:10]}… n={len(pool)} pending={len(pending)} "
+                f"[{i+1}/{len(bs_targets)}]"
+            )
             for t in pending:
                 pref, suf = (t.get("prefix") or "").lower(), (t.get("suffix") or "").lower()
                 hits = match_hits(pool, pref, suf)
@@ -1034,9 +1207,13 @@ def resolve_truncs(
                     accept(t, hits[0], "scout_tg_blockscout", bucket="token")
                 elif len(hits) > 1:
                     stats.collisions_skipped += 1
-            time.sleep(0.25)
+            if bs_sleep:
+                time.sleep(bs_sleep)
+            # periodic pool flush every 25 tokens
+            if (i + 1) % 25 == 0:
+                save_token_pools(token_pools)
 
-    # --- Pass 2: GMGN traders (GHA; skip well-resolved tokens; don't burn box) ---
+        # --- Pass 2: GMGN traders (GHA; skip well-resolved tokens; don't burn box) ---
     if gmgn_off:
         print("scout_tg GMGN resolve skip: GMGN_DISABLED=1", flush=True)
         err_kind = "gmgn_disabled"
@@ -1136,6 +1313,50 @@ def resolve_truncs(
                     stats.collisions_skipped += 1
             time.sleep(1.0)
 
+    # --- Pass 2.5: multi-token union for pairs appearing on ≥2 tokens ---
+    if env_bool("SCOUT_TG_MULTI_UNION", True):
+        pair_to_cas: dict[str, set[str]] = {}
+        for t in trunc_rows:
+            if elite_only and t.get("tier") != "elite":
+                continue
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            if pk == "|" or pk in pair_to_addr:
+                continue
+            ca = (t.get("token_ca") or "").lower()
+            if ca.startswith("0x"):
+                pair_to_cas.setdefault(pk, set()).add(ca)
+        multi_pairs = {pk: cas for pk, cas in pair_to_cas.items() if len(cas) >= 2}
+        print(f"scout_tg multi_union candidate_pairs={len(multi_pairs)}")
+        # representative trunc row per pair
+        rep: dict[str, dict] = {}
+        for t in trunc_rows:
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            if pk in multi_pairs and pk not in rep:
+                rep[pk] = t
+        for pk, cas in sorted(multi_pairs.items(), key=lambda x: -len(x[1])):
+            if pk in pair_to_addr:
+                continue
+            union: set[str] = set()
+            for ca in cas:
+                union |= token_pools.get(ca) or set()
+            if len(union) < 2:
+                continue
+            pre, suf = pk.split("|", 1)
+            hits = match_hits(union, pre, suf)
+            if len(hits) == 1:
+                t = rep.get(pk)
+                if t:
+                    accept(t, hits[0], "scout_tg_multi_union", bucket="multi")
+                    # cross-fill remaining rows via pair cache loop later
+            elif len(hits) > 1:
+                stats.collisions_skipped += 1
+        # re-apply pair cache after union accepts
+        for t in pending_rows():
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            addr = pair_to_addr.get(pk)
+            if addr:
+                accept(t, addr, "scout_tg_pair_cache", bucket="pair_cache")
+
     # --- Pass 3: global unique against local pool (+ optional 2-hit ∩ token) ---
     still = pending_rows()
     stats.attempted = len(
@@ -1205,9 +1426,10 @@ def resolve_truncs(
         )
 
     append_resolve_cache(new_cache + pair_index_rows)
+    save_token_pools(token_pools)
     calls = stats.gmgn_calls
 
-    # final unresolved stats
+    # final unresolved stats + reason report (unique pairs)
     all_pairs = {
         pair_key(t.get("prefix"), t.get("suffix"))
         for t in trunc_rows
@@ -1216,6 +1438,70 @@ def resolve_truncs(
     }
     stats.unique_pairs_total = len(all_pairs)
     stats.unique_pairs_resolved = sum(1 for pk in all_pairs if pk in pair_to_addr)
+
+    # build pair → tokens + sample row
+    pair_cas: dict[str, set[str]] = {}
+    pair_row: dict[str, dict] = {}
+    for t in trunc_rows:
+        if elite_only and t.get("tier") != "elite":
+            continue
+        pk = pair_key(t.get("prefix"), t.get("suffix"))
+        if pk == "|":
+            continue
+        ca = (t.get("token_ca") or "").lower()
+        if ca:
+            pair_cas.setdefault(pk, set()).add(ca)
+        if pk not in pair_row:
+            pair_row[pk] = t
+
+    unresolved_rows: list[dict] = []
+    for pk in sorted(all_pairs):
+        if pk in pair_to_addr:
+            continue
+        pre, suf = pk.split("|", 1)
+        cas = pair_cas.get(pk) or set()
+        union: set[str] = set()
+        api_fail_tokens = 0
+        for ca in cas:
+            pool = token_pools.get(ca) or set()
+            union |= pool
+            if ca not in token_pools:
+                api_fail_tokens += 1
+        global_hits = match_hits(known, pre, suf)
+        token_hits = match_hits(union, pre, suf) if union else []
+        if len(global_hits) > 1 or len(token_hits) > 1:
+            reason = "multi_match"
+            stats.reason_multi_match += 1
+        elif not cas:
+            reason = "no_token_ca"
+            stats.reason_no_token_pool += 1
+        elif not union:
+            reason = "api_fail" if api_fail_tokens == len(cas) else "no_token_pool"
+            if reason == "api_fail":
+                stats.reason_api_fail += 1
+            else:
+                stats.reason_no_token_pool += 1
+        else:
+            reason = "no_match"
+            stats.reason_no_match += 1
+        t = pair_row.get(pk) or {}
+        unresolved_rows.append(
+            {
+                "pair_key": pk,
+                "prefix": pre,
+                "suffix": suf,
+                "trunc": t.get("trunc"),
+                "tier": t.get("tier"),
+                "reason": reason,
+                "n_tokens": len(cas),
+                "token_cas": sorted(cas)[:30],
+                "union_pool_size": len(union),
+                "global_hits": len(global_hits),
+                "token_hits": len(token_hits),
+            }
+        )
+
+    write_jsonl(UNRESOLVED_PATH, unresolved_rows)
     stats.unresolved_remaining = sum(
         1
         for t in trunc_rows
@@ -1223,6 +1509,45 @@ def resolve_truncs(
         and (t.get("trunc_key") or "") not in resolved_keys
         and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr
     )
+
+    # markdown summary
+    try:
+        lines = [
+            "# Scout TG trunc resolve summary",
+            "",
+            f"- Updated (UTC): {now_iso()}",
+            f"- Unique pairs: **{stats.unique_pairs_resolved}/{stats.unique_pairs_total}** "
+            f"({(100.0 * stats.unique_pairs_resolved / max(1, stats.unique_pairs_total)):.1f}%)",
+            f"- Trunc rows still unresolved: **{stats.unresolved_remaining}**",
+            f"- Methods: pair_cache={stats.pair_cache_hits} token_scoped={stats.token_scoped_hits} "
+            f"multi_union={stats.multi_union_hits} global={stats.global_hits} "
+            f"two_hit={stats.two_hit_token_accept}",
+            f"- Blockscout: tokens_fetched={stats.bs_tokens} nonempty={stats.bs_tokens_nonempty} "
+            f"api_fail={stats.bs_api_fail} gmgn_calls={stats.gmgn_calls}",
+            f"- Unresolved reasons (unique pairs): no_token_pool={stats.reason_no_token_pool} "
+            f"api_fail={stats.reason_api_fail} multi_match={stats.reason_multi_match} "
+            f"no_match={stats.reason_no_match}",
+            "",
+            "## Top unresolved blockers",
+            "",
+        ]
+        from collections import Counter as _Counter
+
+        rc = _Counter(r["reason"] for r in unresolved_rows)
+        for reason, n in rc.most_common():
+            lines.append(f"- `{reason}`: {n}")
+        lines.append("")
+        lines.append("### Sample unresolved (up to 40)")
+        lines.append("")
+        for r in unresolved_rows[:40]:
+            lines.append(
+                f"- `{r['pair_key']}` reason={r['reason']} tokens={r['n_tokens']} "
+                f"union={r['union_pool_size']} tier={r.get('tier')}"
+            )
+        RESOLVE_SUMMARY_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    except Exception as e:
+        print(f"scout_tg summary write fail: {type(e).__name__}", file=sys.stderr)
+
     print(
         "scout_tg resolve_stats "
         + json.dumps(stats.as_dict(), ensure_ascii=False)
@@ -1392,16 +1717,28 @@ def main() -> int:
     if not watch_path.is_absolute():
         watch_path = ROOT / watch_path
 
-    print(f"scout_tg scrape pages={pages} resolve={do_resolve} cap={vet_cap}")
-    posts, hits = scrape_pages(pages)
-    n_posts, n_trunc = persist_posts(posts)
-    n_hits = persist_hits(hits)
-    n_early = sum(1 for p in posts if p.get("live_buys"))
-    n_with_ca = sum(1 for p in posts if p.get("token_ca"))
-    print(
-        f"scout_tg scraped early_posts={n_early} with_ca={n_with_ca} hits={n_hits} "
-        f"persisted_posts={n_posts} trunc_rows={n_trunc}"
-    )
+    print(f"scout_tg scrape pages={pages} resolve={do_resolve} cap={vet_cap} max_tokens={max_tokens}")
+    if pages <= 0:
+        print("scout_tg scrape skipped (SCOUT_TG_PAGES<=0) — resolve-only from disk")
+        posts, hits = [], []
+        n_posts = n_trunc = n_hits = n_early = n_with_ca = 0
+        if POSTS_PATH.exists():
+            n_posts = sum(1 for line in POSTS_PATH.read_text(encoding="utf-8").splitlines() if line.strip())
+        if TRUNC_PATH.exists():
+            n_trunc = sum(1 for line in TRUNC_PATH.read_text(encoding="utf-8").splitlines() if line.strip())
+        if HITS_PATH.exists():
+            n_hits = sum(1 for line in HITS_PATH.read_text(encoding="utf-8").splitlines() if line.strip())
+        print(f"scout_tg disk posts={n_posts} trunc_rows={n_trunc} hits={n_hits}")
+    else:
+        posts, hits = scrape_pages(pages)
+        n_posts, n_trunc = persist_posts(posts)
+        n_hits = persist_hits(hits)
+        n_early = sum(1 for p in posts if p.get("live_buys"))
+        n_with_ca = sum(1 for p in posts if p.get("token_ca"))
+        print(
+            f"scout_tg scraped early_posts={n_early} with_ca={n_with_ca} hits={n_hits} "
+            f"persisted_posts={n_posts} trunc_rows={n_trunc}"
+        )
 
     resolved_n = 0
     added = tagged = 0

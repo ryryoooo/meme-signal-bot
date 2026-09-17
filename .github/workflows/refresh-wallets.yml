@@ -114,12 +114,14 @@ jobs:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
           GMGN_DISABLED: "0"
           SCOUT_TG_ENABLED: "1"
-          SCOUT_TG_PAGES: "60"
+          SCOUT_TG_PAGES: "80"
           SCOUT_TG_RESOLVE: "1"
-          SCOUT_TG_VET_CAP: "80"
-          SCOUT_TG_MAX_TOKENS: "30"
-          SCOUT_TG_BS_PAGES: "20"
+          SCOUT_TG_VET_CAP: "100"
+          SCOUT_TG_MAX_TOKENS: "60"
+          SCOUT_TG_BS_PAGES: "30"
           SCOUT_TG_BLOCKSCOUT: "1"
+          SCOUT_TG_BS_ALL: "0"
+          SCOUT_TG_MULTI_UNION: "1"
           SCOUT_TG_SKIP_WELL_RESOLVED: "0.8"
           SCOUT_RANK_MERGE: "1"
           CHAIN: robinhood
@@ -166,14 +168,14 @@ jobs:
         run: |
           git config user.name "meme-signal-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/wallets_ranked_all.jsonl rh-wallets/wallets_onchain.jsonl rh-wallets/summary_scout.md rh-wallets/summary_rank_all.md rh-wallets/summary_onchain_ranked.md rh-wallets/raw/ arc-wallets/wallets.jsonl arc-wallets/wallets_quality.jsonl arc-wallets/raw/ fomo-wallets/ xbtscout/ scripts/harvest_kol_vetted.py scripts/harvest_scout_telegram.py scripts/rank_scout_wallets.py scripts/rank_all_wallets.py scripts/onchain_from_ranked.py || true
+          git add rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/wallets_ranked_all.jsonl rh-wallets/wallets_onchain.jsonl rh-wallets/summary_scout.md rh-wallets/summary_scout_resolve.md rh-wallets/summary_rank_all.md rh-wallets/summary_onchain_ranked.md rh-wallets/raw/ arc-wallets/wallets.jsonl arc-wallets/wallets_quality.jsonl arc-wallets/raw/ fomo-wallets/ xbtscout/ scripts/harvest_kol_vetted.py scripts/harvest_scout_telegram.py scripts/rank_scout_wallets.py scripts/rank_all_wallets.py scripts/onchain_from_ranked.py || true
           if git diff --cached --quiet; then
             echo "no wallet changes"
           else
             git commit -m "chore: refresh+refine smart wallets"
             if ! git pull --rebase origin main; then
               echo "rebase conflict — prefer GHA wallet/raw artifacts"
-              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/wallets_ranked_all.jsonl rh-wallets/wallets_onchain.jsonl rh-wallets/summary_scout.md rh-wallets/summary_rank_all.md rh-wallets/summary_onchain_ranked.md; do
+              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/wallets_ranked_all.jsonl rh-wallets/wallets_onchain.jsonl rh-wallets/summary_scout.md rh-wallets/summary_scout_resolve.md rh-wallets/summary_rank_all.md rh-wallets/summary_onchain_ranked.md; do
                 if [ -f "$f" ] && git status --porcelain "$f" | grep -q .; then
                   git checkout --theirs -- "$f" || true
                   git add "$f" || true
@@ -195,6 +197,7 @@ jobs:
             rh-wallets/wallets_ranked_all.jsonl
             rh-wallets/wallets_onchain.jsonl
             rh-wallets/summary_scout.md
+            rh-wallets/summary_scout_resolve.md
             rh-wallets/summary_rank_all.md
             rh-wallets/summary_onchain_ranked.md
             rh-wallets/raw/scout_tg_*.jsonl
