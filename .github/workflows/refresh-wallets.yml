@@ -106,6 +106,7 @@ jobs:
             echo "no wallet changes"
           else
             git commit -m "chore: refresh+refine smart wallets"
+            git pull --rebase origin main || true
             git push
           fi
 
