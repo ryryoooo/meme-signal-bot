@@ -90,18 +90,18 @@ CHAIN_META = {
 }
 
 # Heat gates from 2x+ alert sample (provisional): winners had cluster≥~$208, liq≥~$1.6k
-LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.20"))
-MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "1500"))
-MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "4000"))
-MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "200"))
-MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "12000"))
-MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "1500"))
+LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.15"))
+MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "2500"))
+MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
+MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
+MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "5000"))
+MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "400"))
 REQUIRE_GRADUATED = (os.environ.get("REQUIRE_GRADUATED") or "0").strip().lower() in ("1", "true", "yes")
 ALLOW_PRE_GRAD = (os.environ.get("ALLOW_PRE_GRAD") or "1").strip().lower() in ("1", "true", "yes")
-PRE_GRAD_MIN_VOLUME_M5 = float(os.environ.get("PRE_GRAD_MIN_VOLUME_M5", "2000"))
-REQUIRE_BUY_INCREASE = (os.environ.get("REQUIRE_BUY_INCREASE") or "1").strip().lower() in ("1", "true", "yes")
-MIN_M5_SELL_RATIO = float(os.environ.get("MIN_M5_SELL_RATIO", "0.08"))  # some sells = two-way
-MIN_ABS_PRICE_CHANGE_M5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", "2"))  # some movement
+PRE_GRAD_MIN_VOLUME_M5 = float(os.environ.get("PRE_GRAD_MIN_VOLUME_M5", "800"))
+REQUIRE_BUY_INCREASE = (os.environ.get("REQUIRE_BUY_INCREASE") or "0").strip().lower() in ("1", "true", "yes")
+MIN_M5_SELL_RATIO = float(os.environ.get("MIN_M5_SELL_RATIO", "0"))  # 0=off; set >0 for two-way
+MIN_ABS_PRICE_CHANGE_M5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", "0"))  # 0=off
 MAX_PRICE_CHANGE_M5_PCT = float(os.environ.get("MAX_PRICE_CHANGE_M5_PCT", "60"))
 MAX_PRICE_CHANGE_H1_PCT = float(os.environ.get("MAX_PRICE_CHANGE_H1_PCT", "250"))
 MAX_M5_BUY_RATIO = float(os.environ.get("MAX_M5_BUY_RATIO", "0.92"))  # one-sided tape
@@ -110,7 +110,8 @@ MIN_HOLDERS = int(os.environ.get("MIN_HOLDERS", "80"))
 HOLDERS_REQUIRED = (os.environ.get("HOLDERS_REQUIRED") or "0").strip().lower() in ("1", "true", "yes")
 MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))  # need ≥1 wallet scoring ≥ this
 MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.5"))
-MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "1800"))  # skip if younger than 30m
+MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # skip if younger than 15m
+MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "21600"))  # skip if older than 6h (0=off)
 LP_LOCK_MIN = 0.01  # locked+burned share of LP
 # LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
 # Set LP_LOCK_REQUIRED=1 to hard-fail unlocked LP again.
@@ -352,7 +353,7 @@ def wallet_looks_bot(meta: dict | None) -> bool:
     if "fresh_wallet" in blob and not any(
         s in blob for s in ("early", "nansen", "smart trader", "token_profit", "profit")
     ):
-        if env_bool("EXCLUDE_FRESH_WALLET_ONLY", True):
+        if env_bool("EXCLUDE_FRESH_WALLET_ONLY", False):
             return True
     return False
 
@@ -542,9 +543,71 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
         if vol_m5_f is None or vol_m5_f < pre_m5:
             fails.append(f"pre_grad_volume_m5={vol_m5_f or 0:.0f}<{pre_m5:.0f}")
 
+
+    # Launch window: not too fresh, not too stale (pair age)
+    try:
+        min_age = float(os.environ.get("MIN_TOKEN_AGE_SEC", str(MIN_TOKEN_AGE_SEC)))
+    except (TypeError, ValueError):
+        min_age = float(MIN_TOKEN_AGE_SEC)
+    try:
+        max_age = float(os.environ.get("MAX_TOKEN_AGE_SEC", str(MAX_TOKEN_AGE_SEC)))
+    except (TypeError, ValueError):
+        max_age = float(MAX_TOKEN_AGE_SEC)
+    age_sec = None
+    for key in ("token_age_sec", "age_sec", "pair_age_sec"):
+        if safety.get(key) is not None:
+            try:
+                age_sec = float(safety[key])
+                break
+            except (TypeError, ValueError):
+                pass
+    if age_sec is None and safety.get("pair_created_at_ms"):
+        try:
+            import time as _time
+            age_sec = max(0.0, _time.time() - float(safety["pair_created_at_ms"]) / 1000.0)
+        except (TypeError, ValueError):
+            age_sec = None
+    if age_sec is not None:
+        if min_age > 0 and age_sec < min_age:
+            fails.append(f"launch_too_new={int(age_sec)}s<{int(min_age)}s")
+        if max_age > 0 and age_sec > max_age:
+            fails.append(f"launch_too_old={int(age_sec)}s>{int(max_age)}s")
+
+    # Liquidity axis (hard): absolute liq + ratio already in heat_gate; reinforce here
+    try:
+        min_liq = float(os.environ.get("MIN_LIQ_USD", str(MIN_LIQ_USD)))
+    except (TypeError, ValueError):
+        min_liq = MIN_LIQ_USD
+    try:
+        liq_mcap_min = float(os.environ.get("LIQ_MCAP_MIN", str(LIQ_MCAP_MIN)))
+    except (TypeError, ValueError):
+        liq_mcap_min = LIQ_MCAP_MIN
+    liq = safety.get("liq_usd")
+    mcap = safety.get("mcap_usd") or safety.get("fdv")
+    if liq is None:
+        fails.append("liq_na")
+    else:
+        try:
+            if float(liq) < min_liq:
+                fails.append(f"liq_thin={float(liq):.0f}<{min_liq:.0f}")
+        except (TypeError, ValueError):
+            fails.append("liq_na")
+    ratio = safety.get("ratio")
+    if ratio is None and liq is not None and mcap:
+        try:
+            ratio = float(liq) / float(mcap)
+        except (TypeError, ValueError, ZeroDivisionError):
+            ratio = None
+    if ratio is not None:
+        try:
+            if float(ratio) < liq_mcap_min:
+                fails.append(f"liq_ratio={float(ratio):.2f}<{liq_mcap_min:.2f}")
+        except (TypeError, ValueError):
+            pass
+
     # 2) 5m volume
     vol_m5 = safety.get("volume_m5")
-    vol_m5_req = env_bool("VOLUME_M5_REQUIRED", True)
+    vol_m5_req = env_bool("VOLUME_M5_REQUIRED", False)
     if vol_m5 is None:
         if vol_m5_req:
             fails.append("volume_m5_na")
@@ -615,7 +678,7 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
             pass
 
     # 4) 24h volume (existing)
-    vol_required = env_bool("VOLUME_REQUIRED", True)
+    vol_required = env_bool("VOLUME_REQUIRED", False)
     vol = safety.get("volume_h24")
     if vol is None:
         if vol_required:
@@ -643,15 +706,17 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
     if total_usd < min_cluster:
         fails.append(f"weak_cluster={total_usd:.0f}<{min_cluster:.0f}")
 
-    if not wallet_scores:
-        fails.append("quality_na")
-    else:
-        best = max(wallet_scores)
-        avg = sum(wallet_scores) / len(wallet_scores)
-        if best < min_q:
-            fails.append(f"quality_best={best:.2f}<{min_q:.2f}")
-        if avg < min_avg_q:
-            fails.append(f"quality_avg={avg:.2f}<{min_avg_q:.2f}")
+    # Wallet quality is soft unless REQUIRE_WALLET_QUALITY=1 (avoid over-skipping)
+    if env_bool("REQUIRE_WALLET_QUALITY", False):
+        if not wallet_scores:
+            fails.append("quality_na")
+        else:
+            best = max(wallet_scores)
+            avg = sum(wallet_scores) / len(wallet_scores)
+            if best < min_q:
+                fails.append(f"quality_best={best:.2f}<{min_q:.2f}")
+            if avg < min_avg_q:
+                fails.append(f"quality_avg={avg:.2f}<{min_avg_q:.2f}")
     return fails
 
 
@@ -1998,6 +2063,7 @@ def safety_check(ca: str, chain: str) -> dict:
             "bondingish": snap.get("bondingish"),
             "dex_id": snap.get("dex_id"),
             "labels": snap.get("labels"),
+            "pair_created_at_ms": snap.get("pair_created_at_ms"),
             "holder_count": snap.get("holder_count"),
             "source": "gmgn",
             "fetch_failed": fetch_failed,
@@ -2697,7 +2763,7 @@ def run_once(args: argparse.Namespace) -> int:
         # Prefer 仕込み smart wallets in the overlap (Arc default on)
         require_early = env_bool(
             "REQUIRE_EARLY_HIT",
-            True if (chain or "").lower() == "arc" else False,
+            False,
         )
         if require_early:
             early_addrs = [
