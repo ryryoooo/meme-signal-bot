@@ -273,16 +273,21 @@ def parse_portfolio_row(row: dict) -> dict:
     """Map portfolio stats/profits fields into wallet record fields."""
     if not isinstance(row, dict):
         return {}
-    # nested wrappers
-    for nest in ("data", "stats", "profit", "pnl"):
+    # Flatten known nests first (GMGN stats puts WR under pnl_stat / common)
+    flat = dict(row)
+    for nest in ("data", "stats", "profit", "pnl", "pnl_stat", "common", "summary", "30d", "7d", "all"):
         inner = row.get(nest)
-        if isinstance(inner, dict) and (
-            any(k in inner for k in ("realized_profit", "realized_pnl", "winrate", "win_rate", "profit"))
-        ):
-            # prefer flattening useful fields from nest into a copy
-            merged = {**row, **inner}
-            row = merged
-            break
+        if isinstance(inner, dict):
+            for k, v in inner.items():
+                if k not in flat or flat.get(k) is None:
+                    flat[k] = v
+            # one more level (pnl_stat.winrate etc. already copied; also nested period)
+            for nest2 in ("30d", "7d", "all", "1d"):
+                inner2 = inner.get(nest2)
+                if isinstance(inner2, dict):
+                    for k, v in inner2.items():
+                        if k not in flat or flat.get(k) is None:
+                            flat[k] = v
 
     rp = None
     for k in (
@@ -294,58 +299,47 @@ def parse_portfolio_row(row: dict) -> dict:
         "profit",
         "pnl",
     ):
-        v = num(row.get(k))
+        v = num(flat.get(k))
         if v is not None:
             rp = v
             break
-    # nested period objects e.g. {"30d": {"realized_profit": ...}}
-    if rp is None:
-        for pk in ("30d", "7d", "all", "1d"):
-            d = row.get(pk)
-            if isinstance(d, dict):
-                for k in ("realized_profit", "realized_pnl", "profit", "pnl"):
-                    v = num(d.get(k))
-                    if v is not None:
-                        rp = v
-                        break
-            if rp is not None:
-                break
 
     wr = None
-    for k in ("winrate", "win_rate", "buy_success_rate", "profit_win_rate", "pnl_winrate", "win_ratio"):
-        v = num(row.get(k))
-        if v is not None:
-            wr = v
-            if wr > 1.5:
-                wr = wr / 100.0
-            break
+    for k in (
+        "winrate",
+        "win_rate",
+        "buy_success_rate",
+        "profit_win_rate",
+        "pnl_winrate",
+        "win_ratio",
+        "realized_profit_pnl",  # sometimes a ratio 0-1
+    ):
+        v = num(flat.get(k))
+        if v is None:
+            continue
+        # realized_profit_pnl can be a PnL *multiple* (e.g. 2.5x) — only treat as WR if in [0,1.5]
+        if k == "realized_profit_pnl" and (v < 0 or v > 1.5):
+            continue
+        wr = v
+        if wr > 1.5:
+            wr = wr / 100.0
+        break
     if wr is None:
-        for pk in ("30d", "7d", "all", "1d", "stats", "pnl"):
-            d = row.get(pk)
-            if not isinstance(d, dict):
-                continue
-            for k in ("winrate", "win_rate", "buy_success_rate", "profit_win_rate"):
-                v = num(d.get(k))
-                if v is not None:
-                    wr = v
-                    if wr > 1.5:
-                        wr = wr / 100.0
-                    break
-            if wr is not None:
-                break
+        wins = num(flat.get("win_count") or flat.get("winner") or flat.get("profit_num") or flat.get("wins"))
+        total = num(flat.get("token_num") or flat.get("total_num") or flat.get("trade_num") or flat.get("total"))
+        if wins is not None and total and total > 0:
+            wr = float(wins) / float(total)
 
     nt = None
     for k in (
-        "buy",
         "txs",
         "tx_count",
         "total_trades",
         "trade_count",
         "n_trades",
         "buy_30d",
-        "history_bought_cost",
     ):
-        v = row.get(k)
+        v = flat.get(k)
         if v is None:
             continue
         try:
@@ -357,16 +351,28 @@ def parse_portfolio_row(row: dict) -> dict:
                 break
         except (TypeError, ValueError):
             pass
-    # buy+sell counts
+    # buy / sell may be ints or dicts with count
+    def _count(val) -> float | None:
+        if val is None:
+            return None
+        if isinstance(val, dict):
+            for ck in ("count", "tx", "txs", "num", "n"):
+                n = num(val.get(ck))
+                if n is not None:
+                    return n
+            return None
+        return num(val)
+
     if nt is None:
-        b = num(row.get("buy_tx_count") or row.get("buy_count"))
-        s = num(row.get("sell_tx_count") or row.get("sell_count"))
+        b = _count(flat.get("buy") or flat.get("buy_tx_count") or flat.get("buy_count"))
+        s = _count(flat.get("sell") or flat.get("sell_tx_count") or flat.get("sell_count"))
         if b is not None or s is not None:
             nt = int((b or 0) + (s or 0))
+    # history_bought_cost alone is NOT trade count
 
     addr = None
-    for k in ("address", "wallet_address", "walletAddress", "maker"):
-        v = row.get(k)
+    for k in ("address", "wallet_address", "walletAddress", "maker", "wallet"):
+        v = flat.get(k)
         if isinstance(v, str) and v.startswith("0x"):
             addr = v.lower()
             break
@@ -375,13 +381,15 @@ def parse_portfolio_row(row: dict) -> dict:
         "realized_pnl_usd": rp,
         "win_rate": wr,
         "n_trades": nt,
-        "raw_keys": sorted(row.keys())[:40],
+        "raw_keys": sorted(flat.keys())[:50],
     }
 
 
 def _ingest_portfolio_payload(data, batch: list[str], out: dict[str, dict]) -> list[str]:
     """Parse portfolio stats/profits JSON into out; return sample raw_keys for logging."""
     sample_keys: list[str] = []
+    shape = type(data).__name__
+    top_keys = list(data.keys())[:20] if isinstance(data, dict) else []
     items = extract_list(data)
     if not items and isinstance(data, dict):
         for a in batch:
@@ -391,22 +399,38 @@ def _ingest_portfolio_payload(data, batch: list[str], out: dict[str, dict]) -> l
                 items.append({"address": a, **data[a.lower()]})
         dd = data.get("data")
         if isinstance(dd, dict) and not items:
-            # addr -> stats map, or list-like
-            for k, v in dd.items():
-                if isinstance(v, dict):
-                    items.append({"address": k, **v})
-                elif k == "list" and isinstance(v, list):
-                    items.extend([x for x in v if isinstance(x, dict)])
+            # addr -> stats map OR single wallet object
+            addr_like = [k for k in dd.keys() if isinstance(k, str) and k.lower().startswith("0x")]
+            if addr_like:
+                for k in addr_like:
+                    v = dd[k]
+                    if isinstance(v, dict):
+                        items.append({"address": k, **v})
+            elif any(
+                k in dd
+                for k in ("realized_profit", "realized_pnl", "winrate", "win_rate", "buy", "pnl_stat")
+            ):
+                items.append(dict(dd))
+            else:
+                for k, v in dd.items():
+                    if isinstance(v, dict):
+                        items.append({"address": k, **v} if isinstance(k, str) and k.startswith("0x") else dict(v))
+                    elif k == "list" and isinstance(v, list):
+                        items.extend([x for x in v if isinstance(x, dict)])
         if not items:
-            # single-wallet stats blob
-            if any(k in data for k in ("realized_profit", "realized_pnl", "winrate", "win_rate", "buy")):
+            if any(
+                k in data
+                for k in ("realized_profit", "realized_pnl", "winrate", "win_rate", "buy", "pnl_stat")
+            ):
                 items.append(dict(data))
+    print(f"  portfolio_shape={shape} top_keys={top_keys} items={len(items)} batch={len(batch)}")
     for i, row in enumerate(items):
         if not isinstance(row, dict):
             continue
         parsed = parse_portfolio_row(row)
         addr = parsed.get("address")
-        if not addr and i < len(batch) and len(items) == len(batch):
+        # zip with request order when API omits address
+        if not addr and i < len(batch):
             addr = batch[i]
             parsed["address"] = addr
         if not addr and len(batch) == 1:
@@ -425,65 +449,73 @@ def _ingest_portfolio_payload(data, batch: list[str], out: dict[str, dict]) -> l
             if not sample_keys:
                 sample_keys = list(parsed["raw_keys"])
         out[addr] = merged
+    # If still only one blob for many wallets, assign to first only (API quirk) — caller may retry smaller
+    if len(out) == 1 and len(batch) > 1 and batch[0] not in out:
+        only = next(iter(out.values()))
+        # remapped below
+        pass
+    if len(items) == 1 and len(batch) > 1 and len(out) <= 1:
+        # single-object response: bind to batch[0]
+        parsed = parse_portfolio_row(items[0] if isinstance(items[0], dict) else {})
+        a0 = batch[0]
+        parsed["address"] = a0
+        prev = out.get(a0) or {}
+        merged = dict(prev)
+        for k, v in parsed.items():
+            if v is not None and k != "raw_keys":
+                merged[k] = v
+        if parsed.get("raw_keys"):
+            merged["raw_keys"] = parsed["raw_keys"]
+            sample_keys = list(parsed["raw_keys"])
+        out.clear()
+        out[a0] = merged
+        print(f"  stats_single_object_bound_to={a0[:10]}… (API ignored multi-wallet)")
     return sample_keys
 
 
 def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dict[str, dict], int, str | None]:
-    """Prefer ONE batched portfolio stats (has WR), then profits fill for PnL.
+    """Vet wallets via portfolio stats (WR). Multi-wallet stats often returns 1 blob — use per-wallet.
 
-    GHA often gets only ~1 successful GMGN call before 429 — stats must go first.
-    Each batch CLI invocation counts as 1 toward remaining_cap.
+    remaining_cap = max successful CLI calls. Prefer 1 wallet per call for correct WR binding.
     """
     out: dict[str, dict] = {}
     if remaining_cap <= 0 or not addresses:
         return out, 0, None
-    # stats supports multi-wallet; keep batch within cap semantics (1 call)
-    batch = addresses[: min(len(addresses), 50)]
     calls = 0
     err_kind = None
-
-    # 1) stats first — winrate lives here
-    sargs = ["portfolio", "stats", "--chain", chain, "--period", "30d"]
-    for a in batch:
-        sargs.extend(["--wallet", a])
-    sdata, serr = gmgn_raw(sargs, timeout=180)
-    calls += 1
-    if serr == "rate_limited":
-        print(f"[{chain}] portfolio stats rate-limited (batch={len(batch)})")
-        return out, calls, "rate_limited"
-    if serr:
-        print(f"[{chain}] portfolio stats fail: {serr}")
-        err_kind = serr
-    else:
-        keys = _ingest_portfolio_payload(sdata, batch, out)
-        n_wr = sum(1 for a in batch if out.get(a, {}).get("win_rate") is not None)
-        n_rp = sum(1 for a in batch if out.get(a, {}).get("realized_pnl_usd") is None is False)
-        # fix silly count
-        n_rp = sum(1 for a in batch if (out.get(a) or {}).get("realized_pnl_usd") is not None)
-        print(
-            f"[{chain}] stats parsed={len(out)}/{len(batch)} with_wr={n_wr} with_rp={n_rp} "
-            f"sample_keys={keys[:12]}"
-        )
-
-    # 2) profits fill if we still have budget and missing rp (or empty stats)
-    need_rp = [a for a in batch if (out.get(a) or {}).get("realized_pnl_usd") is None]
-    if need_rp and calls < remaining_cap:
-        pargs = ["portfolio", "profits", "--chain", chain, "--period", "30d"]
-        for a in need_rp:
-            pargs.extend(["--wallet", a])
-        pdata, perr = gmgn_raw(pargs, timeout=180)
+    # Per-wallet stats until cap or rate limit (multi-wallet binding is unreliable)
+    for a in addresses:
+        if calls >= remaining_cap:
+            break
+        sargs = ["portfolio", "stats", "--chain", chain, "--period", "30d", "--wallet", a]
+        sdata, serr = gmgn_raw(sargs, timeout=90)
         calls += 1
-        if perr == "rate_limited":
-            print(f"[{chain}] portfolio profits rate-limited after stats")
+        if serr == "rate_limited":
+            print(f"[{chain}] portfolio stats rate-limited after {len(out)} ok / tried={calls}")
             return out, calls, "rate_limited"
-        if perr:
-            print(f"[{chain}] portfolio profits fail: {perr}")
-            err_kind = err_kind or perr
-        else:
-            keys = _ingest_portfolio_payload(pdata, need_rp, out)
-            n_rp = sum(1 for a in batch if (out.get(a) or {}).get("realized_pnl_usd") is not None)
-            print(f"[{chain}] profits fill parsed_total={len(out)} with_rp={n_rp} sample_keys={keys[:12]}")
-
+        if serr:
+            print(f"[{chain}] stats fail {a[:10]}… {serr}")
+            err_kind = serr
+            continue
+        before = len(out)
+        keys = _ingest_portfolio_payload(sdata, [a], out)
+        if a not in out:
+            # force bind
+            parsed = parse_portfolio_row(sdata if isinstance(sdata, dict) else {})
+            if not parsed.get("raw_keys") and isinstance(sdata, dict):
+                dd = sdata.get("data")
+                if isinstance(dd, dict):
+                    parsed = parse_portfolio_row(dd)
+            parsed["address"] = a
+            out[a] = {**out.get(a, {}), **{k: v for k, v in parsed.items() if v is not None}}
+        wr = (out.get(a) or {}).get("win_rate")
+        rp = (out.get(a) or {}).get("realized_pnl_usd")
+        nt = (out.get(a) or {}).get("n_trades")
+        print(
+            f"[{chain}] stats {a[:10]}… wr={wr} rp={rp} n={nt} keys={keys[:8]} "
+            f"(+{len(out) - before})"
+        )
+        time.sleep(0.25)
     return out, calls, err_kind
 
 
@@ -862,7 +894,7 @@ def main() -> int:
     if not skip_vet and combined and remaining > 0:
         addrs = [c["address"] for _, c in combined]
         # remaining_cap: allow stats + optional profits fill (=2)
-        sm, used, verr = batch_vet("robinhood", addrs, min(remaining, 2))
+        sm, used, verr = batch_vet("robinhood", addrs, min(remaining, max(5, fomo_vet_cap)))
         remaining -= used
         summary["vetted"] += len(sm)
         stats_map.update(sm)
@@ -977,7 +1009,7 @@ def main() -> int:
             summary["updated_arc"] += 1
         if need:
             addrs = [c["address"] for c in need[: min(20, len(need))]]
-            sm, used, verr = batch_vet("arc", addrs, min(remaining, 2))
+            sm, used, verr = batch_vet("arc", addrs, min(remaining, 5))
             remaining -= used
             summary["vetted"] += len(sm)
             if verr == "rate_limited":
