@@ -142,10 +142,11 @@ jobs:
           FOMO_HOLDERS_INTERVAL: "14400"
           FOMO_WATCH_PATH: fomo-wallets/wallets_evm.jsonl
           XBTSCOUT_ENABLED: "1"
-          XBTSCOUT_SCRAPE_SECONDS: "300"
+          XBTSCOUT_SCRAPE_SECONDS: "120"
           XBTSCOUT_MAX_TOKENS: "3"
           XBTSCOUT_NOTIFY: "1"
           XBTSCOUT_NOTIFY_CHAINS: "robinhood"
+          XBTSCOUT_EARLY_CALL_ONLY: "1"
           XBTSCOUT_NOTIFY_AFTER: "2026-09-17T08:07:36.351932+00:00"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json

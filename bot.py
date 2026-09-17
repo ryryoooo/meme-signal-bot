@@ -2865,8 +2865,8 @@ def run_once(args: argparse.Namespace) -> int:
         pass
     paper_mod.ensure_paper_state(state)
 
-    if chain == "robinhood" and env_bool("XBTSCOUT_ENABLED", True):
-        interval = int(os.environ.get("XBTSCOUT_SCRAPE_SECONDS", "1800"))
+    if env_bool("XBTSCOUT_ENABLED", True) and (chain == "robinhood" or env_bool("XBTSCOUT_ON_ANY_CHAIN", False)):
+        interval = int(os.environ.get("XBTSCOUT_SCRAPE_SECONDS", "45"))
         now_x = time.time()
         last_x = state.get("last_xbtscout_scrape_ts")
         due = True
@@ -2881,17 +2881,19 @@ def run_once(args: argparse.Namespace) -> int:
             due = True
         if due:
             try:
-                new_recs = [r for r in scrape_xbtscout_posts() if r.get("is_new")]
-                new_cas = [r["ca"] for r in new_recs]
+                all_recs = scrape_xbtscout_posts()
+                # Notify on new *posts* (status id); CA may already be known
+                notify_recs = list(all_recs)
+                new_cas = [r["ca"] for r in all_recs if r.get("is_new")]
             except Exception as e:
                 print(f"xbtscout scrape err {type(e).__name__}", file=sys.stderr)
-                new_recs = []
+                notify_recs = []
                 new_cas = []
             state["last_xbtscout_scrape_ts"] = now_x
-            if new_recs:
+            if notify_recs:
                 xhook = resolve_xbtscout_webhook(chain)
-                n_post = notify_xbtscout_new_cas(new_recs, xhook, chain, state=state)
-                print(f"xbtscout discord notified={n_post}/{len(new_recs)}", flush=True)
+                n_post = notify_xbtscout_new_cas(notify_recs, xhook, chain, state=state)
+                print(f"xbtscout discord notified={n_post}/{len(notify_recs)}", flush=True)
             if new_cas:
                 # Wallet harvest needs GMGN — leave to GHA when box IP is banned / disabled
                 if (os.environ.get("GMGN_DISABLED") or "0").strip().lower() in ("1", "true", "yes"):
@@ -3527,26 +3529,65 @@ def build_xbtscout_embed(rec: dict, chain: str) -> dict:
     }
 
 
+def _xbtscout_status_id(rec: dict) -> str | None:
+    u = _xbtscout_post_url_from_rec(rec) or ""
+    m = re.search(r"/status/(\d+)", u)
+    return m.group(1) if m else None
+
+
+def _xbtscout_is_early_call(rec: dict) -> bool:
+    """True for scout early-call posts (not just 2x/5x hit follow-ups)."""
+    if not env_bool("XBTSCOUT_EARLY_CALL_ONLY", True):
+        return True
+    blob = " ".join(
+        str(rec.get(k) or "")
+        for k in ("source_url_or_text_snip", "snip", "title")
+    ).lower()
+    if "early call" in blob or "early-call" in blob:
+        return True
+    if "hit" in blob and "from our call" in blob:
+        return False
+    return False
+
+
 def notify_xbtscout_new_cas(
     new_recs: list[dict],
     webhook: str,
     chain: str = "robinhood",
     state: dict | None = None,
 ) -> int:
-    """Post each new CA to Discord once. Returns number posted."""
+    """Post new @xbtscout *posts* (early-call, RH) to Discord. Keyed by status id, not CA."""
     if not env_bool("XBTSCOUT_NOTIFY", True):
         return 0
     if not webhook or not new_recs:
         return 0
-    notified = set()
+
+    notified_posts: set[str] = set()
+    notified_cas: set[str] = set()
     if state is not None:
-        raw = state.get("xbtscout_notified_cas") or []
-        if isinstance(raw, list):
-            notified = {str(x).lower() for x in raw}
+        raw_p = state.get("xbtscout_notified_posts") or []
+        if isinstance(raw_p, list):
+            notified_posts = {str(x) for x in raw_p}
+        raw_c = state.get("xbtscout_notified_cas") or []
+        if isinstance(raw_c, list):
+            notified_cas = {str(x).lower() for x in raw_c}
+
     cas_path = ROOT / "xbtscout" / "cas.jsonl"
     have = _xbtscout_load_cas(cas_path)
-    posted_n = 0
-    # Only Robinhood unless XBTSCOUT_NOTIFY_CHAINS overrides (comma list)
+    # also load post notify ledger
+    posts_path = ROOT / "xbtscout" / "notified_posts.jsonl"
+    if posts_path.exists():
+        for line in posts_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                o = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            sid = str(o.get("status_id") or "")
+            if sid:
+                notified_posts.add(sid)
+
     allow_chains = {
         x.strip().lower()
         for x in (os.environ.get("XBTSCOUT_NOTIFY_CHAINS") or "robinhood,rh").split(",")
@@ -3556,72 +3597,90 @@ def notify_xbtscout_new_cas(
         allow_chains.add("robinhood")
     notify_after = (os.environ.get("XBTSCOUT_NOTIFY_AFTER") or "").strip()
 
+    posted_n = 0
+    dirty_posts: list[dict] = []
+
     for rec in new_recs:
         ca = (rec.get("ca") or "").lower().strip()
         if not ca.startswith("0x"):
             continue
-        # skip if already notified (state or cas.jsonl flag)
-        row = have.get(ca) or rec
-        if row.get("discord_notified_at") or ca in notified:
+        row = have.get(ca) or {}
+        merged = {**row, **rec, "ca": ca}
+        sid = _xbtscout_status_id(merged)
+        if not sid:
+            # cannot dedupe posts without status — skip to avoid spam
+            print(f"xbtscout notify skip no_status {ca[:10]}…", flush=True)
             continue
+        if sid in notified_posts:
+            continue
+        if not _xbtscout_is_early_call(merged):
+            # still mark so hit-milestones don't retry
+            notified_posts.add(sid)
+            dirty_posts.append({"status_id": sid, "ca": ca, "skipped": "not_early_call"})
+            continue
+
         blob = " ".join(
             str(x or "")
             for x in (
-                row.get("source_url_or_text_snip"),
-                rec.get("source_url_or_text_snip"),
-                row.get("snip"),
-                rec.get("snip"),
+                merged.get("source_url_or_text_snip"),
+                merged.get("snip"),
+                merged.get("title"),
             )
         )
         guess = (
-            row.get("chain_guess")
-            or rec.get("chain_guess")
+            merged.get("chain_guess")
             or _xbtscout_chain_guess(blob, "robinhood")
         )
         guess = str(guess).lower()
         if guess in ("rh", "robinhoodchain"):
             guess = "robinhood"
         if guess not in allow_chains:
-            # mark skipped non-RH so we don't retry forever
-            if ca in have:
-                have[ca]["discord_skipped_chain"] = guess
-                have[ca]["discord_notified_at"] = have[ca].get("discord_notified_at") or f"skipped:{guess}"
-            else:
-                have[ca] = {**row, **rec, "ca": ca, "chain_guess": guess,
-                            "discord_notified_at": f"skipped:{guess}",
-                            "discord_skipped_chain": guess}
-            print(f"xbtscout notify skip chain={guess} {ca[:10]}…", flush=True)
+            notified_posts.add(sid)
+            dirty_posts.append({"status_id": sid, "ca": ca, "skipped": f"chain:{guess}"})
+            print(f"xbtscout notify skip chain={guess} status={sid}", flush=True)
             continue
-        # optional: only posts after baseline (next-post mode)
+
         if notify_after:
-            posted = str(row.get("posted_at") or rec.get("posted_at") or "")
+            posted = str(merged.get("posted_at") or "")
             if posted and posted < notify_after:
+                notified_posts.add(sid)
+                dirty_posts.append({"status_id": sid, "ca": ca, "skipped": "before_baseline"})
                 continue
-        embed = build_xbtscout_embed({**row, **rec, "ca": ca, "chain_guess": guess}, chain)
+
+        embed = build_xbtscout_embed({**merged, "chain_guess": guess}, chain)
+        gurl = gmgn_tok.token_app_url(guess, ca)
+        purl = _xbtscout_post_url_from_rec(merged)
+        bits = [f"🆕 xbtscout early call `{ca[:10]}…`", f"GMGN: {gurl}"]
+        if purl:
+            bits.append(f"X: {purl}")
         try:
-            gurl = gmgn_tok.token_app_url(guess, ca)
-            purl = _xbtscout_post_url_from_rec({**row, **rec, "ca": ca})
-            bits = [f"🆕 xbtscout `{ca[:10]}…`", f"GMGN: {gurl}"]
-            if purl:
-                bits.append(f"X: {purl}")
             discord_webhook(webhook, content="\n".join(bits), embeds=[embed])
         except Exception as e:
-            print(f"xbtscout notify fail {ca[:10]}… {type(e).__name__}", file=sys.stderr)
+            print(f"xbtscout notify fail {sid} {type(e).__name__}", file=sys.stderr)
             continue
         posted_n += 1
-        notified.add(ca)
+        notified_posts.add(sid)
+        notified_cas.add(ca)
         from datetime import datetime, timezone as _tz
         ts = datetime.now(_tz.utc).isoformat()
         if ca in have:
             have[ca]["discord_notified_at"] = ts
+            have[ca]["discord_notified_status"] = sid
+            have[ca]["post_url"] = purl or have[ca].get("post_url")
         else:
-            have[ca] = {**row, "discord_notified_at": ts}
-        print(f"xbtscout notify ok {ca[:10]}…", flush=True)
-    # persist notifies + chain-skips
+            have[ca] = {**merged, "discord_notified_at": ts, "discord_notified_status": sid}
+        dirty_posts.append({"status_id": sid, "ca": ca, "notified_at": ts, "post_url": purl})
+        print(f"xbtscout notify ok status={sid} {ca[:10]}…", flush=True)
+
     _xbtscout_write_cas(cas_path, have)
+    if dirty_posts:
+        posts_path.parent.mkdir(parents=True, exist_ok=True)
+        with posts_path.open("a", encoding="utf-8") as f:
+            for o in dirty_posts:
+                f.write(json.dumps(o, ensure_ascii=False) + "\n")
     if state is not None:
-        # keep last 500
-        state["xbtscout_notified_cas"] = list(notified)[-500:]
+        state["xbtscout_notified_posts"] = list(notified_posts)[-800:]
+        state["xbtscout_notified_cas"] = list(notified_cas)[-500:]
     return posted_n
 
 
@@ -4192,16 +4251,21 @@ def main() -> int:
 
     if args.notify_xbtscout:
         chain = (os.environ.get("CHAIN") or "robinhood").strip().lower()
-        recs = [r for r in scrape_xbtscout_posts() if r.get("is_new")]
-        # also allow force-notify of latest N unnotified
-        if not recs and env_bool("XBTSCOUT_NOTIFY_BACKFILL", False):
-            cas_path = ROOT / "xbtscout" / "cas.jsonl"
-            have = _xbtscout_load_cas(cas_path)
-            recs = [o for o in have.values() if not o.get("discord_notified_at")]
-            recs = sorted(recs, key=lambda o: str(o.get("posted_at") or ""), reverse=True)[: int(os.environ.get("XBTSCOUT_NOTIFY_BACKFILL_N", "5"))]
+        # Full RSS page → notify dedupes by status id (early-call + RH)
+        recs = scrape_xbtscout_posts()
         hook = resolve_xbtscout_webhook(chain)
-        n = notify_xbtscout_new_cas(recs, hook, chain, state=None)
-        print(f"notify-xbtscout posted={n}")
+        # lightweight state file so watch loop doesn't repost
+        state_path = Path(os.environ.get("XBTSCOUT_STATE_PATH") or str(ROOT / "xbtscout" / "watch_state.json"))
+        state: dict = {}
+        if state_path.exists():
+            try:
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+            except Exception:
+                state = {}
+        n = notify_xbtscout_new_cas(recs, hook, chain, state=state)
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"notify-xbtscout posted={n} scraped={len(recs)}")
         return 0 if n >= 0 else 1
     if args.harvest_xbtscout:
         chain = os.environ.get("CHAIN", "robinhood").strip().lower()
