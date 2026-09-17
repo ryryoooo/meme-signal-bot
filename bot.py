@@ -90,7 +90,7 @@ CHAIN_META = {
 }
 
 # Heat gates from 2x+ alert sample (provisional): winners had cluster≥~$208, liq≥~$1.6k
-LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.15"))
+LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.10"))
 MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "2500"))
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
