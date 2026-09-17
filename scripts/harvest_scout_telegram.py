@@ -762,31 +762,80 @@ def http_get_json(url: str, timeout: float = 25.0, retries: int = 3) -> tuple[ob
     return None, last_err or "error"
 
 
-# Soft host quarantine: only skip after consecutive hard failures (not single CF 403).
+# Soft host quarantine. NEVER permanently kill on 429 — only cooldown.
 _BS_HOST_FAILS: dict[str, int] = {}
-_BS_DEAD_HOSTS: set[str] = set()
-_BS_HOST_FAIL_LIMIT = 4
+_BS_DEAD_HOSTS: set[str] = set()  # only 401/402 paywall
+_BS_HOST_COOLDOWN_UNTIL: dict[str, float] = {}
+_BS_HOST_FAIL_LIMIT = 8
+_BS_RATE_EVENTS = 0
 
 
 def _bs_note_fail(host: str, err: str | None) -> None:
+    global _BS_RATE_EVENTS
     if not err:
         _BS_HOST_FAILS[host] = 0
         return
     if err in ("http_401", "http_402"):
         _BS_DEAD_HOSTS.add(host)
         return
-    if err in ("http_403", "http_429", "html"):
+    if err == "http_429":
+        _BS_RATE_EVENTS += 1
+        # cooldown grows with consecutive rate events (cap 90s)
+        cool = min(90.0, 12.0 * (2 ** min(3, _BS_RATE_EVENTS - 1)))
+        _BS_HOST_COOLDOWN_UNTIL[host] = time.time() + cool
+        print(f"scout_tg blockscout cooldown {host.split('//')[-1][:40]}… {cool:.0f}s (429)", flush=True)
+        time.sleep(cool)
+        return
+    if err in ("http_403", "html"):
         n = _BS_HOST_FAILS.get(host, 0) + 1
         _BS_HOST_FAILS[host] = n
+        cool = min(45.0, 4.0 * n)
+        _BS_HOST_COOLDOWN_UNTIL[host] = time.time() + cool
         if n >= _BS_HOST_FAIL_LIMIT:
-            _BS_DEAD_HOSTS.add(host)
+            # temporary quarantine, not forever — clear after long sleep
+            print(f"scout_tg blockscout soft-quarantine {host.split('//')[-1][:40]}… fails={n}", flush=True)
+            time.sleep(30.0)
+            _BS_HOST_FAILS[host] = max(0, n - 3)
         return
     # soft: don't kill on transient network
 
 
 def _bs_note_ok(host: str) -> None:
+    global _BS_RATE_EVENTS
     _BS_HOST_FAILS[host] = 0
     _BS_DEAD_HOSTS.discard(host)
+    _BS_HOST_COOLDOWN_UNTIL.pop(host, None)
+    _BS_RATE_EVENTS = max(0, _BS_RATE_EVENTS - 1)
+
+
+def _bs_host_available(host: str) -> bool:
+    if not host or host in _BS_DEAD_HOSTS:
+        return False
+    until = _BS_HOST_COOLDOWN_UNTIL.get(host, 0)
+    if until and time.time() < until:
+        return False
+    return True
+
+
+def _bs_wait_for_any(hosts: list[str], max_wait: float = 120.0) -> list[str]:
+    """Return currently available hosts; if all cooling, sleep until one frees."""
+    t0 = time.time()
+    while True:
+        avail = [h for h in hosts if _bs_host_available(h)]
+        if avail:
+            return avail
+        # all cooling or dead
+        lives = [h for h in hosts if h not in _BS_DEAD_HOSTS]
+        if not lives:
+            return []
+        waits = [_BS_HOST_COOLDOWN_UNTIL.get(h, 0) - time.time() for h in lives]
+        waits = [w for w in waits if w > 0]
+        if not waits or time.time() - t0 > max_wait:
+            # force-clear cooldowns after max_wait
+            for h in lives:
+                _BS_HOST_COOLDOWN_UNTIL.pop(h, None)
+            return lives
+        time.sleep(min(5.0, max(0.5, min(waits))))
 
 
 def load_token_pools() -> dict[str, set[str]]:
@@ -832,22 +881,24 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
     """Deep holders/transfers + etherscan-compat tokentx. Returns (addrs, last_err)."""
     if max_pages is None:
         max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "20"))
-    hosts_v2 = [
+    hosts_v2_all = [
         h
         for h in [
             os.environ.get("RH_BLOCKSCOUT_API_V2", "https://robinhoodchain.blockscout.com/api/v2"),
             "https://api.blockscout.com/4663/api/v2",
         ]
-        if h and h not in _BS_DEAD_HOSTS
+        if h
     ]
-    hosts_es = [
+    hosts_es_all = [
         h
         for h in [
             os.environ.get("RH_BLOCKSCOUT_API", "https://robinhoodchain.blockscout.com/api"),
             "https://api.blockscout.com/4663/api",
         ]
-        if h and h not in _BS_DEAD_HOSTS
+        if h
     ]
+    hosts_v2 = _bs_wait_for_any(hosts_v2_all, max_wait=float(os.environ.get("SCOUT_TG_BS_COOLDOWN_WAIT", "90")))
+    hosts_es = _bs_wait_for_any(hosts_es_all, max_wait=float(os.environ.get("SCOUT_TG_BS_COOLDOWN_WAIT", "90")))
     if not hosts_v2 and not hosts_es:
         return [], "all_hosts_dead"
 
@@ -879,13 +930,24 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
         url = base + (("?" + extra_q) if extra_q else "")
         got = False
         for _page in range(max(1, max_pages)):
-            data, err = http_get_json(url, timeout=25.0, retries=3)
+            if not _bs_host_available(host):
+                break
+            data, err = http_get_json(url, timeout=25.0, retries=4)
             if err:
                 last_err = err
                 _bs_note_fail(host, err)
                 if host in _BS_DEAD_HOSTS:
                     return got
-                break
+                if err == "http_429":
+                    # cooldown slept inside note_fail — retry same page once
+                    data2, err2 = http_get_json(url, timeout=25.0, retries=3)
+                    if err2:
+                        last_err = err2
+                        _bs_note_fail(host, err2)
+                        break
+                    data, err = data2, None
+                else:
+                    break
             _bs_note_ok(host)
             if not isinstance(data, dict):
                 last_err = "bad_json"
@@ -929,6 +991,8 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
                 continue
             es_got = False
             for page in range(1, max(1, max_pages) + 1):
+                if not _bs_host_available(host):
+                    break
                 qs = urllib.parse.urlencode(
                     {
                         "module": "account",
@@ -939,13 +1003,21 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
                         "sort": "desc",
                     }
                 )
-                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=3)
+                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=4)
                 if err:
                     last_err = err
                     _bs_note_fail(host, err)
                     if host in _BS_DEAD_HOSTS:
                         break
-                    break
+                    if err == "http_429":
+                        data2, err2 = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=3)
+                        if err2:
+                            last_err = err2
+                            _bs_note_fail(host, err2)
+                            break
+                        data, err = data2, None
+                    else:
+                        break
                 _bs_note_ok(host)
                 if not isinstance(data, dict):
                     break
@@ -1146,6 +1218,30 @@ def resolve_truncs(
 
     if env_bool("SCOUT_TG_BLOCKSCOUT", True):
         # Prefer tokens that still have unresolved truncs; optional: skip well-pooled
+        # Prefer tokens that share unresolved pairs with other tokens (union leverage)
+        pair_cas_count: dict[str, int] = {}
+        for t in trunc_rows:
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            if pk == "|" or pk in pair_to_addr:
+                continue
+            ca = (t.get("token_ca") or "").lower()
+            if ca.startswith("0x"):
+                pair_cas_count[pk] = pair_cas_count.get(pk, 0) + 0  # placeholder
+        # recount unique cas per pair
+        _pcs: dict[str, set[str]] = {}
+        for t in trunc_rows:
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            if pk == "|" or pk in pair_to_addr:
+                continue
+            ca = (t.get("token_ca") or "").lower()
+            if ca.startswith("0x"):
+                _pcs.setdefault(pk, set()).add(ca)
+        ca_multi_score: dict[str, int] = {}
+        for pk, cas in _pcs.items():
+            if len(cas) >= 2:
+                for ca in cas:
+                    ca_multi_score[ca] = ca_multi_score.get(ca, 0) + len(cas)
+
         pending_cas = []
         for ca in cas_ordered:
             pending = [
@@ -1156,6 +1252,7 @@ def resolve_truncs(
             ]
             if pending:
                 pending_cas.append(ca)
+        pending_cas.sort(key=lambda c: (-ca_multi_score.get(c, 0), ca_score(by_ca[c])))
         if bs_cap < 0:
             bs_targets = pending_cas
         else:
@@ -1182,7 +1279,16 @@ def resolve_truncs(
                 err = None
                 print(f"scout_tg blockscout reuse {ca[:10]}… n={len(addrs)} pending={len(pending)}")
             else:
-                addrs, err = fetch_blockscout_addrs(ca)
+                addrs, err = [], None
+                attempts = int(os.environ.get("SCOUT_TG_BS_TOKEN_RETRIES", "3"))
+                for attempt in range(max(1, attempts)):
+                    addrs, err = fetch_blockscout_addrs(ca)
+                    if addrs or err in ("empty", "all_hosts_dead", None):
+                        break
+                    if err in ("http_429", "http_403"):
+                        time.sleep(float(os.environ.get("SCOUT_TG_BS_429_PAUSE", "25")))
+                        continue
+                    break
                 stats.bs_tokens += 1
                 if err and err not in ("empty",) and not addrs:
                     stats.bs_api_fail += 1
@@ -1193,7 +1299,13 @@ def resolve_truncs(
                 stats.bs_tokens_nonempty += 1
             if not addrs and not prior:
                 print(f"scout_tg blockscout empty {ca[:10]}… err={err}")
-                if bs_sleep:
+                if err == "all_hosts_dead":
+                    # hard paywall — stop BS early to avoid burning the run
+                    print("scout_tg blockscout abort: all_hosts_dead (401/402)", flush=True)
+                    break
+                if err == "http_429":
+                    time.sleep(float(os.environ.get("SCOUT_TG_BS_429_PAUSE", "25")))
+                elif bs_sleep:
                     time.sleep(bs_sleep)
                 continue
             print(
