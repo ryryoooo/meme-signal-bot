@@ -94,12 +94,14 @@ LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.15"))
 MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "2500"))
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
-MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "5000"))
-MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "400"))
+MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "8000"))
+MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "800"))
+MIN_BUY_VOLUME_M5_USD = float(os.environ.get("MIN_BUY_VOLUME_M5_USD", "500"))  # life
+MIN_BUYS_M5 = int(os.environ.get("MIN_BUYS_M5", "8"))
 REQUIRE_GRADUATED = (os.environ.get("REQUIRE_GRADUATED") or "0").strip().lower() in ("1", "true", "yes")
 ALLOW_PRE_GRAD = (os.environ.get("ALLOW_PRE_GRAD") or "1").strip().lower() in ("1", "true", "yes")
 PRE_GRAD_MIN_VOLUME_M5 = float(os.environ.get("PRE_GRAD_MIN_VOLUME_M5", "800"))
-REQUIRE_BUY_INCREASE = (os.environ.get("REQUIRE_BUY_INCREASE") or "0").strip().lower() in ("1", "true", "yes")
+REQUIRE_BUY_INCREASE = (os.environ.get("REQUIRE_BUY_INCREASE") or "1").strip().lower() in ("1", "true", "yes")
 MIN_M5_SELL_RATIO = float(os.environ.get("MIN_M5_SELL_RATIO", "0"))  # 0=off; set >0 for two-way
 MIN_ABS_PRICE_CHANGE_M5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", "0"))  # 0=off
 MAX_PRICE_CHANGE_M5_PCT = float(os.environ.get("MAX_PRICE_CHANGE_M5_PCT", "60"))
@@ -108,8 +110,11 @@ MAX_M5_BUY_RATIO = float(os.environ.get("MAX_M5_BUY_RATIO", "0.92"))  # one-side
 DROP_BOT_WALLETS = (os.environ.get("DROP_BOT_WALLETS") or "1").strip().lower() in ("1", "true", "yes")
 MIN_HOLDERS = int(os.environ.get("MIN_HOLDERS", "80"))
 HOLDERS_REQUIRED = (os.environ.get("HOLDERS_REQUIRED") or "0").strip().lower() in ("1", "true", "yes")
-MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))  # need ≥1 wallet scoring ≥ this
-MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.5"))
+MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))
+MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.6"))
+DROP_WEAK_WALLETS = (os.environ.get("DROP_WEAK_WALLETS") or "1").strip().lower() in ("1", "true", "yes")
+WEAK_WALLET_MAX_SCORE = float(os.environ.get("WEAK_WALLET_MAX_SCORE", "0.5"))
+WATCH_MIN_REALIZED_HARD = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "50"))
 MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # legacy floor
 MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "604800"))  # 7d hard cap (0=off)
 # Playbook windows (sec)
@@ -719,7 +724,7 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
 
     # 2) 5m volume
     vol_m5 = safety.get("volume_m5")
-    vol_m5_req = env_bool("VOLUME_M5_REQUIRED", False)
+    vol_m5_req = env_bool("VOLUME_M5_REQUIRED", True)
     if vol_m5 is None:
         if vol_m5_req:
             fails.append("volume_m5_na")
@@ -790,7 +795,7 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
             pass
 
     # 4) 24h volume (existing)
-    vol_required = env_bool("VOLUME_REQUIRED", False)
+    vol_required = env_bool("VOLUME_REQUIRED", True)
     vol = safety.get("volume_h24")
     if vol is None:
         if vol_required:
@@ -802,6 +807,36 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
         except (TypeError, ValueError):
             if vol_required:
                 fails.append("volume_na")
+
+    # Buy volume is life: m5 buy-side USD proxy + min buy count
+    try:
+        min_buy_vol = float(os.environ.get("MIN_BUY_VOLUME_M5_USD", str(MIN_BUY_VOLUME_M5_USD)))
+    except (TypeError, ValueError):
+        min_buy_vol = MIN_BUY_VOLUME_M5_USD
+    try:
+        min_buys = int(float(os.environ.get("MIN_BUYS_M5", str(MIN_BUYS_M5))))
+    except (TypeError, ValueError):
+        min_buys = MIN_BUYS_M5
+    vol_m5_v = safety.get("volume_m5")
+    bm2 = safety.get("buys_m5")
+    sm2 = safety.get("sells_m5")
+    try:
+        bm2i = int(bm2) if bm2 is not None else None
+        sm2i = int(sm2) if sm2 is not None else None
+    except (TypeError, ValueError):
+        bm2i = sm2i = None
+    if bm2i is not None and bm2i < min_buys:
+        fails.append(f"buys_m5_thin={bm2i}<{min_buys}")
+    if vol_m5_v is not None and bm2i is not None and sm2i is not None and (bm2i + sm2i) > 0:
+        try:
+            buy_share = bm2i / (bm2i + sm2i)
+            buy_vol_usd = float(vol_m5_v) * buy_share
+            if buy_vol_usd < min_buy_vol:
+                fails.append(f"buy_vol_m5={buy_vol_usd:.0f}<{min_buy_vol:.0f}")
+        except (TypeError, ValueError, ZeroDivisionError):
+            fails.append("buy_vol_m5_na")
+    elif env_bool("BUY_VOLUME_REQUIRED", True):
+        fails.append("buy_vol_m5_na")
 
     holders = safety.get("holder_count")
     if holders is None:
@@ -819,7 +854,7 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
         fails.append(f"weak_cluster={total_usd:.0f}<{min_cluster:.0f}")
 
     # Wallet quality is soft unless REQUIRE_WALLET_QUALITY=1 (avoid over-skipping)
-    if env_bool("REQUIRE_WALLET_QUALITY", False):
+    if env_bool("REQUIRE_WALLET_QUALITY", True):
         if not wallet_scores:
             fails.append("quality_na")
         else:
@@ -862,6 +897,29 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
         filtered = {a: o for a, o in filtered.items() if not wallet_looks_bot(o)}
         print(
             f"watchlist drop_bots keep={len(filtered)} dropped={before - len(filtered)} before={before}",
+            flush=True,
+        )
+    if env_bool("DROP_WEAK_WALLETS", True) and filtered:
+        before = len(filtered)
+        try:
+            min_rp = float(os.environ.get("WATCH_MIN_REALIZED_HARD", str(WATCH_MIN_REALIZED_HARD)))
+        except (TypeError, ValueError):
+            min_rp = WATCH_MIN_REALIZED_HARD
+        try:
+            weak_max = float(os.environ.get("WEAK_WALLET_MAX_SCORE", str(WEAK_WALLET_MAX_SCORE)))
+        except (TypeError, ValueError):
+            weak_max = WEAK_WALLET_MAX_SCORE
+        kept = {}
+        for a, o in filtered.items():
+            rp = _wallet_realized(o)
+            q = wallet_quality_score(o)
+            # keep if meaningful pnl OR quality score above weak floor
+            if rp >= min_rp or q > weak_max:
+                kept[a] = o
+        filtered = kept
+        print(
+            f"watchlist drop_weak keep={len(filtered)} dropped={before - len(filtered)} "
+            f"min_rp={min_rp} weak_max_q={weak_max}",
             flush=True,
         )
     if not filtered:
@@ -2415,6 +2473,8 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("未卒業")
         elif rs.startswith("volume_m5"):
             bits.append("5分出来高薄い")
+        elif rs.startswith("buy_vol") or rs.startswith("buys_m5"):
+            bits.append("買いボリューム不足")
         elif rs.startswith("spike_") or rs.startswith("dump_m5") or rs.startswith("onesided"):
             bits.append("急騰/不自然")
         elif rs.startswith("bots_left"):
@@ -2843,16 +2903,30 @@ def run_once(args: argparse.Namespace) -> int:
         }
 
         # Drop bot-suspicious wallets from overlap (recompute n / total)
-        if env_bool("DROP_BOT_WALLETS", DROP_BOT_WALLETS):
+        if env_bool("DROP_BOT_WALLETS", DROP_BOT_WALLETS) or env_bool("DROP_WEAK_WALLETS", True):
             kept_w = []
             dropped_bots = []
+            try:
+                weak_max = float(os.environ.get("WEAK_WALLET_MAX_SCORE", str(WEAK_WALLET_MAX_SCORE)))
+            except (TypeError, ValueError):
+                weak_max = WEAK_WALLET_MAX_SCORE
+            try:
+                min_rp = float(os.environ.get("WATCH_MIN_REALIZED_HARD", str(WATCH_MIN_REALIZED_HARD)))
+            except (TypeError, ValueError):
+                min_rp = WATCH_MIN_REALIZED_HARD
             for w in list(s.get("wallets") or []):
                 addr = (w.get("address") or "").lower()
                 meta = watch.get(addr) or {}
-                if wallet_looks_bot(meta):
-                    dropped_bots.append(addr[:10])
-                else:
-                    kept_w.append(w)
+                if env_bool("DROP_BOT_WALLETS", DROP_BOT_WALLETS) and wallet_looks_bot(meta):
+                    dropped_bots.append(addr[:10] + ":bot")
+                    continue
+                if env_bool("DROP_WEAK_WALLETS", True):
+                    q = wallet_quality_score(meta)
+                    rp = _wallet_realized(meta)
+                    if q <= weak_max and rp < min_rp:
+                        dropped_bots.append(addr[:10] + ":weak")
+                        continue
+                kept_w.append(w)
             if dropped_bots:
                 print(
                     f"drop_bot_wallets ca={ca[:10]}… dropped={dropped_bots} keep={len(kept_w)}",
