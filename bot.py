@@ -117,6 +117,11 @@ MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.6"))
 DROP_WEAK_WALLETS = (os.environ.get("DROP_WEAK_WALLETS") or "1").strip().lower() in ("1", "true", "yes")
 WEAK_WALLET_MAX_SCORE = float(os.environ.get("WEAK_WALLET_MAX_SCORE", "0.5"))
 WATCH_MIN_REALIZED_HARD = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "500"))
+REQUIRE_CONSISTENT_PNL = (os.environ.get("REQUIRE_CONSISTENT_PNL") or "1").strip().lower() in ("1", "true", "yes")
+WATCH_MIN_WINRATE = float(os.environ.get("WATCH_MIN_WINRATE", "0.45"))
+WATCH_MIN_TRADES = int(os.environ.get("WATCH_MIN_TRADES", "15"))
+WATCH_MIN_AVG_PNL_PER_TRADE = float(os.environ.get("WATCH_MIN_AVG_PNL_PER_TRADE", "50"))
+ALLOW_FOMO_WITHOUT_WR = (os.environ.get("ALLOW_FOMO_WITHOUT_WR") or "0").strip().lower() in ("1", "true", "yes")
 MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # legacy floor
 MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "604800"))  # 7d hard cap (0=off)
 # Playbook windows (sec)
@@ -377,28 +382,105 @@ def wallet_looks_bot(meta: dict | None) -> bool:
     return False
 
 
-def wallet_passes_filter(o: dict, min_realized: float) -> bool:
-    """Keep winners. FOMO-only uses leaderboard PnL (no win-rate)."""
-    rp = _wallet_realized(o)
-    if rp <= 0:
-        return False
-    if min_realized > 0 and rp <= min_realized:
-        return False
-    min_wr = float(os.environ.get("WATCH_MIN_WINRATE", "0.40"))
-    min_n = int(os.environ.get("WATCH_MIN_TRADES_FOR_WR", "10"))
+def _wallet_winrate(o: dict) -> float | None:
     wr = o.get("win_rate")
     if wr is None:
         wr = o.get("gmgn_winrate")
     wrn = _num(wr)
+    if wrn is None:
+        return None
+    if wrn > 1.0:
+        wrn = wrn / 100.0
+    return wrn
+
+
+def _wallet_n_trades(o: dict) -> int:
+    for key in ("n_trades", "trades", "trade_count"):
+        try:
+            v = int(o.get(key) or 0)
+            if v > 0:
+                return v
+        except (TypeError, ValueError):
+            pass
+    return 0
+
+
+def _multi_hit_profit(o: dict) -> bool:
+    """Repeat edge without win_rate: ≥2 early-2x tokens or ≥3 tokens seen."""
     try:
-        nt = int(o.get("n_trades") or o.get("trades") or 0)
+        min_tok = int(float(os.environ.get("WATCH_MIN_PROFIT_TOKENS", "3")))
     except (TypeError, ValueError):
-        nt = 0
-    if _is_fomo_only(o) and wrn is None:
+        min_tok = 3
+    try:
+        min_e2 = int(float(os.environ.get("WATCH_MIN_EARLY2X_TOKENS", "2")))
+    except (TypeError, ValueError):
+        min_e2 = 2
+    try:
+        n_seen = int(o.get("n_tokens_seen") or o.get("n_tokens") or 0)
+    except (TypeError, ValueError):
+        n_seen = 0
+    e2 = o.get("early_2x_tokens") or []
+    if isinstance(e2, (str, int)):
+        e2 = [e2]
+    try:
+        e2n = len(list(e2))
+    except TypeError:
+        e2n = 0
+    if e2n >= min_e2:
         return True
-    if wrn is not None and nt >= min_n and wrn < min_wr:
+    if n_seen >= min_tok:
+        return True
+    return False
+
+
+def wallet_is_consistent(o: dict) -> bool:
+    """Average/repeat winners only — lucky one-shot PnL is noise."""
+    if not env_bool("REQUIRE_CONSISTENT_PNL", True):
+        return True
+    try:
+        min_wr = float(os.environ.get("WATCH_MIN_WINRATE", str(WATCH_MIN_WINRATE)))
+    except (TypeError, ValueError):
+        min_wr = WATCH_MIN_WINRATE
+    try:
+        min_n = int(float(os.environ.get("WATCH_MIN_TRADES", str(WATCH_MIN_TRADES))))
+    except (TypeError, ValueError):
+        min_n = WATCH_MIN_TRADES
+    try:
+        min_n = max(min_n, int(float(os.environ.get("WATCH_MIN_TRADES_FOR_WR", "0") or 0)))
+    except (TypeError, ValueError):
+        pass
+    try:
+        min_avg = float(os.environ.get("WATCH_MIN_AVG_PNL_PER_TRADE", str(WATCH_MIN_AVG_PNL_PER_TRADE)))
+    except (TypeError, ValueError):
+        min_avg = WATCH_MIN_AVG_PNL_PER_TRADE
+    wrn = _wallet_winrate(o)
+    nt = _wallet_n_trades(o)
+    rp = _wallet_realized(o)
+    if env_bool("ALLOW_FOMO_WITHOUT_WR", False) and _is_fomo_only(o) and wrn is None:
+        return rp > 0
+    # Path A: win-rate track record (preferred)
+    if wrn is not None and nt >= min_n:
+        if wrn < min_wr:
+            return False
+        if min_avg > 0 and nt > 0 and (rp / nt) < min_avg:
+            return False
+        return True
+    # Path B: multi-token repeat edge (Arc-style, no WR yet) — single-token profit = lucky noise
+    if wrn is None and nt < min_n and _multi_hit_profit(o):
+        return rp > 0
+    return False
+
+
+def wallet_passes_filter(o: dict, min_realized: float) -> bool:
+    """Keep consistent average winners. Lucky one-shot PnL is noise."""
+    rp = _wallet_realized(o)
+    if rp <= 0:
+        return False
+    if min_realized > 0 and rp < min_realized:
         return False
     if wallet_label_banned(o):
+        return False
+    if not wallet_is_consistent(o):
         return False
     return True
 
@@ -476,10 +558,17 @@ def wallet_quality_score(meta: dict | None) -> float:
         nt = int(meta.get("n_trades") or 0)
     except (TypeError, ValueError):
         nt = 0
-    if nt >= 10 and wr >= 0.45:
+    if wr is None or wr == 0.0:
+        wr = float(_wallet_winrate(meta) or 0)
+    if nt >= 15 and wr >= 0.45:
+        score += 0.8
+    elif nt >= 10 and wr >= 0.45:
         score += 0.5
     elif nt >= 5 and wr >= 0.40:
-        score += 0.25
+        score += 0.15
+    # penalize missing track record (lucky / unknown)
+    if nt < 10 or wr < 0.40:
+        score = min(score, 0.4)
     blob = " ".join(
         str(x)
         for x in list(meta.get("tags") or [])
@@ -945,13 +1034,12 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
         kept = {}
         for a, o in filtered.items():
             rp = _wallet_realized(o)
-            # Hard realized floor — drops $0.01 / meh onchain placeholders.
-            # Exempt xbtscout pre-post/early (size-filtered harvest) until PnL vet runs.
-            if rp >= min_rp or wallet_is_early_stage(o):
-                # still drop pure placeholders with no early tag
-                if rp < 1 and not wallet_is_early_stage(o):
-                    continue
-                kept[a] = o
+            # Average winners only. Early-tag alone is not enough if PnL is lucky/one-shot.
+            if rp < min_rp:
+                continue
+            if not wallet_is_consistent(o):
+                continue
+            kept[a] = o
         filtered = kept
         print(
             f"watchlist drop_weak keep={len(filtered)} dropped={before - len(filtered)} "
@@ -2957,8 +3045,9 @@ def run_once(args: argparse.Namespace) -> int:
                     dropped_bots.append(addr[:10] + ":bot")
                     continue
                 if env_bool("DROP_WEAK_WALLETS", True):
+                    q = wallet_quality_score(meta)
                     rp = _wallet_realized(meta)
-                    if rp < min_rp and not wallet_is_early_stage(meta):
+                    if (not wallet_is_consistent(meta)) or rp < min_rp or q <= weak_max:
                         dropped_bots.append(addr[:10] + ":weak")
                         continue
                 kept_w.append(w)
