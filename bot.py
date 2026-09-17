@@ -516,6 +516,9 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
             "xbtscout_pre_post",
             "xbtscout_pre",
             "xbtscout_early",
+            "scout_tg_early",
+            "scout_elite",
+            "scout_tg",
             "nansen",
             "smart trader",
             "30d smart",
@@ -1817,14 +1820,33 @@ def refine_wallets(watch_path: Path, min_realized: float | None = None) -> int:
             dropped += 1
             reasons["label_ban"] = reasons.get("label_ban", 0) + 1
             continue
+        tags_pre = {str(x).lower() for x in (o.get("tags") or []) + (o.get("gmgn_tags") or [])}
+        scoutish = bool(tags_pre & {"scout_tg", "scout_elite", "scout_good", "scout_tg_early"}) or (
+            "telegram:scoutrobinhood" in {str(x).lower() for x in (o.get("source_endpoints") or [])}
+        )
         if not wallet_passes_filter(o, min_realized):
-            dropped += 1
-            rp = _wallet_realized(o)
-            if rp <= 0:
-                reasons["pnl_le_0"] = reasons.get("pnl_le_0", 0) + 1
-            else:
-                reasons["winrate_or_floor"] = reasons.get("winrate_or_floor", 0) + 1
-            continue
+            # Keep high-signal scout TG wallets pending / multi-hit elite
+            keep_scout = False
+            if scoutish:
+                try:
+                    hits = int(o.get("scout_hit_count") or 0)
+                    elite_n = int(o.get("scout_elite_count") or 0)
+                except (TypeError, ValueError):
+                    hits = elite_n = 0
+                tier = str(o.get("scout_tier") or "").lower()
+                if "scout_elite" in tags_pre or tier == "elite":
+                    if hits >= 2 or elite_n >= 2 or o.get("win_rate") is not None:
+                        keep_scout = True
+                elif hits >= 3 and o.get("win_rate") is not None:
+                    keep_scout = True
+            if not keep_scout:
+                dropped += 1
+                rp = _wallet_realized(o)
+                if rp <= 0:
+                    reasons["pnl_le_0"] = reasons.get("pnl_le_0", 0) + 1
+                else:
+                    reasons["winrate_or_floor"] = reasons.get("winrate_or_floor", 0) + 1
+                continue
         rp = _wallet_realized(o)
         try:
             n_tok = int(o.get("n_tokens_seen") or len(o.get("symbols_seen") or []) or 0)

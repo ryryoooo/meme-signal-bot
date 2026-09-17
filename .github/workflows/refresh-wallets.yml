@@ -77,6 +77,7 @@ jobs:
         run: python3 scripts/harvest_kol_vetted.py
         continue-on-error: true
 
+
       # xbtscout burns GMGN before portfolio WR fills — keep off while track/stats are 429-prone
       - name: Collect — xbtscout smart tags (1 CA)
         if: ${{ false }}
@@ -107,11 +108,34 @@ jobs:
           WATCH_MIN_AVG_PNL_PER_TRADE: "50"
         run: python3 bot.py --refine-wallets
 
+
+      - name: Enrich — Scout TG early Live buys (scrape+resolve+rank)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
+          SCOUT_TG_ENABLED: "1"
+          SCOUT_TG_PAGES: "5"
+          SCOUT_TG_RESOLVE: "1"
+          SCOUT_TG_VET_CAP: "40"
+          SCOUT_TG_MAX_TOKENS: "8"
+          SCOUT_RANK_MERGE: "1"
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          REQUIRE_CONSISTENT_PNL: "1"
+          WATCH_MIN_WINRATE: "0.45"
+          WATCH_MIN_TRADES: "15"
+          WATCH_MIN_AVG_PNL_PER_TRADE: "50"
+          WATCH_MIN_REALIZED_HARD: "500"
+        run: |
+          python3 scripts/harvest_scout_telegram.py
+          python3 scripts/rank_scout_wallets.py
+        continue-on-error: true
+
       - name: Commit watchlist if changed
         run: |
           git config user.name "meme-signal-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add rh-wallets/wallets.jsonl rh-wallets/raw/ arc-wallets/wallets.jsonl arc-wallets/wallets_quality.jsonl arc-wallets/raw/ fomo-wallets/ xbtscout/ scripts/harvest_kol_vetted.py || true
+          git add rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/summary_scout.md rh-wallets/raw/ arc-wallets/wallets.jsonl arc-wallets/wallets_quality.jsonl arc-wallets/raw/ fomo-wallets/ xbtscout/ scripts/harvest_kol_vetted.py scripts/harvest_scout_telegram.py scripts/rank_scout_wallets.py || true
           if git diff --cached --quiet; then
             echo "no wallet changes"
           else
@@ -126,5 +150,8 @@ jobs:
           name: rh-wallets-jsonl
           path: |
             rh-wallets/wallets.jsonl
+            rh-wallets/wallets_scout_ranked.jsonl
+            rh-wallets/summary_scout.md
+            rh-wallets/raw/scout_tg_*.jsonl
             fomo-wallets/
           retention-days: 30
