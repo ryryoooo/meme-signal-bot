@@ -522,6 +522,7 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
         pl = str(p).lower().strip()
         if pl.startswith("early") or pl == "nansen" or pl.startswith("nansen:"):
             return True
+    # bare kol / gmgn_kol is often late chase — never early by itself
     return False
 
 
@@ -582,6 +583,16 @@ def wallet_quality_score(meta: dict | None) -> float:
         score += 0.3
     if str(meta.get("list_tier") or "").lower() in ("quality", "keeper", "a"):
         score += 0.2
+    # KOL / renowned bonus only when consistent average winner (KOL alone = noise)
+    kolish = any(
+        t in blob
+        for t in ("kol", "gmgn_kol", "renowned")
+    ) or any(
+        str(x).lower() in ("kol", "gmgn_kol", "renowned")
+        for x in list(meta.get("tags") or []) + list(meta.get("gmgn_tags") or []) + list(meta.get("sources") or [])
+    )
+    if kolish and wallet_is_consistent(meta):
+        score += 0.3
     return round(score, 3)
 
 
@@ -2870,11 +2881,17 @@ def run_once(args: argparse.Namespace) -> int:
             due = True
         if due:
             try:
-                new_cas = scrape_xbtscout_cas()
+                new_recs = [r for r in scrape_xbtscout_posts() if r.get("is_new")]
+                new_cas = [r["ca"] for r in new_recs]
             except Exception as e:
                 print(f"xbtscout scrape err {type(e).__name__}", file=sys.stderr)
+                new_recs = []
                 new_cas = []
             state["last_xbtscout_scrape_ts"] = now_x
+            if new_recs:
+                xhook = resolve_xbtscout_webhook(chain)
+                n_post = notify_xbtscout_new_cas(new_recs, xhook, chain, state=state)
+                print(f"xbtscout discord notified={n_post}/{len(new_recs)}", flush=True)
             if new_cas:
                 harvest_xbtscout_wallets(watch_path, max_tokens=1, only_cas=new_cas)
                 watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
@@ -3412,6 +3429,101 @@ def test_fomo_holders_post() -> int:
 
 
 
+def resolve_xbtscout_webhook(chain: str | None = None) -> str:
+    """Optional dedicated channel; else RH/signal webhook."""
+    u = (os.environ.get("DISCORD_XBTSCOUT_WEBHOOK_URL") or "").strip()
+    if u:
+        return u
+    return resolve_signal_webhook(chain or "robinhood")
+
+
+def build_xbtscout_embed(rec: dict, chain: str) -> dict:
+    """Discord embed for a new @xbtscout CA with tap-to-open GMGN app link."""
+    ca = (rec.get("ca") or "").strip()
+    guess = (rec.get("chain_guess") or chain or "robinhood").lower()
+    if guess in ("rh", "robinhoodchain"):
+        guess = "robinhood"
+    link = gmgn_tok.token_app_url(guess, ca)
+    snip = (rec.get("source_url_or_text_snip") or rec.get("snip") or "").strip()
+    # strip long nitter prefix noise
+    if " | " in snip:
+        snip = snip.split(" | ", 1)[-1]
+    snip = snip[:280]
+    posted = rec.get("posted_at") or rec.get("date") or ""
+    title = f"🐦 xbtscout 新CA · {guess}"
+    desc_parts = [
+        f"**CA** `{ca}`",
+        f"**[GMGNで開く]({link})**",
+    ]
+    if posted:
+        desc_parts.append(f"投稿: {posted}")
+    if snip:
+        desc_parts.append(snip)
+    return {
+        "title": title[:250],
+        "description": "\n".join(desc_parts)[:4000],
+        "url": link,
+        "color": 0x1DA1F2,
+        "fields": [
+            {"name": "chain", "value": guess, "inline": True},
+            {"name": "GMGN", "value": f"[app]({link})", "inline": True},
+        ],
+        "footer": {"text": "@xbtscout · tap GMGN link"},
+    }
+
+
+def notify_xbtscout_new_cas(
+    new_recs: list[dict],
+    webhook: str,
+    chain: str = "robinhood",
+    state: dict | None = None,
+) -> int:
+    """Post each new CA to Discord once. Returns number posted."""
+    if not env_bool("XBTSCOUT_NOTIFY", True):
+        return 0
+    if not webhook or not new_recs:
+        return 0
+    notified = set()
+    if state is not None:
+        raw = state.get("xbtscout_notified_cas") or []
+        if isinstance(raw, list):
+            notified = {str(x).lower() for x in raw}
+    cas_path = ROOT / "xbtscout" / "cas.jsonl"
+    have = _xbtscout_load_cas(cas_path)
+    posted_n = 0
+    for rec in new_recs:
+        ca = (rec.get("ca") or "").lower().strip()
+        if not ca.startswith("0x"):
+            continue
+        # skip if already notified (state or cas.jsonl flag)
+        row = have.get(ca) or rec
+        if row.get("discord_notified_at") or ca in notified:
+            continue
+        guess = (row.get("chain_guess") or rec.get("chain_guess") or chain or "robinhood")
+        # RH signal channel: still post BSC with correct GMGN slug
+        embed = build_xbtscout_embed({**row, **rec, "ca": ca, "chain_guess": guess}, chain)
+        try:
+            discord_webhook(webhook, content=f"🆕 xbtscout `{ca[:10]}…` → {gmgn_tok.token_app_url(guess, ca)}", embeds=[embed])
+        except Exception as e:
+            print(f"xbtscout notify fail {ca[:10]}… {type(e).__name__}", file=sys.stderr)
+            continue
+        posted_n += 1
+        notified.add(ca)
+        from datetime import datetime, timezone as _tz
+        ts = datetime.now(_tz.utc).isoformat()
+        if ca in have:
+            have[ca]["discord_notified_at"] = ts
+        else:
+            have[ca] = {**row, "discord_notified_at": ts}
+        print(f"xbtscout notify ok {ca[:10]}…", flush=True)
+    if posted_n:
+        _xbtscout_write_cas(cas_path, have)
+    if state is not None:
+        # keep last 500
+        state["xbtscout_notified_cas"] = list(notified)[-500:]
+    return posted_n
+
+
 def scrape_xbtscout_cas() -> list[str]:
     """Pull new 0x CAs from nitter @xbtscout. Fail soft. Returns new CA strings.
     Also stores posted_at when RSS items can be parsed (for pre-post buyer harvest).
@@ -3852,6 +3964,7 @@ def main() -> int:
     p.add_argument("--refine-wallets", action="store_true", help="Drop losers / banned labels from wallets.jsonl")
     p.add_argument("--refresh-fomo", action="store_true", help="FOMO 7d leaderboard → drop fallen FOMO-only wallets")
     p.add_argument("--harvest-xbtscout", action="store_true", help="Scrape @xbtscout new CAs and GMGN-tag 1")
+    p.add_argument("--notify-xbtscout", action="store_true", help="Scrape @xbtscout and Discord-notify new CAs with GMGN links")
     p.add_argument("--paper-summary", action="store_true", help="Write paper_summary.md from logs/state")
     p.add_argument("--pages", type=int, default=2, help="legacy Nansen pages if NANSEN_FOR_TRADES=1")
     p.add_argument("--per-page", type=int, default=100, help="GMGN --limit / Nansen per_page")
@@ -3947,6 +4060,19 @@ def main() -> int:
         ).resolve()
         return refresh_fomo_wallets(watch_path)
 
+    if args.notify_xbtscout:
+        chain = (os.environ.get("CHAIN") or "robinhood").strip().lower()
+        recs = [r for r in scrape_xbtscout_posts() if r.get("is_new")]
+        # also allow force-notify of latest N unnotified
+        if not recs and env_bool("XBTSCOUT_NOTIFY_BACKFILL", False):
+            cas_path = ROOT / "xbtscout" / "cas.jsonl"
+            have = _xbtscout_load_cas(cas_path)
+            recs = [o for o in have.values() if not o.get("discord_notified_at")]
+            recs = sorted(recs, key=lambda o: str(o.get("posted_at") or ""), reverse=True)[: int(os.environ.get("XBTSCOUT_NOTIFY_BACKFILL_N", "5"))]
+        hook = resolve_xbtscout_webhook(chain)
+        n = notify_xbtscout_new_cas(recs, hook, chain, state=None)
+        print(f"notify-xbtscout posted={n}")
+        return 0 if n >= 0 else 1
     if args.harvest_xbtscout:
         chain = os.environ.get("CHAIN", "robinhood").strip().lower()
         watch_path = Path(

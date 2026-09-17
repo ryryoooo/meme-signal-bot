@@ -139,8 +139,9 @@ jobs:
           FOMO_HOLDERS_INTERVAL: "14400"
           FOMO_WATCH_PATH: fomo-wallets/wallets_evm.jsonl
           XBTSCOUT_ENABLED: "1"
-          XBTSCOUT_SCRAPE_SECONDS: "900"
+          XBTSCOUT_SCRAPE_SECONDS: "300"
           XBTSCOUT_MAX_TOKENS: "3"
+          XBTSCOUT_NOTIFY: "1"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
           PAPER_LOG_PATH: paper_log.jsonl
