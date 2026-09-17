@@ -1,3 +1,4 @@
+export GMGN_DISABLED="${GMGN_DISABLED:-1}"
 #!/bin/bash
 # Box-local Arc signal loop (~60s). Primary entry path for live_tick.
 # LIVE_TRADING=0 here — live_tick owns swaps. No Super / no GHA wake.

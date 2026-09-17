@@ -2893,7 +2893,11 @@ def run_once(args: argparse.Namespace) -> int:
                 n_post = notify_xbtscout_new_cas(new_recs, xhook, chain, state=state)
                 print(f"xbtscout discord notified={n_post}/{len(new_recs)}", flush=True)
             if new_cas:
-                harvest_xbtscout_wallets(watch_path, max_tokens=1, only_cas=new_cas)
+                # Wallet harvest needs GMGN — leave to GHA when box IP is banned / disabled
+                if (os.environ.get("GMGN_DISABLED") or "0").strip().lower() in ("1", "true", "yes"):
+                    print("xbtscout harvest skip: GMGN_DISABLED (GHA owns harvest)", flush=True)
+                else:
+                    harvest_xbtscout_wallets(watch_path, max_tokens=1, only_cas=new_cas)
                 watch, raw_count, fallback = load_watchlist(watch_path, min_realized)
                 fomo_addrs = fomo_watch_addresses(fomo_index)
                 for addr, rec in fomo_addrs.items():
@@ -3791,6 +3795,9 @@ def harvest_xbtscout_wallets(
     only_cas: list[str] | None = None,
 ) -> int:
     """GMGN early/pre-post buyers on xbtscout CAs (RH). Prefer wallets active before post time."""
+    if (os.environ.get("GMGN_DISABLED") or "0").strip().lower() in ("1", "true", "yes"):
+        print("harvest-xbtscout skip: GMGN_DISABLED (run on GHA)", flush=True)
+        return 0
     write_gmgn_dotenv()
     max_n = int(max_tokens if max_tokens is not None else os.environ.get("XBTSCOUT_MAX_TOKENS", "3"))
     min_buy_usd = float(os.environ.get("XBTSCOUT_MIN_BUY_USD", "80"))

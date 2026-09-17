@@ -135,13 +135,19 @@ def sync_cooldown_from_state(until: float) -> None:
         pass
 
 
+
+def gmgn_disabled() -> bool:
+    """Box should set GMGN_DISABLED=1 and leave GMGN to GitHub Actions (different IP)."""
+    return (os.environ.get("GMGN_DISABLED") or "0").strip().lower() in ("1", "true", "yes")
+
+
 def gmgn_on_cooldown() -> bool:
     return time.time() < _cooldown_until()
 
 
 def gmgn_should_skip() -> bool:
-    """True when we must not call gmgn-cli (cooldown or resume pad)."""
-    return gmgn_on_cooldown()
+    """True when we must not call gmgn-cli (disabled, cooldown, or resume pad)."""
+    return gmgn_disabled() or gmgn_on_cooldown()
 
 
 def gmgn_cooldown_remaining() -> float:
@@ -173,6 +179,8 @@ def gmgn_cli_json(args: list[str], timeout: float = 40, retries: int = 0) -> tup
     Retrying extends the IP ban.
     """
     write_gmgn_dotenv()
+    if gmgn_disabled():
+        return None, "disabled"
     if gmgn_on_cooldown():
         return None, "rate"
     key = (os.environ.get("GMGN_API_KEY") or "").strip()

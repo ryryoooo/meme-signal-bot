@@ -35,7 +35,8 @@ jobs:
 
       - name: Configure GMGN env (no echo)
         env:
-          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
         run: |
           mkdir -p "$HOME/.config/gmgn"
           python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
@@ -57,7 +58,8 @@ jobs:
 
       - name: Collect — xbtscout smart tags (1 CA)
         env:
-          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           XBTSCOUT_MAX_TOKENS: "3"
@@ -68,7 +70,8 @@ jobs:
 
       - name: Collect — KOL track (vetted consistent only)
         env:
-          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
           KOL_LIMIT: "100"
           KOL_VET_CAP: "20"
           KOL_MIN_TOKENS: "2"

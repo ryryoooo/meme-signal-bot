@@ -102,3 +102,10 @@ python3 bot.py --test-live-webhook   # Arc LIVE チャンネルにサンプルPn
 ## 注意
 - シークレットをログに出さない
 - Public リポ。Actions 無料枠のため cron は `*/5`
+
+## GMGN IP ban / box vs GHA
+
+箱のIPが `RATE_LIMIT_BANNED` になりやすいので、**箱は `GMGN_DISABLED=1`（デフォルト）**。
+GMGN呼び出し（smartmoney / xbtscout harvest / KOL vet / token security）は **GitHub Actions** 側（別IP）で実行。
+
+任意で2つ目のキーを `GMGN_API_KEY_GHA` に置くと GHA だけそちらを使う（未設定時は `GMGN_API_KEY`）。

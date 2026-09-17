@@ -37,7 +37,8 @@ jobs:
 
       - name: Configure GMGN env (no echo)
         env:
-          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
         run: |
           mkdir -p "$HOME/.config/gmgn"
           python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
@@ -60,7 +61,8 @@ jobs:
 
       - name: Run once (signals + paper marks)
         env:
-          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
           FOMO_API_KEY: ${{ secrets.FOMO_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}

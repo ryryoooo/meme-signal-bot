@@ -1,3 +1,4 @@
+export GMGN_DISABLED="${GMGN_DISABLED:-1}"
 #!/bin/bash
 set -euo pipefail
 cd /workspace/meme-foundation/discord-bot
