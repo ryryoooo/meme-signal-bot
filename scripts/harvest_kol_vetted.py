@@ -379,90 +379,110 @@ def parse_portfolio_row(row: dict) -> dict:
     }
 
 
-def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dict[str, dict], int, str | None]:
-    """Call portfolio profits (batched) then fill gaps with portfolio stats. Returns stats, calls_used, err."""
-    out: dict[str, dict] = {}
-    if remaining_cap <= 0 or not addresses:
-        return out, 0, None
-    # prefer one profits call for many wallets
-    batch = addresses[: min(len(addresses), remaining_cap, 50)]
-    calls = 0
-    err_kind = None
-
-    # profits — one call counts as 1 toward cap (batch)
-    args = ["portfolio", "profits", "--chain", chain, "--period", "30d"]
-    for a in batch:
-        args.extend(["--wallet", a])
-    data, err = gmgn_raw(args, timeout=180)
-    calls += 1
-    if err == "rate_limited":
-        return out, calls, "rate_limited"
-    if err:
-        print(f"[{chain}] portfolio profits fail: {err}")
-        err_kind = err
-    else:
-        items = extract_list(data)
-        if not items and isinstance(data, dict):
-            # map keyed by address
-            for a in batch:
-                if isinstance(data.get(a), dict):
-                    items.append({"address": a, **data[a]})
-                elif isinstance(data.get(a.lower()), dict):
-                    items.append({"address": a, **data[a.lower()]})
-            # sometimes data.data is dict addr->stats
-            dd = data.get("data")
-            if isinstance(dd, dict) and not items:
-                for k, v in dd.items():
-                    if isinstance(v, dict):
-                        items.append({"address": k, **v})
-        for row in items:
-            parsed = parse_portfolio_row(row if isinstance(row, dict) else {})
-            addr = parsed.get("address")
-            if not addr:
-                continue
-            out[addr] = parsed
-        print(f"[{chain}] profits parsed={len(out)} / batch={len(batch)}")
-
-    # fill missing PnL *or* winrate with stats — profits often omits WR
-    missing = [
-        a
-        for a in batch
-        if a not in out
-        or out[a].get("realized_pnl_usd") is None
-        or out[a].get("win_rate") is None
-    ]
-    for a in missing:
-        if calls >= remaining_cap:
-            break
-        sargs = ["portfolio", "stats", "--chain", chain, "--wallet", a, "--period", "30d"]
-        sdata, serr = gmgn_raw(sargs, timeout=90)
-        calls += 1
-        if serr == "rate_limited":
-            return out, calls, "rate_limited"
-        if serr or sdata is None:
-            print(f"[{chain}] stats fail {a[:10]}… {serr}")
+def _ingest_portfolio_payload(data, batch: list[str], out: dict[str, dict]) -> list[str]:
+    """Parse portfolio stats/profits JSON into out; return sample raw_keys for logging."""
+    sample_keys: list[str] = []
+    items = extract_list(data)
+    if not items and isinstance(data, dict):
+        for a in batch:
+            if isinstance(data.get(a), dict):
+                items.append({"address": a, **data[a]})
+            elif isinstance(data.get(a.lower()), dict):
+                items.append({"address": a, **data[a.lower()]})
+        dd = data.get("data")
+        if isinstance(dd, dict) and not items:
+            # addr -> stats map, or list-like
+            for k, v in dd.items():
+                if isinstance(v, dict):
+                    items.append({"address": k, **v})
+                elif k == "list" and isinstance(v, list):
+                    items.extend([x for x in v if isinstance(x, dict)])
+        if not items:
+            # single-wallet stats blob
+            if any(k in data for k in ("realized_profit", "realized_pnl", "winrate", "win_rate", "buy")):
+                items.append(dict(data))
+    for i, row in enumerate(items):
+        if not isinstance(row, dict):
             continue
-        # stats may return list or dict
-        rows = extract_list(sdata)
-        target = None
-        if rows:
-            target = rows[0] if isinstance(rows[0], dict) else None
-        elif isinstance(sdata, dict):
-            target = sdata.get("data") if isinstance(sdata.get("data"), dict) else sdata
-        if not isinstance(target, dict):
+        parsed = parse_portfolio_row(row)
+        addr = parsed.get("address")
+        if not addr and i < len(batch) and len(items) == len(batch):
+            addr = batch[i]
+            parsed["address"] = addr
+        if not addr and len(batch) == 1:
+            addr = batch[0]
+            parsed["address"] = addr
+        if not addr:
             continue
-        parsed = parse_portfolio_row({**target, "address": a})
-        parsed["address"] = a
-        prev = out.get(a) or {}
-        # merge: prefer newly parsed non-None over previous
+        addr = addr.lower()
+        prev = out.get(addr) or {}
         merged = dict(prev)
         for k, v in parsed.items():
             if v is not None and k != "raw_keys":
                 merged[k] = v
         if parsed.get("raw_keys"):
             merged["raw_keys"] = parsed["raw_keys"]
-        out[a] = merged
-        time.sleep(0.35)
+            if not sample_keys:
+                sample_keys = list(parsed["raw_keys"])
+        out[addr] = merged
+    return sample_keys
+
+
+def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dict[str, dict], int, str | None]:
+    """Prefer ONE batched portfolio stats (has WR), then profits fill for PnL.
+
+    GHA often gets only ~1 successful GMGN call before 429 — stats must go first.
+    Each batch CLI invocation counts as 1 toward remaining_cap.
+    """
+    out: dict[str, dict] = {}
+    if remaining_cap <= 0 or not addresses:
+        return out, 0, None
+    # stats supports multi-wallet; keep batch within cap semantics (1 call)
+    batch = addresses[: min(len(addresses), 50)]
+    calls = 0
+    err_kind = None
+
+    # 1) stats first — winrate lives here
+    sargs = ["portfolio", "stats", "--chain", chain, "--period", "30d"]
+    for a in batch:
+        sargs.extend(["--wallet", a])
+    sdata, serr = gmgn_raw(sargs, timeout=180)
+    calls += 1
+    if serr == "rate_limited":
+        print(f"[{chain}] portfolio stats rate-limited (batch={len(batch)})")
+        return out, calls, "rate_limited"
+    if serr:
+        print(f"[{chain}] portfolio stats fail: {serr}")
+        err_kind = serr
+    else:
+        keys = _ingest_portfolio_payload(sdata, batch, out)
+        n_wr = sum(1 for a in batch if out.get(a, {}).get("win_rate") is not None)
+        n_rp = sum(1 for a in batch if out.get(a, {}).get("realized_pnl_usd") is None is False)
+        # fix silly count
+        n_rp = sum(1 for a in batch if (out.get(a) or {}).get("realized_pnl_usd") is not None)
+        print(
+            f"[{chain}] stats parsed={len(out)}/{len(batch)} with_wr={n_wr} with_rp={n_rp} "
+            f"sample_keys={keys[:12]}"
+        )
+
+    # 2) profits fill if we still have budget and missing rp (or empty stats)
+    need_rp = [a for a in batch if (out.get(a) or {}).get("realized_pnl_usd") is None]
+    if need_rp and calls < remaining_cap:
+        pargs = ["portfolio", "profits", "--chain", chain, "--period", "30d"]
+        for a in need_rp:
+            pargs.extend(["--wallet", a])
+        pdata, perr = gmgn_raw(pargs, timeout=180)
+        calls += 1
+        if perr == "rate_limited":
+            print(f"[{chain}] portfolio profits rate-limited after stats")
+            return out, calls, "rate_limited"
+        if perr:
+            print(f"[{chain}] portfolio profits fail: {perr}")
+            err_kind = err_kind or perr
+        else:
+            keys = _ingest_portfolio_payload(pdata, need_rp, out)
+            n_rp = sum(1 for a in batch if (out.get(a) or {}).get("realized_pnl_usd") is not None)
+            print(f"[{chain}] profits fill parsed_total={len(out)} with_rp={n_rp} sample_keys={keys[:12]}")
 
     return out, calls, err_kind
 
@@ -763,11 +783,12 @@ def main() -> int:
     arc = load_jsonl(arc_path)
     arc_q = load_jsonl(arc_q_path) if arc_q_path.exists() else dict(arc)
 
-    # Reserve FOMO budget up front so KOL cannot starve the board path
-    fomo_budget = 0 if skip_vet else min(fomo_vet_cap, max(0, remaining))
-    kol_budget_total = max(0, remaining - fomo_budget)
-    remaining = kol_budget_total
+    fomo_cands = load_fomo_candidates(min_pnl=min_realized)
+    summary["fomo_candidates"] = len(fomo_cands)
+    summary["fomo_tagged"] = tag_fomo_already_consistent(rh, fomo_cands, min_realized)
 
+    # Build per-chain KOL candidates first (fetch/reuse raw)
+    kol_by_chain: dict[str, list[dict]] = {}
     for chain in chains:
         cdir = chain_dir(chain)
         raw_dir = cdir / "raw"
@@ -778,157 +799,105 @@ def main() -> int:
             fetched, ferr = fetch_kol_track(chain, limit, raw_dir)
             if ferr == "rate_limited":
                 summary["track_rate_limited"] = True
-                print(f"[{chain}] track rate-limited; continue with raw/vet (do not abort other chains)")
+                print(f"[{chain}] track rate-limited; continue with raw/vet")
             rows = load_raw_rows(raw_dir)
             if not rows and fetched:
                 rows = [r for r in fetched if (r.get("side") or "buy").lower() == "buy"]
-
         by = aggregate_makers(rows)
         cands = candidate_list(by, min_tokens, min_usd)
+        kol_by_chain[chain] = cands
         summary["kol_candidates"] += len(cands)
         print(f"[{chain}] makers={len(by)} candidates={len(cands)}")
-        for c in cands[:15]:
+        for c in cands[:12]:
             print(
                 f"  cand {c['address'][:10]}… buys={c['n_buys']} "
                 f"usd={c['sum_buy_usd']:.0f} toks={c['n_tokens']} "
                 f"label={c['address_label']!r}"
             )
 
-        if not cands:
-            continue
-
-        need_vet = []
-        already_ok = []
-        watch = rh if chain == "robinhood" else arc
-        for c in cands:
-            cur = watch.get(c["address"])
-            if cur and bot.wallet_passes_filter(cur, min_realized):
-                already_ok.append((c, cur))
-            else:
-                need_vet.append(c)
-
-        stats_map: dict[str, dict] = {}
-        vet_blocked = False
-        if not skip_vet and need_vet and remaining > 0:
-            addrs = [c["address"] for c in need_vet]
-            use = remaining if chain == chains[-1] else max(1, remaining // max(1, len(chains) - chains.index(chain)))
-            use = min(use, remaining, len(addrs))
-            sm, used, verr = batch_vet(chain, addrs[:use], use)
-            remaining -= used
-            summary["vetted"] += len(sm)
-            if verr == "rate_limited":
-                summary["rate_limited"] = True
-                vet_blocked = True
-                print(f"[{chain}] rate-limited during vet; skip further portfolio calls")
-            stats_map.update(sm)
-        elif skip_vet:
-            print(f"[{chain}] skip_vet")
-
-        passed_rows: list[tuple[dict, dict]] = []
-        for c, cur in already_ok:
-            st = {
-                "realized_pnl_usd": cur.get("realized_pnl_usd"),
-                "win_rate": cur.get("win_rate") or cur.get("gmgn_winrate"),
-                "n_trades": cur.get("n_trades"),
-            }
-            passed_rows.append((c, st))
-
-        for c in need_vet:
-            st = stats_map.get(c["address"])
-            if not st:
-                continue
-            trial = {
-                "address": c["address"],
-                "realized_pnl_usd": st.get("realized_pnl_usd") or 0,
-                "win_rate": st.get("win_rate"),
-                "n_trades": st.get("n_trades") or 0,
-                "n_tokens": c.get("n_tokens"),
-                "tags": ["kol", "gmgn_kol"] + list(c.get("gmgn_tags") or []),
-                "sources": ["gmgn_kol"],
-                "source_endpoints": ["gmgn:track_kol"],
-            }
-            if trial["win_rate"] is None and st.get("win_rate") is not None:
-                trial["gmgn_winrate"] = st["win_rate"]
-            ok = bot.wallet_passes_filter(trial, min_realized) and bot.wallet_is_consistent(trial)
-            # Arc multi-hit path: allow when WR missing but repeat-token edge present
-            if not ok and chain == "arc" and trial.get("win_rate") is None:
-                trial2 = dict(trial)
-                trial2["n_tokens"] = c.get("n_tokens") or trial.get("n_tokens")
-                ok = bot.wallet_passes_filter(trial2, min_realized)
-            print(
-                f"  vet {c['address'][:10]}… rp={st.get('realized_pnl_usd')} "
-                f"wr={st.get('win_rate')} n={st.get('n_trades')} pass={ok}"
-            )
-            if ok:
-                passed_rows.append((c, st))
-
-        summary["passed"] += len(passed_rows)
-
-        if chain == "robinhood":
-            for c, st in passed_rows:
-                prev = rh.get(c["address"])
-                was = prev is not None
-                rh[c["address"]] = merge_wallet(prev, c, st, chain)
-                if was:
-                    summary["updated_rh"] += 1
-                else:
-                    summary["added_rh"] += 1
+    # --- Single RH vet batch: FOMO (top) + KOL need_vet (stats-first, 1 GMGN call) ---
+    rh_kol = kol_by_chain.get("robinhood") or []
+    kol_need: list[dict] = []
+    kol_already: list[tuple[dict, dict]] = []
+    for c in rh_kol:
+        cur = rh.get(c["address"])
+        if cur and bot.wallet_passes_filter(cur, min_realized):
+            kol_already.append((c, cur))
         else:
-            for c, st in passed_rows:
-                prev = arc.get(c["address"])
-                was = prev is not None
-                merged = merge_wallet(prev, c, st, chain)
-                arc[c["address"]] = merged
-                prev_q = arc_q.get(c["address"])
-                arc_q[c["address"]] = merge_wallet(prev_q, c, st, chain)
-                if was:
-                    summary["updated_arc"] += 1
-                else:
-                    summary["added_arc"] += 1
+            kol_need.append(c)
 
-        if vet_blocked:
-            # stop further KOL chain portfolio calls; FOMO may still try if budget left
-            remaining = 0
-            break
-
-    # Restore FOMO budget (+ any leftover KOL budget)
-    remaining = remaining + fomo_budget
-
-    # FOMO: tag already-consistent, then portfolio-vet top board addrs missing WR
-    fomo_cands = load_fomo_candidates(min_pnl=min_realized)
-    summary["fomo_candidates"] = len(fomo_cands)
-    summary["fomo_tagged"] = tag_fomo_already_consistent(rh, fomo_cands, min_realized)
-    print(f"[fomo] board_candidates={len(fomo_cands)} already_tagged={summary['fomo_tagged']}")
-
-    need_fomo_vet: list[dict] = []
+    fomo_need: list[dict] = []
     for c in fomo_cands:
         cur = rh.get(c["address"])
         if cur and bot.wallet_passes_filter(cur, min_realized):
-            continue  # already good (tagged above)
-        need_fomo_vet.append(c)
+            continue
+        fomo_need.append(c)
 
-    if not skip_vet and need_fomo_vet and remaining > 0 and not summary["rate_limited"]:
-        use = min(remaining, fomo_vet_cap, len(need_fomo_vet))
-        addrs = [c["address"] for c in need_fomo_vet[:use]]
-        print(f"[fomo] vetting top {len(addrs)} / need={len(need_fomo_vet)} budget={remaining}")
-        sm, used, verr = batch_vet("robinhood", addrs, use)
+    # Dedupe addresses; FOMO first (board PnL ranked), then KOL
+    seen_addr: set[str] = set()
+    combined: list[tuple[str, dict]] = []  # (kind, cand)
+    for c in fomo_need[:fomo_vet_cap]:
+        a = c["address"]
+        if a in seen_addr:
+            continue
+        seen_addr.add(a)
+        combined.append(("fomo", c))
+    for c in kol_need:
+        a = c["address"]
+        if a in seen_addr:
+            continue
+        seen_addr.add(a)
+        combined.append(("kol", c))
+
+    # Cap total wallets in the one stats batch (credit/429 awareness)
+    max_batch = min(len(combined), max(vet_cap, fomo_vet_cap), 40)
+    combined = combined[:max_batch]
+    print(
+        f"[rh-vet] queue fomo_need={len(fomo_need)} kol_need={len(kol_need)} "
+        f"batch={len(combined)} already_ok_kol={len(kol_already)} "
+        f"fomo_tagged={summary['fomo_tagged']}"
+    )
+
+    stats_map: dict[str, dict] = {}
+    if not skip_vet and combined and remaining > 0:
+        addrs = [c["address"] for _, c in combined]
+        # remaining_cap: allow stats + optional profits fill (=2)
+        sm, used, verr = batch_vet("robinhood", addrs, min(remaining, 2))
         remaining -= used
         summary["vetted"] += len(sm)
+        stats_map.update(sm)
         if verr == "rate_limited":
             summary["rate_limited"] = True
-            print("[fomo] rate-limited during FOMO vet")
-        for c in need_fomo_vet[:use]:
-            st = sm.get(c["address"])
-            if not st:
-                continue
-            # Prefer GMGN realized; fall back to FOMO 7d pnl for floor check
+    elif skip_vet:
+        print("[rh-vet] skip_vet")
+
+    # Apply already-ok KOL tag merges
+    for c, cur in kol_already:
+        st = {
+            "realized_pnl_usd": cur.get("realized_pnl_usd"),
+            "win_rate": cur.get("win_rate") or cur.get("gmgn_winrate"),
+            "n_trades": cur.get("n_trades"),
+        }
+        prev = rh.get(c["address"])
+        was = prev is not None
+        rh[c["address"]] = merge_wallet(prev, c, st, "robinhood")
+        summary["passed"] += 1
+        if was:
+            summary["updated_rh"] += 1
+        else:
+            summary["added_rh"] += 1
+
+    for kind, c in combined:
+        st = stats_map.get(c["address"])
+        if not st:
+            continue
+        if kind == "fomo":
             rp = st.get("realized_pnl_usd")
+            fp = num(c.get("fomo_pnl_usd"))
             if rp is None:
-                rp = c.get("fomo_pnl_usd") or 0
-            else:
-                fp = num(c.get("fomo_pnl_usd"))
-                if fp is not None:
-                    rp = max(float(rp), float(fp))
+                rp = fp or 0
+            elif fp is not None:
+                rp = max(float(rp), float(fp))
             trial = {
                 "address": c["address"],
                 "realized_pnl_usd": rp or 0,
@@ -957,14 +926,102 @@ def main() -> int:
             else:
                 summary["fomo_added"] += 1
                 summary["added_rh"] += 1
-    elif skip_vet:
-        print("[fomo] skip_vet")
-    elif summary["rate_limited"]:
-        print("[fomo] skip vet: already rate-limited")
-    else:
-        print(f"[fomo] nothing to vet need={len(need_fomo_vet)} remaining={remaining}")
+        else:
+            trial = {
+                "address": c["address"],
+                "realized_pnl_usd": st.get("realized_pnl_usd") or 0,
+                "win_rate": st.get("win_rate"),
+                "n_trades": st.get("n_trades") or 0,
+                "n_tokens": c.get("n_tokens"),
+                "tags": ["kol", "gmgn_kol"] + list(c.get("gmgn_tags") or []),
+                "sources": ["gmgn_kol"],
+                "source_endpoints": ["gmgn:track_kol"],
+            }
+            ok = bot.wallet_passes_filter(trial, min_realized) and bot.wallet_is_consistent(trial)
+            print(
+                f"  kol-vet {c['address'][:10]}… rp={st.get('realized_pnl_usd')} "
+                f"wr={st.get('win_rate')} n={st.get('n_trades')} pass={ok}"
+            )
+            if not ok:
+                continue
+            summary["passed"] += 1
+            prev = rh.get(c["address"])
+            was = prev is not None
+            rh[c["address"]] = merge_wallet(prev, c, st, "robinhood")
+            if was:
+                summary["updated_rh"] += 1
+            else:
+                summary["added_rh"] += 1
 
-    # Backward-compatible alias for older log parsers
+    # --- Arc KOL (separate small stats batch if budget left) ---
+    arc_kol = kol_by_chain.get("arc") or []
+    if arc_kol and not skip_vet and remaining > 0 and not summary["rate_limited"]:
+        need = []
+        already = []
+        for c in arc_kol:
+            cur = arc.get(c["address"])
+            if cur and bot.wallet_passes_filter(cur, min_realized):
+                already.append((c, cur))
+            else:
+                need.append(c)
+        for c, cur in already:
+            st = {
+                "realized_pnl_usd": cur.get("realized_pnl_usd"),
+                "win_rate": cur.get("win_rate") or cur.get("gmgn_winrate"),
+                "n_trades": cur.get("n_trades"),
+            }
+            merged = merge_wallet(arc.get(c["address"]), c, st, "arc")
+            arc[c["address"]] = merged
+            arc_q[c["address"]] = merge_wallet(arc_q.get(c["address"]), c, st, "arc")
+            summary["passed"] += 1
+            summary["updated_arc"] += 1
+        if need:
+            addrs = [c["address"] for c in need[: min(20, len(need))]]
+            sm, used, verr = batch_vet("arc", addrs, min(remaining, 2))
+            remaining -= used
+            summary["vetted"] += len(sm)
+            if verr == "rate_limited":
+                summary["rate_limited"] = True
+            for c in need:
+                st = sm.get(c["address"])
+                if not st:
+                    continue
+                trial = {
+                    "address": c["address"],
+                    "realized_pnl_usd": st.get("realized_pnl_usd") or 0,
+                    "win_rate": st.get("win_rate"),
+                    "n_trades": st.get("n_trades") or 0,
+                    "n_tokens": c.get("n_tokens"),
+                    "tags": ["kol", "gmgn_kol"] + list(c.get("gmgn_tags") or []),
+                    "sources": ["gmgn_kol"],
+                    "source_endpoints": ["gmgn:track_kol"],
+                }
+                ok = bot.wallet_passes_filter(trial, min_realized)
+                # Arc multi-hit: n_tokens from KOL buys can satisfy Path B when WR/trades thin
+                if not ok and trial.get("win_rate") is None:
+                    trial2 = dict(trial)
+                    trial2["n_tokens"] = c.get("n_tokens") or 0
+                    # Path B needs nt < min_n — if portfolio gave huge nt without WR, still fail
+                    ok = bot.wallet_passes_filter(trial2, min_realized)
+                print(
+                    f"  arc-vet {c['address'][:10]}… rp={st.get('realized_pnl_usd')} "
+                    f"wr={st.get('win_rate')} n={st.get('n_trades')} toks={c.get('n_tokens')} pass={ok}"
+                )
+                if not ok:
+                    continue
+                summary["passed"] += 1
+                prev = arc.get(c["address"])
+                was = prev is not None
+                merged = merge_wallet(prev, c, st, "arc")
+                arc[c["address"]] = merged
+                arc_q[c["address"]] = merge_wallet(arc_q.get(c["address"]), c, st, "arc")
+                if was:
+                    summary["updated_arc"] += 1
+                else:
+                    summary["added_arc"] += 1
+    elif not arc_kol:
+        print("[arc] no KOL candidates (need track raw or live fetch)")
+
     summary["candidates"] = summary["kol_candidates"] + summary["fomo_candidates"]
 
     if (

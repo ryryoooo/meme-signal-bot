@@ -60,9 +60,11 @@ jobs:
         env:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
           GMGN_DISABLED: "0"
+          # Track endpoints are 429 even on GHA — reuse raw; spend the one good call on stats (WR).
+          KOL_SKIP_FETCH: "1"
           KOL_LIMIT: "150"
           KOL_VET_CAP: "30"
-          FOMO_VET_CAP: "15"
+          FOMO_VET_CAP: "20"
           KOL_MIN_TOKENS: "2"
           KOL_MIN_BUY_USD: "200"
           KOL_CHAINS: "robinhood,arc"
@@ -75,7 +77,9 @@ jobs:
         run: python3 scripts/harvest_kol_vetted.py
         continue-on-error: true
 
+      # xbtscout burns GMGN before portfolio WR fills — keep off while track/stats are 429-prone
       - name: Collect — xbtscout smart tags (1 CA)
+        if: ${{ false }}
         env:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
           GMGN_DISABLED: "0"
