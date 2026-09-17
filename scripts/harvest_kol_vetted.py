@@ -940,10 +940,11 @@ def main() -> int:
     if not skip_vet and combined and remaining > 0:
         addrs = [c["address"] for _, c in combined]
         # FOMO EVM may be idle on robinhood — try RH then base then eth per wallet until budget gone
-        chains_try = ["robinhood", "base", "eth"]
-        for a in addrs:
+        for idx, a in enumerate(addrs):
             if remaining <= 0 or summary["rate_limited"]:
                 break
+            kind = combined[idx][0] if idx < len(combined) else "kol"
+            chains_try = ["base", "eth", "robinhood"] if kind == "fomo" else ["robinhood"]
             got = None
             for ch in chains_try:
                 if remaining <= 0:
