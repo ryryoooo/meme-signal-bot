@@ -3437,15 +3437,46 @@ def resolve_xbtscout_webhook(chain: str | None = None) -> str:
     return resolve_signal_webhook(chain or "robinhood")
 
 
+def _xbtscout_x_url(raw: str | None) -> str | None:
+    """Normalize nitter/x status URL → https://x.com/xbtscout/status/<id>."""
+    if not raw:
+        return None
+    s = str(raw).strip()
+    if " | " in s and "/status/" in s.split(" | ", 1)[0]:
+        s = s.split(" | ", 1)[0].strip()
+    m = re.search(
+        r"https?://(?:www\.)?(?:nitter\.[^\s/]+|(?:mobile\.)?(?:twitter|x)\.com)/([^\s/]+)/status/(\d+)",
+        s,
+        flags=re.I,
+    )
+    if not m:
+        m = re.search(r"/([^\s/]+)/status/(\d+)", s)
+        if not m:
+            return None
+        user, sid = m.group(1), m.group(2)
+    else:
+        user, sid = m.group(1), m.group(2)
+    user = (user or "xbtscout").strip()
+    return f"https://x.com/{user}/status/{sid}"
+
+
+def _xbtscout_post_url_from_rec(rec: dict) -> str | None:
+    for key in ("post_url", "tweet_url", "x_url", "status_url"):
+        u = _xbtscout_x_url(rec.get(key))
+        if u:
+            return u
+    return _xbtscout_x_url(rec.get("source_url_or_text_snip"))
+
+
 def build_xbtscout_embed(rec: dict, chain: str) -> dict:
-    """Discord embed for a new @xbtscout CA with tap-to-open GMGN app link."""
+    """Discord embed for a new @xbtscout CA with GMGN app link + X post URL."""
     ca = (rec.get("ca") or "").strip()
     guess = (rec.get("chain_guess") or chain or "robinhood").lower()
     if guess in ("rh", "robinhoodchain"):
         guess = "robinhood"
     link = gmgn_tok.token_app_url(guess, ca)
+    post_url = _xbtscout_post_url_from_rec(rec)
     snip = (rec.get("source_url_or_text_snip") or rec.get("snip") or "").strip()
-    # strip long nitter prefix noise
     if " | " in snip:
         snip = snip.split(" | ", 1)[-1]
     snip = snip[:280]
@@ -3455,20 +3486,26 @@ def build_xbtscout_embed(rec: dict, chain: str) -> dict:
         f"**CA** `{ca}`",
         f"**[GMGNで開く]({link})**",
     ]
+    if post_url:
+        desc_parts.append(f"**[Xの投稿]({post_url})**")
+        desc_parts.append(post_url)
     if posted:
-        desc_parts.append(f"投稿: {posted}")
+        desc_parts.append(f"時刻: {posted}")
     if snip:
         desc_parts.append(snip)
+    fields = [
+        {"name": "chain", "value": guess, "inline": True},
+        {"name": "GMGN", "value": f"[app]({link})", "inline": True},
+    ]
+    if post_url:
+        fields.append({"name": "X post", "value": f"[open]({post_url})", "inline": True})
     return {
         "title": title[:250],
         "description": "\n".join(desc_parts)[:4000],
-        "url": link,
+        "url": post_url or link,
         "color": 0x1DA1F2,
-        "fields": [
-            {"name": "chain", "value": guess, "inline": True},
-            {"name": "GMGN", "value": f"[app]({link})", "inline": True},
-        ],
-        "footer": {"text": "@xbtscout · tap GMGN link"},
+        "fields": fields,
+        "footer": {"text": "@xbtscout · GMGN + X post"},
     }
 
 
@@ -3503,7 +3540,12 @@ def notify_xbtscout_new_cas(
         # RH signal channel: still post BSC with correct GMGN slug
         embed = build_xbtscout_embed({**row, **rec, "ca": ca, "chain_guess": guess}, chain)
         try:
-            discord_webhook(webhook, content=f"🆕 xbtscout `{ca[:10]}…` → {gmgn_tok.token_app_url(guess, ca)}", embeds=[embed])
+            gurl = gmgn_tok.token_app_url(guess, ca)
+            purl = _xbtscout_post_url_from_rec({**row, **rec, "ca": ca})
+            bits = [f"🆕 xbtscout `{ca[:10]}…`", f"GMGN: {gurl}"]
+            if purl:
+                bits.append(f"X: {purl}")
+            discord_webhook(webhook, content="\n".join(bits), embeds=[embed])
         except Exception as e:
             print(f"xbtscout notify fail {ca[:10]}… {type(e).__name__}", file=sys.stderr)
             continue
@@ -3592,7 +3634,8 @@ def scrape_xbtscout_posts() -> list[dict]:
 
     # Prefer RSS <item> blocks with pubDate
     items = re.findall(r"<item>(.*?)</item>", html, flags=re.I | re.S)
-    found_pairs: list[tuple[str, str | None]] = []  # ca, posted_at iso
+    # (ca, posted_at, post_url, snip)
+    found_pairs: list[tuple[str, str | None, str | None, str | None]] = []
     if items:
         for block in items:
             pub = None
@@ -3604,32 +3647,53 @@ def scrape_xbtscout_posts() -> list[dict]:
                     pub = parsedate_to_datetime(raw_pub).astimezone(timezone.utc).isoformat()
                 except Exception:
                     pub = raw_pub or None
+            link_raw = None
+            mlink = re.search(r"<link>(.*?)</link>", block, flags=re.I | re.S)
+            if mlink:
+                link_raw = re.sub(r"<[^>]+>", "", mlink.group(1)).strip()
+            if not link_raw:
+                mguid = re.search(r"<guid[^>]*>(.*?)</guid>", block, flags=re.I | re.S)
+                if mguid:
+                    link_raw = re.sub(r"<[^>]+>", "", mguid.group(1)).strip()
+            post_url = _xbtscout_x_url(link_raw)
+            title = ""
+            mtitle = re.search(r"<title>(.*?)</title>", block, flags=re.I | re.S)
+            if mtitle:
+                title = re.sub(r"<[^>]+>", "", mtitle.group(1)).strip()
+            desc = ""
+            mdesc = re.search(r"<description>(.*?)</description>", block, flags=re.I | re.S)
+            if mdesc:
+                desc = re.sub(r"<[^>]+>", " ", mdesc.group(1))
+                desc = re.sub(r"\s+", " ", desc).strip()[:240]
+            snip = " | ".join(x for x in [link_raw or post_url or "", title or desc] if x)
             for m in ca_re.finditer(block):
                 ca = m.group(0).lower()
                 if ca in SKIP_CA:
                     continue
-                found_pairs.append((ca, pub))
+                found_pairs.append((ca, pub, post_url, snip or None))
     else:
         for m in ca_re.finditer(html):
             ca = m.group(0).lower()
             if ca in SKIP_CA:
                 continue
-            found_pairs.append((ca, None))
+            window = html[max(0, m.start() - 500) : m.end() + 200]
+            post_url = _xbtscout_x_url(window)
+            found_pairs.append((ca, None, post_url, None))
 
     # dedupe keep first (newest in RSS)
     seen = set()
-    ordered: list[tuple[str, str | None]] = []
-    for ca, pub in found_pairs:
+    ordered: list[tuple[str, str | None, str | None, str | None]] = []
+    for ca, pub, post_url, snip in found_pairs:
         if ca in seen:
             continue
         seen.add(ca)
-        ordered.append((ca, pub))
+        ordered.append((ca, pub, post_url, snip))
 
     now = datetime.now(timezone.utc).isoformat()
     out_recs: list[dict] = []
     new_count = 0
     dirty = False
-    for ca, pub in ordered:
+    for ca, pub, post_url, snip in ordered:
         prev = have.get(ca) or {}
         is_new = ca not in have
         # Prefer RSS pubDate; never treat legacy "Scout"/page labels as posted_at
@@ -3645,9 +3709,13 @@ def scrape_xbtscout_posts() -> list[dict]:
         if is_new:
             new_count += 1
             dirty = True
+        # Prefer fresh snip/post_url from RSS; keep prior if scrape lacked link
+        snip_store = snip or prev.get("source_url_or_text_snip") or "nitter_xbtscout"
+        post_store = post_url or prev.get("post_url") or _xbtscout_x_url(snip_store)
         store = {
             "ca": ca,
-            "source_url_or_text_snip": prev.get("source_url_or_text_snip") or "nitter_xbtscout",
+            "source_url_or_text_snip": snip_store,
+            "post_url": post_store,
             "chain_guess": prev.get("chain_guess") or "robinhood",
             "date": prev.get("date") if prev.get("date") and str(prev.get("date")).lower() != "scout" else now,
             "posted_at": posted_at,
