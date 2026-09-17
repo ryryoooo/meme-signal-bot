@@ -95,6 +95,12 @@ MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "1500"))
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "4000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "200"))
 MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "5000"))
+MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "800"))
+REQUIRE_GRADUATED = (os.environ.get("REQUIRE_GRADUATED") or "1").strip().lower() in ("1", "true", "yes")
+MAX_PRICE_CHANGE_M5_PCT = float(os.environ.get("MAX_PRICE_CHANGE_M5_PCT", "60"))
+MAX_PRICE_CHANGE_H1_PCT = float(os.environ.get("MAX_PRICE_CHANGE_H1_PCT", "250"))
+MAX_M5_BUY_RATIO = float(os.environ.get("MAX_M5_BUY_RATIO", "0.92"))  # one-sided tape
+DROP_BOT_WALLETS = (os.environ.get("DROP_BOT_WALLETS") or "1").strip().lower() in ("1", "true", "yes")
 MIN_HOLDERS = int(os.environ.get("MIN_HOLDERS", "80"))
 HOLDERS_REQUIRED = (os.environ.get("HOLDERS_REQUIRED") or "0").strip().lower() in ("1", "true", "yes")
 MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))  # need ≥1 wallet scoring ≥ this
@@ -304,14 +310,46 @@ def _is_fomo_only(o: dict) -> bool:
 
 _BAD_WALLET_LABEL = re.compile(
     r"(?:\bteam\b|deployer|creator|dev\s*wallet|copy\s*trad|bundler|"
-    r"sniper\s*bot|label\s*only|mev\s*bot)",
+    r"sniper\s*bot|label\s*only|mev\s*bot|\bbot\b|sandwich|phish|"
+    r"rat[_\s-]?trader|dex[_\s-]?bot|scam)",
     re.I,
+)
+
+_BOT_TAG_SUBSTR = (
+    "bundler", "sniper", "rat_trader", "dex_bot", "sandwich", "mev",
+    "phish", "scammer", "copy_bot", "bot_", "_bot",
 )
 
 
 def wallet_label_banned(o: dict) -> bool:
     lab = str(o.get("address_label") or o.get("label") or "")
     return bool(_BAD_WALLET_LABEL.search(lab))
+
+
+def wallet_looks_bot(meta: dict | None) -> bool:
+    """Heuristic: label/tags look like bot/sniper/copy infra — drop from signal overlap."""
+    if not meta:
+        return False
+    if wallet_label_banned(meta):
+        return True
+    parts = []
+    for key in ("tags", "sources", "source_endpoints", "labels", "gmgn_tags"):
+        for x in meta.get(key) or []:
+            parts.append(str(x).lower())
+    for key in ("source", "address_label", "label", "quality_reason"):
+        v = meta.get(key)
+        if v:
+            parts.append(str(v).lower())
+    blob = " ".join(parts)
+    if any(s in blob for s in _BOT_TAG_SUBSTR):
+        return True
+    # fresh_wallet alone with no early/nansen/profit track → bot-farm suspicion
+    if "fresh_wallet" in blob and not any(
+        s in blob for s in ("early", "nansen", "smart trader", "token_profit", "profit")
+    ):
+        if env_bool("EXCLUDE_FRESH_WALLET_ONLY", True):
+            return True
+    return False
 
 
 def wallet_passes_filter(o: dict, min_realized: float) -> bool:
@@ -431,17 +469,34 @@ def wallet_quality_score(meta: dict | None) -> float:
 
 
 def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: list[float]) -> list[str]:
-    """Four-axis notify gates: volume / holders / buy$ / wallet quality."""
+    """Notify gates: graduated + m5 vol + anti-spike + volume/holders/buys/quality."""
     fails: list[str] = []
     try:
         min_vol = float(os.environ.get("MIN_VOLUME_H24_USD", str(MIN_VOLUME_H24_USD)))
     except (TypeError, ValueError):
         min_vol = MIN_VOLUME_H24_USD
     try:
+        min_vol_m5 = float(os.environ.get("MIN_VOLUME_M5_USD", str(MIN_VOLUME_M5_USD)))
+    except (TypeError, ValueError):
+        min_vol_m5 = MIN_VOLUME_M5_USD
+    try:
         min_holders = int(float(os.environ.get("MIN_HOLDERS", str(MIN_HOLDERS))))
     except (TypeError, ValueError):
         min_holders = MIN_HOLDERS
     holders_required = env_bool("HOLDERS_REQUIRED", HOLDERS_REQUIRED)
+    require_grad = env_bool("REQUIRE_GRADUATED", REQUIRE_GRADUATED)
+    try:
+        max_m5 = float(os.environ.get("MAX_PRICE_CHANGE_M5_PCT", str(MAX_PRICE_CHANGE_M5_PCT)))
+    except (TypeError, ValueError):
+        max_m5 = MAX_PRICE_CHANGE_M5_PCT
+    try:
+        max_h1 = float(os.environ.get("MAX_PRICE_CHANGE_H1_PCT", str(MAX_PRICE_CHANGE_H1_PCT)))
+    except (TypeError, ValueError):
+        max_h1 = MAX_PRICE_CHANGE_H1_PCT
+    try:
+        max_buy_ratio = float(os.environ.get("MAX_M5_BUY_RATIO", str(MAX_M5_BUY_RATIO)))
+    except (TypeError, ValueError):
+        max_buy_ratio = MAX_M5_BUY_RATIO
     try:
         min_cluster = float(os.environ.get("MIN_CLUSTER_USD", str(MIN_CLUSTER_USD)))
     except (TypeError, ValueError):
@@ -455,6 +510,65 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
     except (TypeError, ValueError):
         min_avg_q = MIN_AVG_WALLET_QUALITY
 
+    # 1) Launchpad graduated
+    if require_grad:
+        if safety.get("bondingish") and not safety.get("graduated"):
+            fails.append("not_graduated_bonding")
+        elif safety.get("graduated") is False:
+            fails.append("not_graduated")
+        elif safety.get("graduated") is None and safety.get("liq_usd") is not None:
+            try:
+                min_grad_liq = float(os.environ.get("MIN_GRAD_LIQ_USD", "2500"))
+            except (TypeError, ValueError):
+                min_grad_liq = 2500.0
+            if float(safety["liq_usd"]) < min_grad_liq:
+                fails.append(f"not_graduated_liq={float(safety['liq_usd']):.0f}<{min_grad_liq:.0f}")
+
+    # 2) 5m volume
+    vol_m5 = safety.get("volume_m5")
+    vol_m5_req = env_bool("VOLUME_M5_REQUIRED", True)
+    if vol_m5 is None:
+        if vol_m5_req:
+            fails.append("volume_m5_na")
+    else:
+        try:
+            if float(vol_m5) < min_vol_m5:
+                fails.append(f"volume_m5_thin={float(vol_m5):.0f}<{min_vol_m5:.0f}")
+        except (TypeError, ValueError):
+            if vol_m5_req:
+                fails.append("volume_m5_na")
+
+    # 3) Anti-spike / natural tape
+    pcm5 = safety.get("price_change_m5")
+    pch1 = safety.get("price_change_h1")
+    if pcm5 is not None:
+        try:
+            if float(pcm5) >= max_m5:
+                fails.append(f"spike_m5={float(pcm5):.0f}>={max_m5:.0f}")
+            if float(pcm5) <= -max_m5:  # dump candle also unnatural for entry
+                fails.append(f"dump_m5={float(pcm5):.0f}")
+        except (TypeError, ValueError):
+            pass
+    if pch1 is not None:
+        try:
+            if float(pch1) >= max_h1:
+                fails.append(f"spike_h1={float(pch1):.0f}>={max_h1:.0f}")
+        except (TypeError, ValueError):
+            pass
+    # one-sided 5m buys (no natural two-way flow)
+    bm = safety.get("buys_m5")
+    sm = safety.get("sells_m5")
+    try:
+        bm_i = int(bm) if bm is not None else None
+        sm_i = int(sm) if sm is not None else None
+    except (TypeError, ValueError):
+        bm_i = sm_i = None
+    if bm_i is not None and sm_i is not None and (bm_i + sm_i) >= 8:
+        ratio = bm_i / max(1, bm_i + sm_i)
+        if ratio >= max_buy_ratio:
+            fails.append(f"onesided_m5={ratio:.2f}")
+
+    # 4) 24h volume (existing)
     vol_required = env_bool("VOLUME_REQUIRED", True)
     vol = safety.get("volume_h24")
     if vol is None:
@@ -518,6 +632,13 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
         filtered = {a: o for a, o in filtered.items() if wallet_is_early_stage(o)}
         print(
             f"watchlist early_only keep={len(filtered)} dropped={before - len(filtered)} before={before}",
+            flush=True,
+        )
+    if env_bool("DROP_BOT_WALLETS", True) and filtered:
+        before = len(filtered)
+        filtered = {a: o for a, o in filtered.items() if not wallet_looks_bot(o)}
+        print(
+            f"watchlist drop_bots keep={len(filtered)} dropped={before - len(filtered)} before={before}",
             flush=True,
         )
     if not filtered:
@@ -1817,7 +1938,20 @@ def safety_check(ca: str, chain: str) -> dict:
             "symbol_hint": snap.get("symbol"),
             "volume_h24": snap.get("volume_h24"),
             "volume_h1": snap.get("volume_h1"),
+            "volume_m5": snap.get("volume_m5"),
             "buys_h24": snap.get("buys_h24"),
+            "buys_m5": snap.get("buys_m5"),
+            "sells_m5": snap.get("sells_m5"),
+            "buys_h1": snap.get("buys_h1"),
+            "sells_h1": snap.get("sells_h1"),
+            "price_change_m5": snap.get("price_change_m5"),
+            "price_change_h1": snap.get("price_change_h1"),
+            "price_change_h6": snap.get("price_change_h6"),
+            "price_change_h24": snap.get("price_change_h24"),
+            "graduated": snap.get("graduated"),
+            "bondingish": snap.get("bondingish"),
+            "dex_id": snap.get("dex_id"),
+            "labels": snap.get("labels"),
             "holder_count": snap.get("holder_count"),
             "source": "gmgn",
             "fetch_failed": fetch_failed,
@@ -2031,6 +2165,14 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("ホルダー少ない")
         elif rs.startswith("quality"):
             bits.append("財布の質不足")
+        elif "graduated" in rs or rs.startswith("not_graduated"):
+            bits.append("未卒業")
+        elif rs.startswith("volume_m5"):
+            bits.append("5分出来高薄い")
+        elif rs.startswith("spike_") or rs.startswith("dump_m5") or rs.startswith("onesided"):
+            bits.append("急騰/不自然")
+        elif rs.startswith("bots_left"):
+            bits.append("bot疑惑除外後不足")
         elif "honeypot" in rs:
             bits.append("honeypot")
         elif "cannot_sell" in rs:
@@ -2453,6 +2595,41 @@ def run_once(args: argparse.Namespace) -> int:
             "source": source_name,
             "source_mode": source_mode,
         }
+
+        # Drop bot-suspicious wallets from overlap (recompute n / total)
+        if env_bool("DROP_BOT_WALLETS", DROP_BOT_WALLETS):
+            kept_w = []
+            dropped_bots = []
+            for w in list(s.get("wallets") or []):
+                addr = (w.get("address") or "").lower()
+                meta = watch.get(addr) or {}
+                if wallet_looks_bot(meta):
+                    dropped_bots.append(addr[:10])
+                else:
+                    kept_w.append(w)
+            if dropped_bots:
+                print(
+                    f"drop_bot_wallets ca={ca[:10]}… dropped={dropped_bots} keep={len(kept_w)}",
+                    flush=True,
+                )
+            s["wallets"] = kept_w
+            s["n"] = len(kept_w)
+            total_usd = sum(float(w.get("usd") or 0) for w in kept_w)
+            base_row["n"] = s["n"]
+            base_row["total_usd"] = total_usd
+            base_row["bots_dropped"] = len(dropped_bots)
+            min_wallets = int(os.environ.get("MIN_WALLETS", "2"))
+            if s["n"] < min_wallets:
+                append_paper_log(
+                    paper_path,
+                    {
+                        **base_row,
+                        "posted": False,
+                        "reason": f"bots_left_n={s['n']}<{min_wallets}",
+                    },
+                )
+                skipped += 1
+                continue
 
         # Prefer 仕込み smart wallets in the overlap (Arc default on)
         require_early = env_bool(

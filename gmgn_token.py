@@ -554,6 +554,54 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         buys_h24 = int(h24.get("buys")) if h24.get("buys") is not None else None
     except (TypeError, ValueError):
         buys_h24 = None
+    m5_tx = tx_obj.get("m5") if isinstance(tx_obj.get("m5"), dict) else {}
+    h1_tx = tx_obj.get("h1") if isinstance(tx_obj.get("h1"), dict) else {}
+    try:
+        volume_m5 = float(vol_obj.get("m5")) if vol_obj.get("m5") is not None else None
+    except (TypeError, ValueError):
+        volume_m5 = None
+    try:
+        buys_m5 = int(m5_tx.get("buys")) if m5_tx.get("buys") is not None else None
+    except (TypeError, ValueError):
+        buys_m5 = None
+    try:
+        sells_m5 = int(m5_tx.get("sells")) if m5_tx.get("sells") is not None else None
+    except (TypeError, ValueError):
+        sells_m5 = None
+    try:
+        buys_h1 = int(h1_tx.get("buys")) if h1_tx.get("buys") is not None else None
+    except (TypeError, ValueError):
+        buys_h1 = None
+    try:
+        sells_h1 = int(h1_tx.get("sells")) if h1_tx.get("sells") is not None else None
+    except (TypeError, ValueError):
+        sells_h1 = None
+    pc = pair.get("priceChange") if isinstance(pair.get("priceChange"), dict) else {}
+    def _pc(k):
+        try:
+            return float(pc.get(k)) if pc.get(k) is not None else None
+        except (TypeError, ValueError):
+            return None
+    labels = pair.get("labels") if isinstance(pair.get("labels"), list) else []
+    labels = [str(x).lower() for x in labels]
+    pair_created = pair.get("pairCreatedAt")
+    try:
+        pair_created_ms = int(pair_created) if pair_created is not None else None
+    except (TypeError, ValueError):
+        pair_created_ms = None
+    # Graduation heuristic: real AMM pair with labels/dex, not bonding-only
+    dex_id = str(pair.get("dexId") or pair.get("dex") or "").lower()
+    bondingish = any(
+        x in dex_id or x in " ".join(labels)
+        for x in ("pump", "bonding", "moonshot", "pad", "curve", "launchlab", "raydium-launchlab")
+    ) and not any(x in labels for x in ("graduated", "migrated", "univ3", "univ4", "uniswap"))
+    graduated = False
+    if any(x in labels for x in ("graduated", "migrated")):
+        graduated = True
+    elif liq is not None and liq >= float(__import__("os").environ.get("MIN_GRAD_LIQ_USD", "2500") or 2500):
+        # thick AMM pool ≈ post-migrate; bonding usually thinner until grad
+        if not bondingish:
+            graduated = True
     return {
         "ok": True,
         "reason": None,
@@ -563,8 +611,22 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         "price_usd": price,
         "volume_h24": volume_h24,
         "volume_h1": volume_h1,
+        "volume_m5": volume_m5,
         "buys_h24": buys_h24,
-        "holder_count": None,  # DexScreener usually omits; filled when GMGN path used
+        "buys_m5": buys_m5,
+        "sells_m5": sells_m5,
+        "buys_h1": buys_h1,
+        "sells_h1": sells_h1,
+        "price_change_m5": _pc("m5"),
+        "price_change_h1": _pc("h1"),
+        "price_change_h6": _pc("h6"),
+        "price_change_h24": _pc("h24"),
+        "pair_created_at_ms": pair_created_ms,
+        "dex_id": dex_id or None,
+        "labels": labels,
+        "graduated": graduated,
+        "bondingish": bondingish,
+        "holder_count": None,
         "url": pair.get("url"),
         "pair": pair.get("pairAddress"),
         "chainId": pair.get("chainId"),
