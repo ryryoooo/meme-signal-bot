@@ -66,6 +66,23 @@ jobs:
           WATCH_MIN_REALIZED_HARD: "500"
         run: python3 bot.py --harvest-xbtscout
 
+      - name: Collect — KOL track (vetted consistent only)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          KOL_LIMIT: "100"
+          KOL_VET_CAP: "20"
+          KOL_MIN_TOKENS: "2"
+          KOL_MIN_BUY_USD: "200"
+          KOL_CHAINS: "robinhood,arc"
+          REQUIRE_CONSISTENT_PNL: "1"
+          WATCH_MIN_WINRATE: "0.45"
+          WATCH_MIN_TRADES: "15"
+          WATCH_MIN_AVG_PNL_PER_TRADE: "50"
+          WATCH_MIN_REALIZED_HARD: "500"
+          ALLOW_FOMO_WITHOUT_WR: "0"
+        run: python3 scripts/harvest_kol_vetted.py
+        continue-on-error: true
+
       - name: Refine — drop losers / banned labels
         env:
           CHAIN: robinhood
@@ -81,7 +98,7 @@ jobs:
         run: |
           git config user.name "meme-signal-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add rh-wallets/wallets.jsonl fomo-wallets/ xbtscout/ || true
+          git add rh-wallets/wallets.jsonl rh-wallets/raw/ arc-wallets/wallets.jsonl arc-wallets/wallets_quality.jsonl arc-wallets/raw/ fomo-wallets/ xbtscout/ scripts/harvest_kol_vetted.py || true
           if git diff --cached --quiet; then
             echo "no wallet changes"
           else
