@@ -3488,44 +3488,80 @@ def _xbtscout_post_url_from_rec(rec: dict) -> str | None:
     return _xbtscout_x_url(rec.get("source_url_or_text_snip"))
 
 
+
+def _xbtscout_ticker(rec: dict) -> str:
+    blob = " ".join(
+        str(rec.get(k) or "")
+        for k in ("source_url_or_text_snip", "snip", "title")
+    )
+    m = re.search(r"\$([A-Za-z0-9_]{2,32})", blob)
+    if m:
+        return m.group(1)
+    m = re.search(r"Early Call\s+\$([A-Za-z0-9_]+)", blob, flags=re.I)
+    if m:
+        return m.group(1)
+    return "???"
+
+
+def _xbtscout_scout_stats(rec: dict) -> str:
+    blob = " ".join(
+        str(rec.get(k) or "")
+        for k in ("source_url_or_text_snip", "snip", "title")
+    )
+    m = re.search(
+        r"(\d+)\s*elite\s*\+\s*(\d+)\s*proven[- ]good",
+        blob,
+        flags=re.I,
+    )
+    if m:
+        return f"elite {m.group(1)} · proven {m.group(2)}"
+    return ""
+
+
 def build_xbtscout_embed(rec: dict, chain: str) -> dict:
-    """Discord embed for a new @xbtscout CA with GMGN app link + X post URL."""
+    """Clean Discord card: ticker, CA, GMGN + X links."""
     ca = (rec.get("ca") or "").strip()
     guess = (rec.get("chain_guess") or chain or "robinhood").lower()
     if guess in ("rh", "robinhoodchain"):
         guess = "robinhood"
     link = gmgn_tok.token_app_url(guess, ca)
     post_url = _xbtscout_post_url_from_rec(rec)
+    ticker = _xbtscout_ticker(rec)
+    stats = _xbtscout_scout_stats(rec)
     snip = (rec.get("source_url_or_text_snip") or rec.get("snip") or "").strip()
     if " | " in snip:
         snip = snip.split(" | ", 1)[-1]
-    snip = snip[:280]
-    posted = rec.get("posted_at") or rec.get("date") or ""
-    title = f"🐦 xbtscout 新CA · {guess}"
-    desc_parts = [
-        f"**CA** `{ca}`",
-        f"**[GMGNで開く]({link})**",
-    ]
-    if post_url:
-        desc_parts.append(f"**[Xの投稿]({post_url})**")
-        desc_parts.append(post_url)
-    if posted:
-        desc_parts.append(f"時刻: {posted}")
+    snip = re.sub(r"\s+", " ", snip).strip()
+    if len(snip) > 140:
+        snip = snip[:137] + "…"
+    posted = rec.get("posted_at") or ""
+    if isinstance(posted, str) and "T" in posted:
+        posted = posted.replace("T", " ").replace("+00:00", " UTC")[:19]
+
+    title = f"${ticker}  Early Call"
+    parts = [f"**`{ca}`**"]
+    if stats:
+        parts.append(stats)
     if snip:
-        desc_parts.append(snip)
+        parts.append(f"_{snip}_")
+    desc = "\n".join(parts)
+
     fields = [
-        {"name": "chain", "value": guess, "inline": True},
-        {"name": "GMGN", "value": f"[app]({link})", "inline": True},
+        {"name": "⛓ Chain", "value": guess, "inline": True},
+        {"name": "📱 GMGN", "value": f"[トークンを開く]({link})", "inline": True},
     ]
     if post_url:
-        fields.append({"name": "X post", "value": f"[open]({post_url})", "inline": True})
+        fields.append({"name": "🐦 X", "value": f"[投稿を開く]({post_url})", "inline": True})
+    if posted:
+        fields.append({"name": "⏰", "value": str(posted), "inline": True})
+
     return {
         "title": title[:250],
-        "description": "\n".join(desc_parts)[:4000],
-        "url": post_url or link,
-        "color": 0x1DA1F2,
+        "description": desc[:4000],
+        "url": link,
+        "color": 0x22C55E,
         "fields": fields,
-        "footer": {"text": "@xbtscout · GMGN + X post"},
+        "footer": {"text": f"@xbtscout · {guess}"},
     }
 
 
@@ -3648,13 +3684,11 @@ def notify_xbtscout_new_cas(
                 continue
 
         embed = build_xbtscout_embed({**merged, "chain_guess": guess}, chain)
-        gurl = gmgn_tok.token_app_url(guess, ca)
         purl = _xbtscout_post_url_from_rec(merged)
-        bits = [f"🆕 xbtscout early call `{ca[:10]}…`", f"GMGN: {gurl}"]
-        if purl:
-            bits.append(f"X: {purl}")
+        ticker = _xbtscout_ticker(merged)
+        content = f"**${ticker}** early call"
         try:
-            discord_webhook(webhook, content="\n".join(bits), embeds=[embed])
+            discord_webhook(webhook, content=content, embeds=[embed])
         except Exception as e:
             print(f"xbtscout notify fail {sid} {type(e).__name__}", file=sys.stderr)
             continue
