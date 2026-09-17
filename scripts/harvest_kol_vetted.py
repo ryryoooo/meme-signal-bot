@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""Harvest GMGN KOL buy tracks, aggregate makers, batch-vet, merge consistent winners.
+"""Harvest GMGN KOL buy tracks + FOMO EVM board, batch-vet, merge consistent winners.
 
 Credit-light defaults:
-  KOL_LIMIT=100          track page size
-  KOL_VET_CAP=20         max portfolio calls across chains
+  KOL_LIMIT=150          track page size
+  KOL_VET_CAP=30         max portfolio API calls (profits batches + stats fills)
+  FOMO_VET_CAP=15        max FOMO addrs to portfolio-vet (from FOMO_VET_CAP share of budget)
   KOL_MIN_TOKENS=2       distinct tokens bought
   KOL_MIN_BUY_USD=200    sum buy USD floor
   KOL_CHAINS=robinhood,arc
   KOL_SKIP_FETCH=0       set 1 to reuse raw only (no track API)
   KOL_SKIP_VET=0         set 1 to skip portfolio calls
   REQUIRE_CONSISTENT_PNL / WATCH_MIN_* — imported filters from bot.py
+  ALLOW_FOMO_WITHOUT_WR=0 — FOMO must earn WR via GMGN portfolio (or existing track record)
 
 Mass KOL = noise. Only keep average/repeat winners that pass wallet_passes_filter.
+FOMO leaderboard PnL alone is not enough — vet via portfolio stats/profits first.
 """
 from __future__ import annotations
 
@@ -309,13 +312,27 @@ def parse_portfolio_row(row: dict) -> dict:
                 break
 
     wr = None
-    for k in ("winrate", "win_rate", "buy_success_rate", "profit_win_rate"):
+    for k in ("winrate", "win_rate", "buy_success_rate", "profit_win_rate", "pnl_winrate", "win_ratio"):
         v = num(row.get(k))
         if v is not None:
             wr = v
             if wr > 1.5:
                 wr = wr / 100.0
             break
+    if wr is None:
+        for pk in ("30d", "7d", "all", "1d", "stats", "pnl"):
+            d = row.get(pk)
+            if not isinstance(d, dict):
+                continue
+            for k in ("winrate", "win_rate", "buy_success_rate", "profit_win_rate"):
+                v = num(d.get(k))
+                if v is not None:
+                    wr = v
+                    if wr > 1.5:
+                        wr = wr / 100.0
+                    break
+            if wr is not None:
+                break
 
     nt = None
     for k in (
@@ -406,8 +423,14 @@ def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dic
             out[addr] = parsed
         print(f"[{chain}] profits parsed={len(out)} / batch={len(batch)}")
 
-    # fill missing with stats (each wallet or small batches) — count each call
-    missing = [a for a in batch if a not in out or out[a].get("realized_pnl_usd") is None]
+    # fill missing PnL *or* winrate with stats — profits often omits WR
+    missing = [
+        a
+        for a in batch
+        if a not in out
+        or out[a].get("realized_pnl_usd") is None
+        or out[a].get("win_rate") is None
+    ]
     for a in missing:
         if calls >= remaining_cap:
             break
@@ -430,8 +453,16 @@ def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dic
             continue
         parsed = parse_portfolio_row({**target, "address": a})
         parsed["address"] = a
-        out[a] = parsed
-        time.sleep(0.4)
+        prev = out.get(a) or {}
+        # merge: prefer newly parsed non-None over previous
+        merged = dict(prev)
+        for k, v in parsed.items():
+            if v is not None and k != "raw_keys":
+                merged[k] = v
+        if parsed.get("raw_keys"):
+            merged["raw_keys"] = parsed["raw_keys"]
+        out[a] = merged
+        time.sleep(0.35)
 
     return out, calls, err_kind
 
@@ -520,22 +551,132 @@ def merge_wallet(existing: dict | None, cand: dict, stats: dict, chain: str) -> 
     return row
 
 
-def tag_fomo_consistent(rh: dict[str, dict], min_realized: float) -> int:
-    """Tag FOMO addrs already in RH with wr that pass consistency — no new API calls."""
-    fomo_path = ROOT / "fomo-wallets" / "wallets_evm.jsonl"
-    if not fomo_path.exists():
-        return 0
-    tagged = 0
-    for line in fomo_path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
+def load_fomo_candidates(min_pnl: float = 500.0) -> list[dict]:
+    """FOMO EVM board → vet queue (highest 7d pnl first). No WR assumed."""
+    by_addr: dict[str, dict] = {}
+    for name in ("wallets_evm.jsonl", "leaderboard.jsonl"):
+        p = ROOT / "fomo-wallets" / name
+        if not p.exists():
             continue
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                fo = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            addr = (fo.get("address") or fo.get("evm") or "").strip().lower()
+            if not addr.startswith("0x") or len(addr) != 42:
+                continue
+            pnl = num(fo.get("pnlUsd") or fo.get("realized_pnl_usd")) or 0.0
+            handle = (fo.get("handle") or fo.get("displayName") or "").strip()
+            cur = by_addr.get(addr)
+            if cur is None or pnl > float(cur.get("fomo_pnl_usd") or 0):
+                by_addr[addr] = {
+                    "address": addr,
+                    "address_label": handle or addr[:10],
+                    "fomo_handle": handle,
+                    "fomo_pnl_usd": pnl,
+                    "n_buys": 0,
+                    "sum_buy_usd": 0.0,
+                    "n_tokens": 0,
+                    "gmgn_tags": [],
+                    "source": "fomo",
+                }
+    out = [v for v in by_addr.values() if float(v.get("fomo_pnl_usd") or 0) >= min_pnl]
+    out.sort(key=lambda r: -float(r.get("fomo_pnl_usd") or 0))
+    return out
+
+
+def merge_fomo_wallet(existing: dict | None, cand: dict, stats: dict) -> dict:
+    """Merge FOMO board + GMGN portfolio stats into RH watch row."""
+    now = now_iso()
+    addr = cand["address"]
+    label = cand.get("address_label") or cand.get("fomo_handle") or f"{addr[:6]}...{addr[-4:]}"
+    rp = stats.get("realized_pnl_usd")
+    fomo_pnl = num(cand.get("fomo_pnl_usd"))
+    # keep the stronger realized signal (FOMO 7d board vs GMGN 30d portfolio)
+    if rp is None:
+        rp = fomo_pnl
+    elif fomo_pnl is not None:
+        rp = max(float(rp), float(fomo_pnl))
+    wr = stats.get("win_rate")
+    nt = stats.get("n_trades")
+
+    if existing is None:
+        row = {
+            "address": addr,
+            "address_label": label,
+            "fomo_handle": cand.get("fomo_handle") or label,
+            "realized_pnl_usd": rp,
+            "win_rate": wr,
+            "n_trades": nt,
+            "tags": ["fomo", "kol"],
+            "sources": ["fomo", "gmgn_portfolio"],
+            "source_endpoints": ["fomo_leaderboard", "gmgn:portfolio"],
+            "pass_pnl": True,
+            "chain": "robinhood",
+            "list_tier": "quality",
+            "quality_reason": "fomo_vetted_consistent",
+            "collected_at": now,
+            "vetted_at": now,
+            "fomo_pnl_usd": fomo_pnl,
+        }
+        return row
+
+    row = dict(existing)
+    if rp is not None:
         try:
-            fo = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        addr = (fo.get("address") or "").lower()
-        if not addr.startswith("0x"):
-            continue
+            prev = float(row.get("realized_pnl_usd") or 0)
+            row["realized_pnl_usd"] = max(prev, float(rp)) if prev else float(rp)
+        except (TypeError, ValueError):
+            row["realized_pnl_usd"] = rp
+    if wr is not None:
+        if row.get("win_rate") is None:
+            row["win_rate"] = wr
+        else:
+            try:
+                old = float(row.get("win_rate") or 0)
+                row["win_rate"] = max(old, float(wr)) if old else float(wr)
+            except (TypeError, ValueError):
+                row["win_rate"] = wr
+    if nt is not None:
+        try:
+            old_n = int(row.get("n_trades") or 0)
+            row["n_trades"] = max(old_n, int(nt))
+        except (TypeError, ValueError):
+            row["n_trades"] = nt
+    if cand.get("fomo_handle"):
+        row["fomo_handle"] = cand["fomo_handle"]
+    if not row.get("address_label") and label:
+        row["address_label"] = label
+    tags = list(row.get("tags") or [])
+    for t in ("fomo", "kol"):
+        if t not in tags:
+            tags.append(t)
+    row["tags"] = tags
+    srcs = list(row.get("sources") or [])
+    for s in ("fomo", "gmgn_portfolio"):
+        if s not in srcs:
+            srcs.append(s)
+    row["sources"] = srcs
+    se = list(row.get("source_endpoints") or [])
+    for ep in ("fomo_leaderboard", "gmgn:portfolio"):
+        if ep not in se:
+            se.append(ep)
+    row["source_endpoints"] = se
+    row["pass_pnl"] = True
+    row["vetted_at"] = now
+    row["fomo_pnl_usd"] = fomo_pnl
+    row["quality_reason"] = row.get("quality_reason") or "fomo_vetted_consistent"
+    return row
+
+
+def tag_fomo_already_consistent(rh: dict[str, dict], fomo_cands: list[dict], min_realized: float) -> int:
+    """Tag FOMO addrs already in RH that already pass consistency — no API."""
+    fomo_addrs = {c["address"] for c in fomo_cands}
+    tagged = 0
+    for addr in fomo_addrs:
         cur = rh.get(addr)
         if not cur:
             continue
@@ -554,24 +695,27 @@ def tag_fomo_consistent(rh: dict[str, dict], min_realized: float) -> int:
             srcs.append("fomo")
             changed = True
         se = list(cur.get("source_endpoints") or [])
-        for ep in ("fomo_leaderboard", "gmgn:track_kol"):
-            if ep not in se:
-                # only add fomo_leaderboard; kol endpoint only if already kol-ish
-                if ep == "fomo_leaderboard" and ep not in se:
-                    se.append(ep)
-                    changed = True
+        if "fomo_leaderboard" not in se:
+            se.append("fomo_leaderboard")
+            changed = True
         if changed:
             cur["tags"] = tags
             cur["sources"] = srcs
             cur["source_endpoints"] = se
+            if not cur.get("fomo_handle"):
+                for c in fomo_cands:
+                    if c["address"] == addr and c.get("fomo_handle"):
+                        cur["fomo_handle"] = c["fomo_handle"]
+                        break
             rh[addr] = cur
             tagged += 1
     return tagged
 
 
 def main() -> int:
-    limit = int(os.environ.get("KOL_LIMIT", "100"))
-    vet_cap = int(os.environ.get("KOL_VET_CAP", "20"))
+    limit = int(os.environ.get("KOL_LIMIT", "150"))
+    vet_cap = int(os.environ.get("KOL_VET_CAP", "30"))
+    fomo_vet_cap = int(os.environ.get("FOMO_VET_CAP", "15"))
     min_tokens = int(os.environ.get("KOL_MIN_TOKENS", "2"))
     min_usd = float(os.environ.get("KOL_MIN_BUY_USD", "200"))
     min_realized = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "500"))
@@ -589,14 +733,15 @@ def main() -> int:
         chains = ["robinhood"]
 
     print(
-        f"harvest_kol_vetted limit={limit} vet_cap={vet_cap} "
+        f"harvest_kol_vetted limit={limit} vet_cap={vet_cap} fomo_vet_cap={fomo_vet_cap} "
         f"min_tokens={min_tokens} min_usd={min_usd} chains={chains} "
         f"skip_fetch={skip_fetch} skip_vet={skip_vet}"
     )
 
     remaining = vet_cap
     summary = {
-        "candidates": 0,
+        "kol_candidates": 0,
+        "fomo_candidates": 0,
         "vetted": 0,
         "passed": 0,
         "added_rh": 0,
@@ -604,7 +749,11 @@ def main() -> int:
         "added_arc": 0,
         "updated_arc": 0,
         "fomo_tagged": 0,
+        "fomo_added": 0,
+        "fomo_updated": 0,
+        "fomo_passed": 0,
         "rate_limited": False,
+        "track_rate_limited": False,
     }
 
     rh_path = ROOT / "rh-wallets" / "wallets.jsonl"
@@ -613,6 +762,11 @@ def main() -> int:
     rh = load_jsonl(rh_path)
     arc = load_jsonl(arc_path)
     arc_q = load_jsonl(arc_q_path) if arc_q_path.exists() else dict(arc)
+
+    # Reserve FOMO budget up front so KOL cannot starve the board path
+    fomo_budget = 0 if skip_vet else min(fomo_vet_cap, max(0, remaining))
+    kol_budget_total = max(0, remaining - fomo_budget)
+    remaining = kol_budget_total
 
     for chain in chains:
         cdir = chain_dir(chain)
@@ -623,15 +777,15 @@ def main() -> int:
         else:
             fetched, ferr = fetch_kol_track(chain, limit, raw_dir)
             if ferr == "rate_limited":
-                summary["rate_limited"] = True
-            # always merge with any other local raw (kol_buy etc.)
+                summary["track_rate_limited"] = True
+                print(f"[{chain}] track rate-limited; continue with raw/vet (do not abort other chains)")
             rows = load_raw_rows(raw_dir)
             if not rows and fetched:
                 rows = [r for r in fetched if (r.get("side") or "buy").lower() == "buy"]
 
         by = aggregate_makers(rows)
         cands = candidate_list(by, min_tokens, min_usd)
-        summary["candidates"] += len(cands)
+        summary["kol_candidates"] += len(cands)
         print(f"[{chain}] makers={len(by)} candidates={len(cands)}")
         for c in cands[:15]:
             print(
@@ -643,7 +797,6 @@ def main() -> int:
         if not cands:
             continue
 
-        # Prefer not already in watch with good stats; still re-vet unknowns first
         need_vet = []
         already_ok = []
         watch = rh if chain == "robinhood" else arc
@@ -655,9 +808,9 @@ def main() -> int:
                 need_vet.append(c)
 
         stats_map: dict[str, dict] = {}
+        vet_blocked = False
         if not skip_vet and need_vet and remaining > 0:
             addrs = [c["address"] for c in need_vet]
-            # budget: leave some for other chain
             use = remaining if chain == chains[-1] else max(1, remaining // max(1, len(chains) - chains.index(chain)))
             use = min(use, remaining, len(addrs))
             sm, used, verr = batch_vet(chain, addrs[:use], use)
@@ -665,14 +818,14 @@ def main() -> int:
             summary["vetted"] += len(sm)
             if verr == "rate_limited":
                 summary["rate_limited"] = True
-                print(f"[{chain}] rate-limited during vet; stop further calls")
+                vet_blocked = True
+                print(f"[{chain}] rate-limited during vet; skip further portfolio calls")
             stats_map.update(sm)
         elif skip_vet:
             print(f"[{chain}] skip_vet")
 
         passed_rows: list[tuple[dict, dict]] = []
         for c, cur in already_ok:
-            # already consistent — merge tags only, use existing stats
             st = {
                 "realized_pnl_usd": cur.get("realized_pnl_usd"),
                 "win_rate": cur.get("win_rate") or cur.get("gmgn_winrate"),
@@ -694,10 +847,14 @@ def main() -> int:
                 "sources": ["gmgn_kol"],
                 "source_endpoints": ["gmgn:track_kol"],
             }
-            # map gmgn fields for filter helpers
             if trial["win_rate"] is None and st.get("win_rate") is not None:
                 trial["gmgn_winrate"] = st["win_rate"]
             ok = bot.wallet_passes_filter(trial, min_realized) and bot.wallet_is_consistent(trial)
+            # Arc multi-hit path: allow when WR missing but repeat-token edge present
+            if not ok and chain == "arc" and trial.get("win_rate") is None:
+                trial2 = dict(trial)
+                trial2["n_tokens"] = c.get("n_tokens") or trial.get("n_tokens")
+                ok = bot.wallet_passes_filter(trial2, min_realized)
             print(
                 f"  vet {c['address'][:10]}… rp={st.get('realized_pnl_usd')} "
                 f"wr={st.get('win_rate')} n={st.get('n_trades')} pass={ok}"
@@ -722,7 +879,6 @@ def main() -> int:
                 was = prev is not None
                 merged = merge_wallet(prev, c, st, chain)
                 arc[c["address"]] = merged
-                # signal-arc prefers wallets_quality.jsonl
                 prev_q = arc_q.get(c["address"])
                 arc_q[c["address"]] = merge_wallet(prev_q, c, st, chain)
                 if was:
@@ -730,20 +886,99 @@ def main() -> int:
                 else:
                     summary["added_arc"] += 1
 
-        if summary["rate_limited"]:
+        if vet_blocked:
+            # stop further KOL chain portfolio calls; FOMO may still try if budget left
+            remaining = 0
             break
 
-    # FOMO: only tag addresses already in RH with wr that pass filters
-    summary["fomo_tagged"] = tag_fomo_consistent(rh, min_realized)
+    # Restore FOMO budget (+ any leftover KOL budget)
+    remaining = remaining + fomo_budget
 
-    # Only rewrite files we actually touched (avoid noisy reorder commits)
-    if summary["added_rh"] or summary["updated_rh"] or summary["fomo_tagged"]:
+    # FOMO: tag already-consistent, then portfolio-vet top board addrs missing WR
+    fomo_cands = load_fomo_candidates(min_pnl=min_realized)
+    summary["fomo_candidates"] = len(fomo_cands)
+    summary["fomo_tagged"] = tag_fomo_already_consistent(rh, fomo_cands, min_realized)
+    print(f"[fomo] board_candidates={len(fomo_cands)} already_tagged={summary['fomo_tagged']}")
+
+    need_fomo_vet: list[dict] = []
+    for c in fomo_cands:
+        cur = rh.get(c["address"])
+        if cur and bot.wallet_passes_filter(cur, min_realized):
+            continue  # already good (tagged above)
+        need_fomo_vet.append(c)
+
+    if not skip_vet and need_fomo_vet and remaining > 0 and not summary["rate_limited"]:
+        use = min(remaining, fomo_vet_cap, len(need_fomo_vet))
+        addrs = [c["address"] for c in need_fomo_vet[:use]]
+        print(f"[fomo] vetting top {len(addrs)} / need={len(need_fomo_vet)} budget={remaining}")
+        sm, used, verr = batch_vet("robinhood", addrs, use)
+        remaining -= used
+        summary["vetted"] += len(sm)
+        if verr == "rate_limited":
+            summary["rate_limited"] = True
+            print("[fomo] rate-limited during FOMO vet")
+        for c in need_fomo_vet[:use]:
+            st = sm.get(c["address"])
+            if not st:
+                continue
+            # Prefer GMGN realized; fall back to FOMO 7d pnl for floor check
+            rp = st.get("realized_pnl_usd")
+            if rp is None:
+                rp = c.get("fomo_pnl_usd") or 0
+            else:
+                fp = num(c.get("fomo_pnl_usd"))
+                if fp is not None:
+                    rp = max(float(rp), float(fp))
+            trial = {
+                "address": c["address"],
+                "realized_pnl_usd": rp or 0,
+                "win_rate": st.get("win_rate"),
+                "n_trades": st.get("n_trades") or 0,
+                "tags": ["fomo", "kol"],
+                "sources": ["fomo", "gmgn_portfolio"],
+                "source_endpoints": ["fomo_leaderboard", "gmgn:portfolio"],
+                "fomo_handle": c.get("fomo_handle"),
+            }
+            ok = bot.wallet_passes_filter(trial, min_realized) and bot.wallet_is_consistent(trial)
+            print(
+                f"  fomo-vet {c['address'][:10]}… rp={rp} wr={st.get('win_rate')} "
+                f"n={st.get('n_trades')} board={c.get('fomo_pnl_usd')} pass={ok}"
+            )
+            if not ok:
+                continue
+            summary["fomo_passed"] += 1
+            summary["passed"] += 1
+            prev = rh.get(c["address"])
+            was = prev is not None
+            rh[c["address"]] = merge_fomo_wallet(prev, c, {**st, "realized_pnl_usd": rp})
+            if was:
+                summary["fomo_updated"] += 1
+                summary["updated_rh"] += 1
+            else:
+                summary["fomo_added"] += 1
+                summary["added_rh"] += 1
+    elif skip_vet:
+        print("[fomo] skip_vet")
+    elif summary["rate_limited"]:
+        print("[fomo] skip vet: already rate-limited")
+    else:
+        print(f"[fomo] nothing to vet need={len(need_fomo_vet)} remaining={remaining}")
+
+    # Backward-compatible alias for older log parsers
+    summary["candidates"] = summary["kol_candidates"] + summary["fomo_candidates"]
+
+    if (
+        summary["added_rh"]
+        or summary["updated_rh"]
+        or summary["fomo_tagged"]
+        or summary["fomo_added"]
+        or summary["fomo_updated"]
+    ):
         write_jsonl(rh_path, rh)
     if summary["added_arc"] or summary["updated_arc"]:
         write_jsonl(arc_path, arc)
         write_jsonl(arc_q_path, arc_q)
 
-    # early list: do not auto-add bare kol as early
     print("SUMMARY", json.dumps(summary, ensure_ascii=False))
     return 0
 

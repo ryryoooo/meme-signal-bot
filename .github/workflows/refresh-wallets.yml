@@ -56,24 +56,13 @@ jobs:
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
         run: python3 bot.py --refresh-fomo
 
-      - name: Collect — xbtscout smart tags (1 CA)
+      - name: Collect — KOL+FOMO vetted consistent only
         env:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
           GMGN_DISABLED: "0"
-          CHAIN: robinhood
-          WATCHLIST_PATH: rh-wallets/wallets.jsonl
-          XBTSCOUT_MAX_TOKENS: "3"
-          XBTSCOUT_PRE_POST_ONLY: "1"
-          XBTSCOUT_MIN_BUY_USD: "80"
-          WATCH_MIN_REALIZED_HARD: "500"
-        run: python3 bot.py --harvest-xbtscout
-
-      - name: Collect — KOL track (vetted consistent only)
-        env:
-          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
-          GMGN_DISABLED: "0"
-          KOL_LIMIT: "100"
-          KOL_VET_CAP: "20"
+          KOL_LIMIT: "150"
+          KOL_VET_CAP: "30"
+          FOMO_VET_CAP: "15"
           KOL_MIN_TOKENS: "2"
           KOL_MIN_BUY_USD: "200"
           KOL_CHAINS: "robinhood,arc"
@@ -86,6 +75,19 @@ jobs:
         run: python3 scripts/harvest_kol_vetted.py
         continue-on-error: true
 
+      - name: Collect — xbtscout smart tags (1 CA)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          XBTSCOUT_MAX_TOKENS: "2"
+          XBTSCOUT_PRE_POST_ONLY: "1"
+          XBTSCOUT_MIN_BUY_USD: "80"
+          WATCH_MIN_REALIZED_HARD: "500"
+        run: python3 bot.py --harvest-xbtscout
+        continue-on-error: true
+
       - name: Refine — drop losers / banned labels
         env:
           CHAIN: robinhood
@@ -93,8 +95,12 @@ jobs:
           WATCH_MIN_REALIZED_USD: "0"
           WATCH_MIN_REALIZED_HARD: "500"
           DROP_WEAK_WALLETS: "1"
-          WATCH_MIN_WINRATE: "0.40"
-          WATCH_MIN_TRADES_FOR_WR: "10"
+          REQUIRE_CONSISTENT_PNL: "1"
+          ALLOW_FOMO_WITHOUT_WR: "0"
+          WATCH_MIN_WINRATE: "0.45"
+          WATCH_MIN_TRADES: "15"
+          WATCH_MIN_TRADES_FOR_WR: "15"
+          WATCH_MIN_AVG_PNL_PER_TRADE: "50"
         run: python3 bot.py --refine-wallets
 
       - name: Commit watchlist if changed
