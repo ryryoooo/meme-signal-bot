@@ -116,11 +116,11 @@ MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))
 MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.6"))
 DROP_WEAK_WALLETS = (os.environ.get("DROP_WEAK_WALLETS") or "1").strip().lower() in ("1", "true", "yes")
 WEAK_WALLET_MAX_SCORE = float(os.environ.get("WEAK_WALLET_MAX_SCORE", "0.5"))
-WATCH_MIN_REALIZED_HARD = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "500"))
+WATCH_MIN_REALIZED_HARD = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "300"))
 REQUIRE_CONSISTENT_PNL = (os.environ.get("REQUIRE_CONSISTENT_PNL") or "1").strip().lower() in ("1", "true", "yes")
-WATCH_MIN_WINRATE = float(os.environ.get("WATCH_MIN_WINRATE", "0.45"))
-WATCH_MIN_TRADES = int(os.environ.get("WATCH_MIN_TRADES", "15"))
-WATCH_MIN_AVG_PNL_PER_TRADE = float(os.environ.get("WATCH_MIN_AVG_PNL_PER_TRADE", "50"))
+WATCH_MIN_WINRATE = float(os.environ.get("WATCH_MIN_WINRATE", "0.40"))
+WATCH_MIN_TRADES = int(os.environ.get("WATCH_MIN_TRADES", "10"))
+WATCH_MIN_AVG_PNL_PER_TRADE = float(os.environ.get("WATCH_MIN_AVG_PNL_PER_TRADE", "30"))
 ALLOW_FOMO_WITHOUT_WR = (os.environ.get("ALLOW_FOMO_WITHOUT_WR") or "0").strip().lower() in ("1", "true", "yes")
 MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # legacy floor
 MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "604800"))  # 7d hard cap (0=off)
@@ -135,7 +135,7 @@ SET2_MIN_DUMP_PCT = float(os.environ.get("SET2_MIN_DUMP_PCT", "-50"))  # h24 ≤
 SET2_MAX_M5_ABS = float(os.environ.get("SET2_MAX_M5_ABS", "10"))  # sideways
 SET2_MAX_H1_ABS = float(os.environ.get("SET2_MAX_H1_ABS", "30"))
 SET2_MIN_VOLUME_H24 = float(os.environ.get("SET2_MIN_VOLUME_H24", "8000"))
-PLAYBOOK_REQUIRED = (os.environ.get("PLAYBOOK_REQUIRED") or "1").strip().lower() in ("1", "true", "yes")
+PLAYBOOK_REQUIRED = (os.environ.get("PLAYBOOK_REQUIRED") or "0").strip().lower() in ("1", "true", "yes")
 LP_LOCK_MIN = 0.01  # locked+burned share of LP
 # LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
 # Set LP_LOCK_REQUIRED=1 to hard-fail unlocked LP again.
@@ -408,11 +408,11 @@ def _wallet_n_trades(o: dict) -> int:
 def _multi_hit_profit(o: dict) -> bool:
     """Repeat edge without win_rate: ≥2 early-2x tokens or ≥3 tokens seen."""
     try:
-        min_tok = int(float(os.environ.get("WATCH_MIN_PROFIT_TOKENS", "3")))
+        min_tok = int(float(os.environ.get("WATCH_MIN_PROFIT_TOKENS", "2")))
     except (TypeError, ValueError):
         min_tok = 3
     try:
-        min_e2 = int(float(os.environ.get("WATCH_MIN_EARLY2X_TOKENS", "2")))
+        min_e2 = int(float(os.environ.get("WATCH_MIN_EARLY2X_TOKENS", "1")))
     except (TypeError, ValueError):
         min_e2 = 2
     try:
@@ -458,6 +458,13 @@ def wallet_is_consistent(o: dict) -> bool:
     rp = _wallet_realized(o)
     if env_bool("ALLOW_FOMO_WITHOUT_WR", False) and _is_fomo_only(o) and wrn is None:
         return rp > 0
+    # High-PnL FOMO (EVM) for signal overlap even without WR
+    try:
+        fomo_floor = float(os.environ.get("FOMO_WATCH_MIN_PNL", "20000"))
+    except (TypeError, ValueError):
+        fomo_floor = 20000.0
+    if (o.get("fomo_handle") or _is_fomo_only(o)) and wrn is None and rp >= fomo_floor:
+        return True
     # Path A: win-rate track record (preferred)
     if wrn is not None and nt >= min_n:
         if wrn < min_wr:
