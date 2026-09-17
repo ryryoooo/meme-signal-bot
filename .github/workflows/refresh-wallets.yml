@@ -162,6 +162,7 @@ jobs:
         continue-on-error: true
 
       - name: Commit watchlist if changed
+        continue-on-error: true
         run: |
           git config user.name "meme-signal-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -170,8 +171,18 @@ jobs:
             echo "no wallet changes"
           else
             git commit -m "chore: refresh+refine smart wallets"
-            git pull --rebase origin main || true
-            git push
+            if ! git pull --rebase origin main; then
+              echo "rebase conflict — prefer GHA wallet/raw artifacts"
+              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/wallets_ranked_all.jsonl rh-wallets/wallets_onchain.jsonl rh-wallets/summary_scout.md rh-wallets/summary_rank_all.md rh-wallets/summary_onchain_ranked.md; do
+                if [ -f "$f" ] && git status --porcelain "$f" | grep -q .; then
+                  git checkout --theirs -- "$f" || true
+                  git add "$f" || true
+                fi
+              done
+              git add rh-wallets/raw/ || true
+              GIT_EDITOR=true git rebase --continue || git rebase --abort || true
+            fi
+            git push || git push --rebase origin main || true
           fi
 
       - name: Upload wallets artifact

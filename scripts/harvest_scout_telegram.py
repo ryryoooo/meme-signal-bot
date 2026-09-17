@@ -1020,7 +1020,6 @@ def resolve_truncs(
             if not pending:
                 continue
             addrs = fetch_blockscout_addrs(ca)
-            calls += 1
             stats.bs_tokens += 1
             pool = set(addrs)
             token_pools[ca] = pool | token_pools.get(ca, set())
@@ -1055,7 +1054,7 @@ def resolve_truncs(
             if pending:
                 gmgn_cas.append(ca)
         for ca in gmgn_cas[: max(1, max_tokens)]:
-            if calls >= call_cap:
+            if stats.gmgn_calls >= call_cap:
                 break
             pending = [
                 t
@@ -1089,7 +1088,7 @@ def resolve_truncs(
             if err:
                 print(f"scout_tg traders fail {ca[:10]}… {err}", file=sys.stderr)
                 err_kind = err
-                if calls < call_cap:
+                if stats.gmgn_calls < call_cap:
                     data2, err2 = gmgn_raw(
                         [
                             "token",
@@ -1206,6 +1205,7 @@ def resolve_truncs(
         )
 
     append_resolve_cache(new_cache + pair_index_rows)
+    calls = stats.gmgn_calls
 
     # final unresolved stats
     all_pairs = {
