@@ -150,7 +150,7 @@ ALERT_MAX_AGE_SEC = 24 * 3600
 FOLLOWUP_COOLDOWN_SEC = 30 * 60
 NANSEN_SLEEP = 0.8
 DEFAULT_COOLDOWN_SECONDS = 7200  # 2h
-MAX_SKIP_NOTICES_PER_RUN = 3
+MAX_SKIP_NOTICES_PER_RUN = int(os.environ.get("MAX_SKIP_NOTICES_PER_RUN", "5"))
 # Paper: $300 bankroll, FOUNDATION risk (max 5 open, 20/30%, +100% half, -40% stop; week caps off by default)
 # LIVE_TRADING: Arc-only when LIVE_TRADING=1 + LIVE_CHAINS includes arc. RH never live-trades.
 
@@ -3077,7 +3077,15 @@ def run_once(args: argparse.Namespace) -> int:
                 if env_bool("DROP_WEAK_WALLETS", True):
                     q = wallet_quality_score(meta)
                     rp = _wallet_realized(meta)
-                    if (not wallet_is_consistent(meta)) or rp < min_rp or q <= weak_max:
+                    # Only drop clear duds: no meta + tiny pnl, or inconsistent with low pnl.
+                    # Do NOT drop solely on low quality score (that zeroed FOMO-holder signals).
+                    if not meta and rp < 1:
+                        dropped_bots.append(addr[:10] + ":weak")
+                        continue
+                    if (not wallet_is_consistent(meta)) and rp < min_rp:
+                        dropped_bots.append(addr[:10] + ":weak")
+                        continue
+                    if env_bool("REQUIRE_WALLET_QUALITY", False) and q <= weak_max and rp < min_rp:
                         dropped_bots.append(addr[:10] + ":weak")
                         continue
                 kept_w.append(w)
