@@ -24,13 +24,34 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
       - name: Collect on-chain wallets (Arc + RH, skip GMGN)
         env:
           ARC_INLINE_ACTIVITY_MAX: "400"
-          RH_ONCHAIN_MERGE_MAX: "300"
+          RH_ONCHAIN_MERGE_MAX: "0"
+          RH_ONCHAIN_MERGE_TO_WATCH: "0"
           ONCHAIN_KEEPER_FLOOR: "0.01"
-          RH_ONCHAIN_FLOOR: "0.01"
+          RH_ONCHAIN_FLOOR: "500"
+          RH_ONCHAIN_VET_FLOOR: "500"
         run: python3 onchain_wallet_collect.py --chain both --skip-gmgn
+
+      - name: Vet top RH onchain (low GMGN call-cap; no merge by default)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
+          RH_VET_MAX_CALLS: "5"
+          RH_ONCHAIN_VET_FLOOR: "500"
+          RH_VET_MERGE: "0"
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600)'
+          python3 vet_rh_onchain.py || true
 
       - name: Commit wallet jsonl if changed
         run: |

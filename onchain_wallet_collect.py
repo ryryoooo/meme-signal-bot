@@ -4,9 +4,9 @@
 Credit-saving: no Nansen Super / FOMO / paid GMGN harvests by default.
 Arc: prefer existing meme-foundation/arc-wallets/collect_arc_wallets.py --skip-gmgn
      + export_bot_keepers; else Arcscan API inline merge.
-RH:  Blockscout (etherscan-compat + /api/v2) → rh-wallets/wallets_onchain.jsonl
-     and merge new actives into rh-wallets/wallets.jsonl without dropping
-     existing Nansen/GMGN quality rows.
+RH:  Blockscout (etherscan-compat + /api/v2) → rh-wallets/wallets_onchain.jsonl only
+     by default. Merge into wallets.jsonl only when RH_ONCHAIN_MERGE_TO_WATCH=1
+     AND row has real vetted PnL ≥ floor (never $0.01 placeholders).
 
 Writes onchain_collect_summary.md with counts.
 """
@@ -28,7 +28,9 @@ from pathlib import Path
 BOT_ROOT = Path(__file__).resolve().parent
 JST = timezone(timedelta(hours=9))
 KEEPER_FLOOR = float(os.environ.get("ONCHAIN_KEEPER_FLOOR", "0.01"))
-RH_ONCHAIN_FLOOR = float(os.environ.get("RH_ONCHAIN_FLOOR", "0.01"))
+RH_ONCHAIN_FLOOR = float(os.environ.get("RH_ONCHAIN_FLOOR", "500"))  # never treat $0.01 as pass_pnl truth
+RH_ONCHAIN_MERGE_TO_WATCH = (os.environ.get("RH_ONCHAIN_MERGE_TO_WATCH") or "0").strip().lower() in ("1", "true", "yes")
+RH_ONCHAIN_VET_FLOOR = float(os.environ.get("RH_ONCHAIN_VET_FLOOR", "500"))
 UA = os.environ.get(
     "ONCHAIN_HTTP_UA",
     "Mozilla/5.0 (compatible; meme-signal-bot/1.0; +https://github.com/ryryoooo/meme-signal-bot)",
@@ -591,8 +593,9 @@ def collect_rh() -> dict:
                 "chain": "robinhood",
                 "source": "onchain",
                 "source_endpoints": sorted(rec["sources"]),
-                "pass_pnl": True,
-                "realized_pnl_usd": RH_ONCHAIN_FLOOR,
+                "list_tier": "activity_only",
+                "pass_pnl": False,
+                "realized_pnl_usd": None,
                 "n_token_xf": int(rec.get("n_token_xf") or 0),
                 "n_tx": int(rec.get("n_tx") or 0),
                 "symbols_seen": sorted(rec.get("symbols") or [])[:20],
@@ -629,7 +632,8 @@ def collect_rh() -> dict:
         r["activity_rank"] = i
     write_jsonl(onchain_path, onchain_final)
 
-    # Merge into wallets.jsonl without deleting Nansen/GMGN quality rows
+    # Watch merge is OFF by default — activity stays in wallets_onchain.jsonl only.
+    # Set RH_ONCHAIN_MERGE_TO_WATCH=1 AND pass real PnL vet (see vet_rh_onchain.py).
     watch_path = BOT_ROOT / "rh-wallets" / "wallets.jsonl"
     existing = load_jsonl(watch_path)
     by: dict[str, dict] = {}
@@ -640,52 +644,61 @@ def collect_rh() -> dict:
 
     added = 0
     touched = 0
-    # Prefer top actives for watchlist merge
-    merge_cap = int(os.environ.get("RH_ONCHAIN_MERGE_MAX", "300"))
-    for r in onchain_final[:merge_cap]:
-        a = r["address"]
-        if a in by:
-            row = by[a]
-            # preserve pass_pnl / realized from quality sources
-            if row.get("pass_pnl") is None:
-                row["pass_pnl"] = True
+    merge_cap = int(os.environ.get("RH_ONCHAIN_MERGE_MAX", "0"))
+    if RH_ONCHAIN_MERGE_TO_WATCH and merge_cap > 0:
+        for r in onchain_final[:merge_cap]:
+            a = r["address"]
+            # Only merge rows that already carry a real vetted PnL >= floor
             try:
-                if float(row.get("realized_pnl_usd") or 0) <= 0:
-                    row["realized_pnl_usd"] = float(row.get("realized_pnl_usd") or 0) or RH_ONCHAIN_FLOOR
+                pnl = float(r.get("realized_pnl_usd") or 0)
             except (TypeError, ValueError):
-                row["realized_pnl_usd"] = RH_ONCHAIN_FLOOR
-            eps = list(row.get("source_endpoints") or [])
-            for e in r.get("source_endpoints") or []:
-                if e not in eps:
-                    eps.append(e)
-            row["source_endpoints"] = eps
-            row["onchain_refreshed_at"] = now
-            row["n_token_xf"] = r.get("n_token_xf")
-            by[a] = row
-            touched += 1
-        else:
-            by[a] = {
-                "address": a,
-                "address_label": r.get("address_label") or (a[:4] + "..." + a[-4:]),
-                "realized_pnl_usd": RH_ONCHAIN_FLOOR,
-                "pass_pnl": True,
-                "source_endpoints": list(r.get("source_endpoints") or ["onchain:blockscout"]),
-                "dex_only_note": "onchain_active_blockscout",
-                "gmgn_pnl_usd": None,
-                "gmgn_winrate": None,
-                "gmgn_tags": [],
-                "n_token_xf": r.get("n_token_xf"),
-                "n_tx": r.get("n_tx"),
-                "collected_at": now,
-                "refined_at": now,
-            }
-            added += 1
+                pnl = 0.0
+            vetted = r.get("pass_pnl") is True and pnl >= RH_ONCHAIN_VET_FLOOR
+            if not vetted:
+                continue
+            if a in by:
+                row = by[a]
+                eps = list(row.get("source_endpoints") or [])
+                for e in r.get("source_endpoints") or []:
+                    if e not in eps:
+                        eps.append(e)
+                row["source_endpoints"] = eps
+                row["onchain_refreshed_at"] = now
+                row["n_token_xf"] = r.get("n_token_xf")
+                # never overwrite real quality PnL with weaker
+                try:
+                    cur = float(row.get("realized_pnl_usd") or 0)
+                except (TypeError, ValueError):
+                    cur = 0.0
+                if pnl > cur:
+                    row["realized_pnl_usd"] = pnl
+                    row["pass_pnl"] = True
+                by[a] = row
+                touched += 1
+            else:
+                by[a] = {
+                    "address": a,
+                    "address_label": r.get("address_label") or (a[:4] + "..." + a[-4:]),
+                    "realized_pnl_usd": pnl,
+                    "pass_pnl": True,
+                    "source_endpoints": list(r.get("source_endpoints") or ["onchain:blockscout"])
+                    + ["onchain_vetted"],
+                    "gmgn_pnl_usd": r.get("gmgn_pnl_usd"),
+                    "gmgn_winrate": r.get("gmgn_winrate"),
+                    "gmgn_tags": list(r.get("gmgn_tags") or []),
+                    "n_token_xf": r.get("n_token_xf"),
+                    "n_tx": r.get("n_tx"),
+                    "collected_at": now,
+                    "refined_at": now,
+                }
+                added += 1
+    else:
+        notes.append("watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)")
 
-    # Keep quality rows first (those with real pnl / nansen / gmgn), then onchain adds
     def rh_sort(r: dict):
         eps = [str(x) for x in (r.get("source_endpoints") or [])]
         quality = any(
-            x.startswith("pnl") or "gmgn" in x or "fomo" in x or "nansen" in x or "leaderboard" in x
+            x.startswith("pnl") or "gmgn" in x or "fomo" in x or "nansen" in x or "leaderboard" in x or "xbtscout" in x
             for x in eps
         )
         try:
@@ -695,9 +708,9 @@ def collect_rh() -> dict:
         return (0 if quality else 1, -pnl, r.get("address") or "")
 
     merged = sorted(by.values(), key=rh_sort)
+    # Always rewrite watchlist (may only refresh annotations when merge off — still stable)
     write_jsonl(watch_path, merged)
 
-    # Update short rh summary section
     sum_path = BOT_ROOT / "rh-wallets" / "summary.md"
     sum_path.write_text(
         f"""# RH wallets
@@ -706,6 +719,7 @@ def collect_rh() -> dict:
 - Watchlist wallets.jsonl: **{len(merged)}**
 - On-chain wallets_onchain.jsonl: **{len(onchain_final)}**
 - New on-chain merges this run: **{added}** (touched existing: {touched})
+- Merge-to-watch: **{RH_ONCHAIN_MERGE_TO_WATCH}** (floor={RH_ONCHAIN_VET_FLOOR})
 - Source: Robinhood Blockscout `{RH_BS_V2}` (+ etherscan-compat if allowed)
 - Notes: {'; '.join(notes) if notes else 'ok'}
 """,
@@ -718,6 +732,7 @@ def collect_rh() -> dict:
         "onchain_n": len(onchain_final),
         "added": added,
         "touched": touched,
+        "merge_to_watch": RH_ONCHAIN_MERGE_TO_WATCH,
         "xfers_scanned": len(xfers),
         "addrs_scanned": len(addrs),
         "etherscan_xfers": len(es_xfers),

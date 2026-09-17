@@ -60,7 +60,10 @@ jobs:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
-          XBTSCOUT_MAX_TOKENS: "5"
+          XBTSCOUT_MAX_TOKENS: "3"
+          XBTSCOUT_PRE_POST_ONLY: "1"
+          XBTSCOUT_MIN_BUY_USD: "80"
+          WATCH_MIN_REALIZED_HARD: "500"
         run: python3 bot.py --harvest-xbtscout
 
       - name: Refine — drop losers / banned labels
@@ -68,6 +71,8 @@ jobs:
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           WATCH_MIN_REALIZED_USD: "0"
+          WATCH_MIN_REALIZED_HARD: "500"
+          DROP_WEAK_WALLETS: "1"
           WATCH_MIN_WINRATE: "0.40"
           WATCH_MIN_TRADES_FOR_WR: "10"
         run: python3 bot.py --refine-wallets
@@ -76,7 +81,7 @@ jobs:
         run: |
           git config user.name "meme-signal-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add rh-wallets/wallets.jsonl fomo-wallets/ || true
+          git add rh-wallets/wallets.jsonl fomo-wallets/ xbtscout/ || true
           if git diff --cached --quiet; then
             echo "no wallet changes"
           else

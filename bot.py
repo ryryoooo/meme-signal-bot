@@ -103,7 +103,9 @@ ALLOW_PRE_GRAD = (os.environ.get("ALLOW_PRE_GRAD") or "1").strip().lower() in ("
 PRE_GRAD_MIN_VOLUME_M5 = float(os.environ.get("PRE_GRAD_MIN_VOLUME_M5", "800"))
 REQUIRE_BUY_INCREASE = (os.environ.get("REQUIRE_BUY_INCREASE") or "1").strip().lower() in ("1", "true", "yes")
 MIN_M5_SELL_RATIO = float(os.environ.get("MIN_M5_SELL_RATIO", "0"))  # 0=off; set >0 for two-way
-MIN_ABS_PRICE_CHANGE_M5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", "0"))  # 0=off
+MIN_ABS_PRICE_CHANGE_M5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", "3"))  # abs %; flat charts fail
+REQUIRE_PRICE_MOVE = (os.environ.get("REQUIRE_PRICE_MOVE") or "1").strip().lower() in ("1", "true", "yes")
+MIN_ABS_PRICE_MOVE_H1 = float(os.environ.get("MIN_ABS_PRICE_MOVE_H1", "5"))  # OR with m5 when REQUIRE_PRICE_MOVE
 MAX_PRICE_CHANGE_M5_PCT = float(os.environ.get("MAX_PRICE_CHANGE_M5_PCT", "60"))
 MAX_PRICE_CHANGE_H1_PCT = float(os.environ.get("MAX_PRICE_CHANGE_H1_PCT", "250"))
 MAX_M5_BUY_RATIO = float(os.environ.get("MAX_M5_BUY_RATIO", "0.92"))  # one-sided tape
@@ -114,7 +116,7 @@ MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))
 MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.6"))
 DROP_WEAK_WALLETS = (os.environ.get("DROP_WEAK_WALLETS") or "1").strip().lower() in ("1", "true", "yes")
 WEAK_WALLET_MAX_SCORE = float(os.environ.get("WEAK_WALLET_MAX_SCORE", "0.5"))
-WATCH_MIN_REALIZED_HARD = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "50"))
+WATCH_MIN_REALIZED_HARD = float(os.environ.get("WATCH_MIN_REALIZED_HARD", "500"))
 MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # legacy floor
 MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "604800"))  # 7d hard cap (0=off)
 # Playbook windows (sec)
@@ -407,7 +409,7 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
     if not meta:
         return False
     parts: list[str] = []
-    for key in ("tags", "sources", "source_endpoints"):
+    for key in ("tags", "gmgn_tags", "sources", "source_endpoints"):
         for x in meta.get(key) or []:
             parts.append(str(x))
     for key in ("source", "address_label", "label"):
@@ -422,6 +424,7 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
             "early_live",
             "early:",
             "early ",
+            "xbtscout_pre_post",
             "xbtscout_pre",
             "xbtscout_early",
             "nansen",
@@ -785,14 +788,44 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
                     fails.append(f"buys_not_up_h1={int(bh)}<{int(sh)}")
         except (TypeError, ValueError):
             pass
-    # ideal: some absolute m5 move (not flat dead chart)
-    if pcm5 is not None:
+    # Hard: reject 値動きない charts — at least one TF must move
+    try:
+        min_abs_m5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", str(MIN_ABS_PRICE_CHANGE_M5)))
+    except (TypeError, ValueError):
+        min_abs_m5 = MIN_ABS_PRICE_CHANGE_M5
+    try:
+        min_abs_h1 = float(os.environ.get("MIN_ABS_PRICE_MOVE_H1", str(MIN_ABS_PRICE_MOVE_H1)))
+    except (TypeError, ValueError):
+        min_abs_h1 = MIN_ABS_PRICE_MOVE_H1
+    pch6 = safety.get("price_change_h6")
+    def _abs_or_none(v):
         try:
-            min_abs = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", str(MIN_ABS_PRICE_CHANGE_M5)))
-            if abs(float(pcm5)) < min_abs:
-                fails.append(f"flat_m5={float(pcm5):.1f}")
+            return abs(float(v)) if v is not None else None
         except (TypeError, ValueError):
-            pass
+            return None
+    abs_m5 = _abs_or_none(pcm5)
+    abs_h1 = _abs_or_none(pch1)
+    abs_h6 = _abs_or_none(pch6)
+    # Completely flat across available TFs
+    known = [x for x in (abs_m5, abs_h1, abs_h6) if x is not None]
+    if known and all(x < 0.5 for x in known):
+        fails.append(
+            f"no_price_move m5={pcm5} h1={pch1} h6={pch6}"
+        )
+    elif env_bool("REQUIRE_PRICE_MOVE", REQUIRE_PRICE_MOVE):
+        m5_ok = abs_m5 is not None and abs_m5 >= min_abs_m5
+        h1_ok = abs_h1 is not None and abs_h1 >= min_abs_h1
+        if abs_m5 is not None or abs_h1 is not None:
+            if not (m5_ok or h1_ok):
+                fails.append(
+                    f"flat_price m5={pcm5} (need>={min_abs_m5}) "
+                    f"h1={pch1} (need>={min_abs_h1})"
+                )
+        elif env_bool("PLAYBOOK_REQUIRED", PLAYBOOK_REQUIRED):
+            # missing price series on set2/set1 path — reject dead/unknown
+            fails.append("price_change_na")
+    elif abs_m5 is not None and min_abs_m5 > 0 and abs_m5 < min_abs_m5:
+        fails.append(f"flat_m5={float(pcm5):.1f}")
 
     # 4) 24h volume (existing)
     vol_required = env_bool("VOLUME_REQUIRED", True)
@@ -912,9 +945,12 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
         kept = {}
         for a, o in filtered.items():
             rp = _wallet_realized(o)
-            q = wallet_quality_score(o)
-            # keep if meaningful pnl OR quality score above weak floor
-            if rp >= min_rp or q > weak_max:
+            # Hard realized floor — drops $0.01 / meh onchain placeholders.
+            # Exempt xbtscout pre-post/early (size-filtered harvest) until PnL vet runs.
+            if rp >= min_rp or wallet_is_early_stage(o):
+                # still drop pure placeholders with no early tag
+                if rp < 1 and not wallet_is_early_stage(o):
+                    continue
                 kept[a] = o
         filtered = kept
         print(
@@ -2921,9 +2957,8 @@ def run_once(args: argparse.Namespace) -> int:
                     dropped_bots.append(addr[:10] + ":bot")
                     continue
                 if env_bool("DROP_WEAK_WALLETS", True):
-                    q = wallet_quality_score(meta)
                     rp = _wallet_realized(meta)
-                    if q <= weak_max and rp < min_rp:
+                    if rp < min_rp and not wallet_is_early_stage(meta):
                         dropped_bots.append(addr[:10] + ":weak")
                         continue
                 kept_w.append(w)
@@ -3296,21 +3331,39 @@ def scrape_xbtscout_cas() -> list[str]:
     return [r["ca"] for r in recs if r.get("is_new")]
 
 
+def _xbtscout_load_cas(cas_path: Path) -> dict[str, dict]:
+    have: dict[str, dict] = {}
+    if not cas_path.exists():
+        return have
+    for line in cas_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            o = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        ca = (o.get("ca") or "").lower()
+        if ca.startswith("0x"):
+            have[ca] = o
+    return have
+
+
+def _xbtscout_write_cas(cas_path: Path, have: dict[str, dict]) -> None:
+    cas_path.parent.mkdir(parents=True, exist_ok=True)
+    # newest posted_at first, then ca
+    def sort_key(r: dict):
+        return (str(r.get("posted_at") or r.get("date") or ""), r.get("ca") or "")
+    rows = sorted(have.values(), key=sort_key, reverse=True)
+    cas_path.write_text(
+        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows),
+        encoding="utf-8",
+    )
+
+
 def scrape_xbtscout_posts() -> list[dict]:
     """Return [{ca, posted_at, is_new}, ...] newest first. Persist to xbtscout/cas.jsonl."""
     cas_path = ROOT / "xbtscout" / "cas.jsonl"
-    cas_path.parent.mkdir(parents=True, exist_ok=True)
-    have: dict[str, dict] = {}
-    rows: list[dict] = []
-    if cas_path.exists():
-        for line in cas_path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            o = json.loads(line)
-            ca = (o.get("ca") or "").lower()
-            if ca.startswith("0x"):
-                have[ca] = o
-                rows.append(o)
+    have = _xbtscout_load_cas(cas_path)
     ca_re = re.compile(r"0x[a-fA-F0-9]{40}")
     urls = [
         "https://nitter.jaydenha.uk/xbtscout/rss",
@@ -3346,7 +3399,6 @@ def scrape_xbtscout_posts() -> list[dict]:
             if mpub:
                 raw_pub = re.sub(r"<[^>]+>", "", mpub.group(1)).strip()
                 try:
-                    # RFC 2822-ish
                     from email.utils import parsedate_to_datetime
                     pub = parsedate_to_datetime(raw_pub).astimezone(timezone.utc).isoformat()
                 except Exception:
@@ -3374,36 +3426,38 @@ def scrape_xbtscout_posts() -> list[dict]:
 
     now = datetime.now(timezone.utc).isoformat()
     out_recs: list[dict] = []
-    new_rows: list[dict] = []
+    new_count = 0
+    dirty = False
     for ca, pub in ordered:
+        prev = have.get(ca) or {}
         is_new = ca not in have
-        posted_at = pub or (have.get(ca) or {}).get("posted_at") or (have.get(ca) or {}).get("date")
-        rec = {
-            "ca": ca,
-            "source_url_or_text_snip": "nitter_xbtscout",
-            "chain_guess": "robinhood",
-            "date": (have.get(ca) or {}).get("date") or now,
-            "posted_at": posted_at or now,
-            "page": 0,
-            "is_new": is_new,
-        }
-        out_recs.append(rec)
+        # Prefer RSS pubDate; never treat legacy "Scout"/page labels as posted_at
+        prev_posted = prev.get("posted_at")
+        if isinstance(prev_posted, str) and prev_posted and prev_posted.lower() not in ("scout", "nitter"):
+            # keep ISO-looking prior
+            posted_at = pub or prev_posted
+        else:
+            posted_at = pub or now
+        # backfill posted_at on existing rows when RSS gives a real pubDate
+        if pub and prev.get("posted_at") != pub:
+            dirty = True
         if is_new:
-            store = {k: v for k, v in rec.items() if k != "is_new"}
-            new_rows.append(store)
-            have[ca] = store
-    if new_rows:
-        # newest first then old
-        merged = new_rows + [have[c] for c in have if c not in {r["ca"] for r in new_rows}]
-        # unique
-        uniq = {}
-        for r in merged:
-            uniq[r["ca"]] = r
-        cas_path.write_text(
-            "".join(json.dumps(uniq[c], ensure_ascii=False) + chr(10) for c in uniq),
-            encoding="utf-8",
-        )
-    print(f"xbtscout scrape new={len(new_rows)} page_cas={len(ordered)} total={len(have)}")
+            new_count += 1
+            dirty = True
+        store = {
+            "ca": ca,
+            "source_url_or_text_snip": prev.get("source_url_or_text_snip") or "nitter_xbtscout",
+            "chain_guess": prev.get("chain_guess") or "robinhood",
+            "date": prev.get("date") if prev.get("date") and str(prev.get("date")).lower() != "scout" else now,
+            "posted_at": posted_at,
+            "page": prev.get("page", 0),
+        }
+        have[ca] = store
+        out_recs.append({**store, "is_new": is_new})
+
+    if dirty:
+        _xbtscout_write_cas(cas_path, have)
+    print(f"xbtscout scrape new={new_count} page_cas={len(ordered)} total={len(have)} posted_at_backfill={dirty}")
     return out_recs
 
 
@@ -3415,22 +3469,46 @@ def harvest_xbtscout_wallets(
     """GMGN early/pre-post buyers on xbtscout CAs (RH). Prefer wallets active before post time."""
     write_gmgn_dotenv()
     max_n = int(max_tokens if max_tokens is not None else os.environ.get("XBTSCOUT_MAX_TOKENS", "3"))
+    min_buy_usd = float(os.environ.get("XBTSCOUT_MIN_BUY_USD", "80"))
+    pre_only = (os.environ.get("XBTSCOUT_PRE_POST_ONLY") or "1").strip().lower() in ("1", "true", "yes")
+    cas_path = ROOT / "xbtscout" / "cas.jsonl"
+    cas_have = _xbtscout_load_cas(cas_path)
+
     posts: list[dict] = []
     if only_cas:
         for c in only_cas:
             ca = (c or "").lower()
-            if ca.startswith("0x"):
-                posts.append({"ca": ca, "posted_at": None, "is_new": True})
+            if not ca.startswith("0x"):
+                continue
+            prev = cas_have.get(ca) or {}
+            posts.append({
+                "ca": ca,
+                "posted_at": prev.get("posted_at"),
+                "is_new": True,
+            })
     else:
         try:
             posts = scrape_xbtscout_posts()
+            cas_have = _xbtscout_load_cas(cas_path)
         except Exception as e:
             print(f"xbtscout scrape err {type(e).__name__}", file=sys.stderr)
             posts = []
-    # prefer new posts; fall back to recent known if none new
+    # Enrich posted_at from cas.jsonl for every post
+    for p in posts:
+        ca = p["ca"]
+        if not p.get("posted_at") and ca in cas_have:
+            p["posted_at"] = cas_have[ca].get("posted_at")
+
+    # prefer new posts with posted_at; fall back to recent known
     batch = [p for p in posts if p.get("is_new")][:max_n]
     if not batch:
         batch = posts[:max_n]
+    if not batch and cas_have:
+        # offline harvest from persisted CAs (newest posted_at)
+        def _cas_sort(r):
+            return str(r.get("posted_at") or r.get("date") or "")
+        for r in sorted(cas_have.values(), key=_cas_sort, reverse=True)[:max_n]:
+            batch.append({"ca": r["ca"], "posted_at": r.get("posted_at"), "is_new": False})
     if not batch:
         print("harvest-xbtscout: no CAs")
         return 0
@@ -3469,7 +3547,10 @@ def harvest_xbtscout_wallets(
     queried = 0
     for rec in batch:
         ca = rec["ca"]
-        data = gmgn(["token", "traders", "--chain", "robinhood", "--address", ca, "--tag", "smart_degen", "--limit", "50", "--order-by", "profit", "--raw"])
+        data = gmgn([
+            "token", "traders", "--chain", "robinhood", "--address", ca,
+            "--tag", "smart_degen", "--limit", "50", "--order-by", "profit", "--raw",
+        ])
         if data == "rate":
             break
         queried += 1
@@ -3483,6 +3564,8 @@ def harvest_xbtscout_wallets(
         if not isinstance(rows, list):
             rows = []
         n_keep = 0
+        n_skip_late = 0
+        n_skip_size = 0
         for r in rows:
             if not isinstance(r, dict):
                 continue
@@ -3501,7 +3584,6 @@ def harvest_xbtscout_wallets(
             tagset = {str(t).lower() for t in tags if t}
             if not (tagset & wanted) and "smart_degen" not in tagset:
                 tagset.add("smart_degen")  # endpoint already filtered
-            # Pre-post / early: first buy or last active before xbtscout post
             posted_at = rec.get("posted_at")
             buy_ts = _num(
                 r.get("buy_timestamp")
@@ -3509,6 +3591,14 @@ def harvest_xbtscout_wallets(
                 or r.get("start_holding_at")
                 or r.get("last_active_timestamp")
                 or r.get("timestamp")
+            )
+            buy_usd = _num(
+                r.get("buy_volume_cur")
+                or r.get("buy_volume")
+                or r.get("amount_usd")
+                or r.get("cost")
+                or r.get("total_cost")
+                or r.get("volume")
             )
             pre_post = False
             if posted_at and buy_ts:
@@ -3527,26 +3617,45 @@ def harvest_xbtscout_wallets(
                         pre_post = True
                         tagset.add("xbtscout_pre_post")
                         tagset.add("xbtscout_early")
+                    # early: within 30m after post
+                    elif post_ts < bt <= (post_ts + 30 * 60):
+                        tagset.add("xbtscout_early")
+                        pre_post = True  # treat early window as keepable
                 except Exception:
                     pass
+            if pre_only and not pre_post:
+                n_skip_late += 1
+                continue
             if not pre_post:
-                # still mark as xbtscout scout wallet; early if profit-ranked smart
                 tagset.add("xbtscout_gmgn")
+            if buy_usd is not None and buy_usd < min_buy_usd:
+                n_skip_size += 1
+                continue
+            # Prefer meaningful size; if size unknown keep only pre_post
+            if buy_usd is None and not pre_post:
+                n_skip_size += 1
+                continue
             pnl = _num(r.get("profit") or r.get("realized_profit") or r.get("total_profit"))
-            if pnl is not None and pnl <= 0:
+            # Skip obvious losers; allow unknown pnl for pre-post with size
+            if pnl is not None and pnl < 0:
                 continue
             prev = found.get(addr)
-            if prev:
+            if prev and not pre_post:
                 continue
             found[addr] = {
                 "address": addr,
                 "address_label": label or "",
                 "gmgn_tags": list(tagset),
                 "gmgn_pnl_usd": pnl,
+                "buy_usd": buy_usd,
                 "source_ca": ca,
+                "pre_post": pre_post,
             }
             n_keep += 1
-        print(f"xbtscout {ca[:10]}… traders keep={n_keep} rows={len(rows)}")
+        print(
+            f"xbtscout {ca[:10]}… traders keep={n_keep} rows={len(rows)} "
+            f"skip_late={n_skip_late} skip_size={n_skip_size} posted_at={bool(rec.get('posted_at'))}"
+        )
         time.sleep(1.2)
 
     existing: dict[str, dict] = {}
@@ -3560,6 +3669,7 @@ def harvest_xbtscout_wallets(
                 existing[a] = o
     added = tagged = 0
     now = datetime.now(timezone.utc).isoformat()
+    hard = float(os.environ.get("WATCH_MIN_REALIZED_HARD", str(WATCH_MIN_REALIZED_HARD)))
     for addr, w in found.items():
         pnl = w.get("gmgn_pnl_usd")
         gtags = [str(x) for x in (w.get("gmgn_tags") or [])]
@@ -3567,6 +3677,7 @@ def harvest_xbtscout_wallets(
         src_add = ["xbtscout_gmgn"]
         if is_pre:
             src_add.extend(["xbtscout_pre_post", "xbtscout_early"])
+        tags_add = list(dict.fromkeys(gtags + (["xbtscout_early"] if is_pre else [])))
         if addr in existing:
             o = existing[addr]
             srcs = list(o.get("source_endpoints") or [])
@@ -3579,29 +3690,41 @@ def harvest_xbtscout_wallets(
                 o["source_endpoints"] = srcs
                 tagged += 1
             tags = list(o.get("tags") or [])
-            for s in gtags:
+            for s in tags_add:
                 if s not in tags:
                     tags.append(s)
                     changed = True
-            if is_pre and "xbtscout_early" not in tags:
-                tags.append("xbtscout_early")
             o["tags"] = tags
-            o["gmgn_tags"] = list({*(o.get("gmgn_tags") or []), *gtags})
-            if pnl and (not o.get("realized_pnl_usd") or float(o.get("realized_pnl_usd") or 0) <= 0):
-                o["realized_pnl_usd"] = pnl
-                o["pass_pnl"] = True
+            o["gmgn_tags"] = list(dict.fromkeys([*(o.get("gmgn_tags") or []), *gtags]))
+            if pnl and float(pnl) > 0:
+                try:
+                    cur = float(o.get("realized_pnl_usd") or 0)
+                except (TypeError, ValueError):
+                    cur = 0.0
+                if cur < 1 or cur < float(pnl):
+                    o["realized_pnl_usd"] = float(pnl)
+                    o["pass_pnl"] = True
             continue
-        rp = float(pnl) if pnl and pnl > 0 else 0.01
+        # New watch row: only if pre/early AND (real pnl >= soft floor OR meaningful buy)
+        buy_usd = w.get("buy_usd")
+        if pre_only and not is_pre:
+            continue
+        rp = float(pnl) if pnl and float(pnl) > 0 else 0.0
+        if rp < 1 and (buy_usd is None or float(buy_usd) < min_buy_usd):
+            continue
+        # Do NOT invent $0.01 — leave low until refine/vet; DROP_WEAK will hide until PnL known
+        # But for pre-post with size, stamp a soft pass so harvest isn't useless: use max(buy,1) only as note
         existing[addr] = {
             "address": addr,
             "address_label": w.get("address_label") or "",
-            "realized_pnl_usd": rp,
-            "pass_pnl": True,
+            "realized_pnl_usd": rp if rp >= 1 else 0.0,
+            "pass_pnl": bool(rp >= hard) or is_pre,
             "gmgn_pnl_usd": pnl,
             "gmgn_tags": gtags or ["smart_degen"],
-            "tags": gtags + (["xbtscout_early"] if is_pre else []),
+            "tags": tags_add,
             "source_endpoints": src_add,
             "source_ca": w.get("source_ca"),
+            "xbtscout_buy_usd": buy_usd,
             "collected_at": now,
             "chain": "robinhood",
         }
@@ -3610,7 +3733,19 @@ def harvest_xbtscout_wallets(
     with watch_path.open("w", encoding="utf-8") as f:
         for a in sorted(existing):
             f.write(json.dumps(existing[a], ensure_ascii=False) + "\n")
-    print(f"harvest-xbtscout queried={queried} found={len(found)} added={added} tagged={tagged} watch={len(existing)}")
+    pre_n = sum(
+        1
+        for o in existing.values()
+        if "xbtscout_pre_post" in (o.get("tags") or [])
+        or "xbtscout_early" in (o.get("tags") or [])
+        or "xbtscout_pre_post" in (o.get("gmgn_tags") or [])
+        or "xbtscout_early" in (o.get("gmgn_tags") or [])
+        or "xbtscout_pre_post" in (o.get("source_endpoints") or [])
+    )
+    print(
+        f"harvest-xbtscout queried={queried} found={len(found)} added={added} "
+        f"tagged={tagged} watch={len(existing)} xbtscout_pre_or_early={pre_n}"
+    )
     return 0
 
 
