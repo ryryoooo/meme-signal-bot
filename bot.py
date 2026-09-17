@@ -94,6 +94,11 @@ LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.20"))
 MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "1500"))
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "4000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "200"))
+MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "5000"))
+MIN_HOLDERS = int(os.environ.get("MIN_HOLDERS", "80"))
+HOLDERS_REQUIRED = (os.environ.get("HOLDERS_REQUIRED") or "0").strip().lower() in ("1", "true", "yes")
+MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))  # need ≥1 wallet scoring ≥ this
+MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.5"))
 MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "1800"))  # skip if younger than 30m
 LP_LOCK_MIN = 0.01  # locked+burned share of LP
 # LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
@@ -370,6 +375,125 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
         if pl.startswith("early") or pl == "nansen" or pl.startswith("nansen:"):
             return True
     return False
+
+
+
+def wallet_quality_score(meta: dict | None) -> float:
+    """0–3-ish score for smart-wallet quality (仕込み + PnL track record)."""
+    if not meta:
+        return 0.0
+    score = 0.0
+    if wallet_is_early_stage(meta):
+        score += 1.0
+    try:
+        rp = float(_wallet_realized(meta))
+    except Exception:
+        try:
+            rp = float(meta.get("realized_pnl_usd") or meta.get("total_pnl_usd") or 0)
+        except (TypeError, ValueError):
+            rp = 0.0
+    if rp >= 10_000:
+        score += 1.0
+    elif rp >= 1_000:
+        score += 0.7
+    elif rp >= 100:
+        score += 0.4
+    elif rp > 0:
+        score += 0.2
+    try:
+        wr = float(meta.get("win_rate") or 0)
+        if wr > 1:
+            wr = wr / 100.0
+    except (TypeError, ValueError):
+        wr = 0.0
+    try:
+        nt = int(meta.get("n_trades") or 0)
+    except (TypeError, ValueError):
+        nt = 0
+    if nt >= 10 and wr >= 0.45:
+        score += 0.5
+    elif nt >= 5 and wr >= 0.40:
+        score += 0.25
+    blob = " ".join(
+        str(x)
+        for x in list(meta.get("tags") or [])
+        + list(meta.get("sources") or [])
+        + list(meta.get("source_endpoints") or [])
+        + [meta.get("source") or "", meta.get("list_tier") or ""]
+    ).lower()
+    if "nansen" in blob:
+        score += 0.5
+    if "early2x" in blob or "early_live" in blob:
+        score += 0.3
+    if str(meta.get("list_tier") or "").lower() in ("quality", "keeper", "a"):
+        score += 0.2
+    return round(score, 3)
+
+
+def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: list[float]) -> list[str]:
+    """Four-axis notify gates: volume / holders / buy$ / wallet quality."""
+    fails: list[str] = []
+    try:
+        min_vol = float(os.environ.get("MIN_VOLUME_H24_USD", str(MIN_VOLUME_H24_USD)))
+    except (TypeError, ValueError):
+        min_vol = MIN_VOLUME_H24_USD
+    try:
+        min_holders = int(float(os.environ.get("MIN_HOLDERS", str(MIN_HOLDERS))))
+    except (TypeError, ValueError):
+        min_holders = MIN_HOLDERS
+    holders_required = env_bool("HOLDERS_REQUIRED", HOLDERS_REQUIRED)
+    try:
+        min_cluster = float(os.environ.get("MIN_CLUSTER_USD", str(MIN_CLUSTER_USD)))
+    except (TypeError, ValueError):
+        min_cluster = MIN_CLUSTER_USD
+    try:
+        min_q = float(os.environ.get("MIN_WALLET_QUALITY", str(MIN_WALLET_QUALITY)))
+    except (TypeError, ValueError):
+        min_q = MIN_WALLET_QUALITY
+    try:
+        min_avg_q = float(os.environ.get("MIN_AVG_WALLET_QUALITY", str(MIN_AVG_WALLET_QUALITY)))
+    except (TypeError, ValueError):
+        min_avg_q = MIN_AVG_WALLET_QUALITY
+
+    vol_required = env_bool("VOLUME_REQUIRED", True)
+    vol = safety.get("volume_h24")
+    if vol is None:
+        if vol_required:
+            fails.append("volume_na")
+    else:
+        try:
+            if float(vol) < min_vol:
+                fails.append(f"volume_thin={float(vol):.0f}<{min_vol:.0f}")
+        except (TypeError, ValueError):
+            if vol_required:
+                fails.append("volume_na")
+
+    holders = safety.get("holder_count")
+    if holders is None:
+        if holders_required:
+            fails.append("holders_na")
+    else:
+        try:
+            if int(float(holders)) < min_holders:
+                fails.append(f"holders_thin={int(float(holders))}<{min_holders}")
+        except (TypeError, ValueError):
+            if holders_required:
+                fails.append("holders_na")
+
+    if total_usd < min_cluster:
+        fails.append(f"weak_cluster={total_usd:.0f}<{min_cluster:.0f}")
+
+    if not wallet_scores:
+        fails.append("quality_na")
+    else:
+        best = max(wallet_scores)
+        avg = sum(wallet_scores) / len(wallet_scores)
+        if best < min_q:
+            fails.append(f"quality_best={best:.2f}<{min_q:.2f}")
+        if avg < min_avg_q:
+            fails.append(f"quality_avg={avg:.2f}<{min_avg_q:.2f}")
+    return fails
+
 
 
 def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], int, bool]:
@@ -1691,6 +1815,10 @@ def safety_check(ca: str, chain: str) -> dict:
             "jp": jp,
             "audit_jp": "（Arc・セキュリティ監査スキップ）",
             "symbol_hint": snap.get("symbol"),
+            "volume_h24": snap.get("volume_h24"),
+            "volume_h1": snap.get("volume_h1"),
+            "buys_h24": snap.get("buys_h24"),
+            "holder_count": snap.get("holder_count"),
             "source": "gmgn",
             "fetch_failed": fetch_failed,
             "checklist": [],
@@ -1827,6 +1955,21 @@ def build_embed(
     if not (fomo_lines or sm_lines or both_lines):
         fields.append({"name": "誰が買ったか", "value": "—", "inline": False})
 
+    if safety.get("volume_h24") is not None:
+        fields.append({"name": "出来高24h", "value": fmt_usd(safety.get("volume_h24")), "inline": True})
+    if safety.get("holder_count") is not None:
+        fields.append({"name": "ホルダー", "value": str(int(float(safety["holder_count"]))), "inline": True})
+    qscores = [
+        wallet_quality_score((watch or {}).get((w.get("address") or "").lower()) or {})
+        for w in (s.get("wallets") or [])
+    ]
+    if qscores:
+        fields.append({
+            "name": "財布質",
+            "value": f"best {max(qscores):.1f} / avg {sum(qscores)/len(qscores):.1f}",
+            "inline": True,
+        })
+
     return {
         "title": title[:256],
         "url": gmgn_url,
@@ -1882,6 +2025,12 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             bits.append("時価薄い")
         elif rs.startswith("weak_cluster"):
             bits.append("買い合計が小さい")
+        elif rs.startswith("volume"):
+            bits.append("出来高薄い")
+        elif rs.startswith("holders"):
+            bits.append("ホルダー少ない")
+        elif rs.startswith("quality"):
+            bits.append("財布の質不足")
         elif "honeypot" in rs:
             bits.append("honeypot")
         elif "cannot_sell" in rs:
@@ -2329,19 +2478,12 @@ def run_once(args: argparse.Namespace) -> int:
                 skipped += 1
                 continue
 
-        try:
-            min_cluster = float(os.environ.get("MIN_CLUSTER_USD", str(MIN_CLUSTER_USD)))
-        except (TypeError, ValueError):
-            min_cluster = MIN_CLUSTER_USD
-        if total_usd < min_cluster:
-            reason = f"weak_cluster={total_usd:.0f}<{min_cluster:.0f}"
-            print(f"skip {ca} {reason}", flush=True)
-            append_paper_log(
-                paper_path,
-                {**base_row, "posted": False, "reason": reason},
-            )
-            skipped += 1
-            continue
+        wallet_scores = [
+            wallet_quality_score(watch.get((w.get("address") or "").lower()) or {})
+            for w in (s.get("wallets") or [])
+        ]
+        # four-axis notify gates need market fields — run after we have safety below
+        # (cluster/quality checked here; volume/holders after safety_check)
 
         if s["key"] in seen:
             append_paper_log(paper_path, {**base_row, "posted": False, "reason": "already_seen"})
@@ -2385,6 +2527,56 @@ def run_once(args: argparse.Namespace) -> int:
             elif skip_notices < MAX_SKIP_NOTICES_PER_RUN:
                 try:
                     discord_webhook(webhook, embeds=[build_skip_embed(s, safety, chain)])
+                    skip_notices += 1
+                except Exception as e:
+                    print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)
+            seen.add(s["key"])
+            skipped += 1
+            continue
+
+        # 出来高 / ホルダー / 買い金額 / 財布質
+        wallet_scores = [
+            wallet_quality_score(watch.get((w.get("address") or "").lower()) or {})
+            for w in (s.get("wallets") or [])
+        ]
+        market_fails = notify_market_gate_reasons(safety, total_usd, wallet_scores)
+        print(
+            f"notify_gates ca={ca[:10]}… fails={market_fails or ['ok']} "
+            f"vol={safety.get('volume_h24')} holders={safety.get('holder_count')} "
+            f"cluster={total_usd:.0f} q={wallet_scores}",
+            flush=True,
+        )
+        if market_fails:
+            reason = "notify_gate:" + ",".join(market_fails)
+            print(f"skip {ca} {reason}", flush=True)
+            append_paper_log(
+                paper_path,
+                {
+                    **base_row,
+                    "posted": False,
+                    "reason": reason,
+                    "volume_h24": safety.get("volume_h24"),
+                    "holders": safety.get("holder_count"),
+                    "wallet_scores": wallet_scores,
+                    "mcap": safety.get("mcap_usd"),
+                    "liq": safety.get("liq_usd"),
+                },
+            )
+            if skip_notices < MAX_SKIP_NOTICES_PER_RUN:
+                try:
+                    safety_skip = dict(safety)
+                    safety_skip["reasons"] = market_fails
+                    safety_skip["jp"] = "見送り（" + "・".join(
+                        (
+                            "出来高薄い" if str(r).startswith("volume") else
+                            "ホルダー少ない" if str(r).startswith("holders") else
+                            "買い合計小さい" if str(r).startswith("weak_cluster") else
+                            "財布の質不足" if str(r).startswith("quality") else
+                            "検査NG"
+                        )
+                        for r in market_fails
+                    ) + "）"
+                    discord_webhook(webhook, embeds=[build_skip_embed(s, safety_skip, chain)])
                     skip_notices += 1
                 except Exception as e:
                     print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)

@@ -314,6 +314,11 @@ def parse_info(info: dict) -> dict:
         "fdv": fdv if fdv is not None else mcap,
         "liq_usd": liq,
         "holder_count": _num(info.get("holder_count") or stat.get("holder_count")),
+        "volume_h24": _num(
+            info.get("volume_24h") or info.get("volume") or stat.get("volume_24h")
+            or (stat.get("volume") if not isinstance(stat.get("volume"), dict) else None)
+        ),
+        "buys_h24": _num(stat.get("buys_24h") or info.get("buys_24h")),
         "locked_ratio": _num(info.get("locked_ratio")),
         "top10": _num(stat.get("top_10_holder_rate") or info.get("top_10_holder_rate")),
         "gmgn_url": gmgn_url,
@@ -534,6 +539,21 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         liq = None
     if not price and not liq:
         return None
+    vol_obj = pair.get("volume") if isinstance(pair.get("volume"), dict) else {}
+    tx_obj = pair.get("txns") if isinstance(pair.get("txns"), dict) else {}
+    h24 = tx_obj.get("h24") if isinstance(tx_obj.get("h24"), dict) else {}
+    try:
+        volume_h24 = float(vol_obj.get("h24")) if vol_obj.get("h24") is not None else None
+    except (TypeError, ValueError):
+        volume_h24 = None
+    try:
+        volume_h1 = float(vol_obj.get("h1")) if vol_obj.get("h1") is not None else None
+    except (TypeError, ValueError):
+        volume_h1 = None
+    try:
+        buys_h24 = int(h24.get("buys")) if h24.get("buys") is not None else None
+    except (TypeError, ValueError):
+        buys_h24 = None
     return {
         "ok": True,
         "reason": None,
@@ -541,6 +561,10 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         "mcap_usd": mcap,
         "fdv": mcap,
         "price_usd": price,
+        "volume_h24": volume_h24,
+        "volume_h1": volume_h1,
+        "buys_h24": buys_h24,
+        "holder_count": None,  # DexScreener usually omits; filled when GMGN path used
         "url": pair.get("url"),
         "pair": pair.get("pairAddress"),
         "chainId": pair.get("chainId"),
