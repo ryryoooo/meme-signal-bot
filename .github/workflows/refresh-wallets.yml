@@ -60,7 +60,7 @@ jobs:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY }}
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
-          XBTSCOUT_MAX_TOKENS: "1"
+          XBTSCOUT_MAX_TOKENS: "5"
         run: python3 bot.py --harvest-xbtscout
 
       - name: Refine — drop losers / banned labels

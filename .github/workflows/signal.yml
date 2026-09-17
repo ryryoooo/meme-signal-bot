@@ -82,6 +82,21 @@ jobs:
           MIN_LIQ_USD: "1500"
           MIN_MCAP_USD: "4000"
           LIQ_MCAP_MIN: "0.20"
+          MIN_VOLUME_H24_USD: "12000"
+          VOLUME_REQUIRED: "1"
+          MIN_VOLUME_M5_USD: "1500"
+          VOLUME_M5_REQUIRED: "1"
+          ALLOW_PRE_GRAD: "1"
+          REQUIRE_GRADUATED: "0"
+          PRE_GRAD_MIN_VOLUME_M5: "2000"
+          REQUIRE_BUY_INCREASE: "1"
+          MIN_M5_SELL_RATIO: "0.08"
+          MIN_ABS_PRICE_CHANGE_M5: "2"
+          MAX_PRICE_CHANGE_M5_PCT: "60"
+          MAX_PRICE_CHANGE_H1_PCT: "250"
+          MAX_M5_BUY_RATIO: "0.92"
+          DROP_BOT_WALLETS: "1"
+          REQUIRE_EARLY_HIT: "0"
           COOLDOWN_SECONDS: "7200"
           WATCH_MIN_REALIZED_USD: "0"
           WATCH_MIN_WINRATE: "0.40"
@@ -94,8 +109,8 @@ jobs:
           FOMO_HOLDERS_INTERVAL: "14400"
           FOMO_WATCH_PATH: fomo-wallets/wallets_evm.jsonl
           XBTSCOUT_ENABLED: "1"
-          XBTSCOUT_SCRAPE_SECONDS: "1800"
-          XBTSCOUT_MAX_TOKENS: "1"
+          XBTSCOUT_SCRAPE_SECONDS: "900"
+          XBTSCOUT_MAX_TOKENS: "3"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
           PAPER_LOG_PATH: paper_log.jsonl

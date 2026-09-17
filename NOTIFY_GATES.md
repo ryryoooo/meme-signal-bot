@@ -1,17 +1,12 @@
-# Arc 通知ゲート（2026-09-17）
-
-通知する前に通過（上から順）:
+# Arc / RH 通知ゲート（2026-09-17）
 
 ## 銘柄
-1. **ローンチパッド卒業** `REQUIRE_GRADUATED=1` — bonding/未migrate見送り。Dex labels `graduated`/`migrated`、または十分なAMM流動性（`MIN_GRAD_LIQ_USD` 既定 $2500）かつ bondingっぽくない。
-2. **5分出来高** `MIN_VOLUME_M5_USD`（既定 $800）。
-3. **急騰しすぎ／不自然** — 5分騰落 `MAX_PRICE_CHANGE_M5_PCT`（既定 60%）、1時間 `MAX_PRICE_CHANGE_H1_PCT`（250%）、5分買い偏り `MAX_M5_BUY_RATIO`（0.92）。
-4. **24h出来高** `MIN_VOLUME_H24_USD`（$5k）。
-5. **ホルダー** `MIN_HOLDERS`（80、欠落は `HOLDERS_REQUIRED=0` で通す）。
-6. **薄い板** `LIQ_MCAP_MIN≥0.20`。
+1. **卒業優先・卒業前も可** `ALLOW_PRE_GRAD=1` — bondingでも5分出来高が `PRE_GRAD_MIN_VOLUME_M5`（$2k）以上なら候補。
+2. **5分出来高** `MIN_VOLUME_M5_USD`（$1500）/ **24h** `MIN_VOLUME_H24_USD`（$12k）。
+3. **買い増加** `REQUIRE_BUY_INCREASE` — 5分買い＞売り（1hも同方向ならなお良い）。
+4. **上下に動く** — 5分に最低の値動き（`MIN_ABS_PRICE_CHANGE_M5`）＋売り比率（`MIN_M5_SELL_RATIO`）で片側テープ拒否。急騰上限は従来どおり。
+5. **ホルダー / 板** — 既存。
 
-## 買い・財布
-7. **買い金額** `MIN_TRADE_USD` + `MIN_CLUSTER_USD`（$150 / $250）+ ≥2本。
-8. **bot疑惑除外** `DROP_BOT_WALLETS` — label/tags の bot・sniper・mev・fresh_wallet単独などを交差から落とす。残りが `MIN_WALLETS` 未満なら見送り。
-9. **仕込み** `REQUIRE_EARLY_HIT` / `WATCH_EARLY_ONLY`。
-10. **質スコア** best≥`MIN_WALLET_QUALITY`、avg≥`MIN_AVG_WALLET_QUALITY`。
+## 財布（RH特に）
+- `@xbtscout` 投稿の **投稿時刻直前〜直後** に買っている GMGN smart 財布を `xbtscout_pre_post` / `xbtscout_early` として監視にマージ（signal毎スクレイプ＋refreshジョブ）。
+- bot疑惑・仕込み・質スコアは Arc 側ルール継続。

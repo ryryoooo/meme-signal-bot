@@ -94,9 +94,14 @@ LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.20"))
 MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "1500"))
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "4000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "200"))
-MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "5000"))
-MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "800"))
-REQUIRE_GRADUATED = (os.environ.get("REQUIRE_GRADUATED") or "1").strip().lower() in ("1", "true", "yes")
+MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "12000"))
+MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "1500"))
+REQUIRE_GRADUATED = (os.environ.get("REQUIRE_GRADUATED") or "0").strip().lower() in ("1", "true", "yes")
+ALLOW_PRE_GRAD = (os.environ.get("ALLOW_PRE_GRAD") or "1").strip().lower() in ("1", "true", "yes")
+PRE_GRAD_MIN_VOLUME_M5 = float(os.environ.get("PRE_GRAD_MIN_VOLUME_M5", "2000"))
+REQUIRE_BUY_INCREASE = (os.environ.get("REQUIRE_BUY_INCREASE") or "1").strip().lower() in ("1", "true", "yes")
+MIN_M5_SELL_RATIO = float(os.environ.get("MIN_M5_SELL_RATIO", "0.08"))  # some sells = two-way
+MIN_ABS_PRICE_CHANGE_M5 = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", "2"))  # some movement
 MAX_PRICE_CHANGE_M5_PCT = float(os.environ.get("MAX_PRICE_CHANGE_M5_PCT", "60"))
 MAX_PRICE_CHANGE_H1_PCT = float(os.environ.get("MAX_PRICE_CHANGE_H1_PCT", "250"))
 MAX_M5_BUY_RATIO = float(os.environ.get("MAX_M5_BUY_RATIO", "0.92"))  # one-sided tape
@@ -399,6 +404,8 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
             "early_live",
             "early:",
             "early ",
+            "xbtscout_pre",
+            "xbtscout_early",
             "nansen",
             "smart trader",
             "30d smart",
@@ -510,19 +517,30 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
     except (TypeError, ValueError):
         min_avg_q = MIN_AVG_WALLET_QUALITY
 
-    # 1) Launchpad graduated
-    if require_grad:
-        if safety.get("bondingish") and not safety.get("graduated"):
+    # 1) Launchpad: prefer graduated; pre-grad OK if ALLOW_PRE_GRAD + strong m5 heat
+    allow_pre = env_bool("ALLOW_PRE_GRAD", ALLOW_PRE_GRAD)
+    try:
+        pre_m5 = float(os.environ.get("PRE_GRAD_MIN_VOLUME_M5", str(PRE_GRAD_MIN_VOLUME_M5)))
+    except (TypeError, ValueError):
+        pre_m5 = PRE_GRAD_MIN_VOLUME_M5
+    is_grad = bool(safety.get("graduated"))
+    is_bond = bool(safety.get("bondingish")) and not is_grad
+    vol_m5_early = safety.get("volume_m5")
+    try:
+        vol_m5_f = float(vol_m5_early) if vol_m5_early is not None else None
+    except (TypeError, ValueError):
+        vol_m5_f = None
+    if require_grad and not is_grad:
+        if allow_pre and vol_m5_f is not None and vol_m5_f >= pre_m5:
+            pass  # pre-grad candidate via volume
+        elif is_bond:
             fails.append("not_graduated_bonding")
-        elif safety.get("graduated") is False:
+        else:
             fails.append("not_graduated")
-        elif safety.get("graduated") is None and safety.get("liq_usd") is not None:
-            try:
-                min_grad_liq = float(os.environ.get("MIN_GRAD_LIQ_USD", "2500"))
-            except (TypeError, ValueError):
-                min_grad_liq = 2500.0
-            if float(safety["liq_usd"]) < min_grad_liq:
-                fails.append(f"not_graduated_liq={float(safety['liq_usd']):.0f}<{min_grad_liq:.0f}")
+    elif (not require_grad) and is_bond and allow_pre:
+        # soft: bonding only if m5 volume strong
+        if vol_m5_f is None or vol_m5_f < pre_m5:
+            fails.append(f"pre_grad_volume_m5={vol_m5_f or 0:.0f}<{pre_m5:.0f}")
 
     # 2) 5m volume
     vol_m5 = safety.get("volume_m5")
@@ -567,6 +585,34 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
         ratio = bm_i / max(1, bm_i + sm_i)
         if ratio >= max_buy_ratio:
             fails.append(f"onesided_m5={ratio:.2f}")
+        try:
+            min_sell_r = float(os.environ.get("MIN_M5_SELL_RATIO", str(MIN_M5_SELL_RATIO)))
+        except (TypeError, ValueError):
+            min_sell_r = MIN_M5_SELL_RATIO
+        sell_r = sm_i / max(1, bm_i + sm_i)
+        if sell_r < min_sell_r:
+            fails.append(f"no_two_way_m5={sell_r:.2f}<{min_sell_r:.2f}")
+    # buys increasing vs sells (候補: 買い優勢だが片側すぎない)
+    if env_bool("REQUIRE_BUY_INCREASE", REQUIRE_BUY_INCREASE):
+        if bm_i is not None and sm_i is not None:
+            if bm_i <= sm_i:
+                fails.append(f"buys_not_up_m5={bm_i}<={sm_i}")
+        bh = safety.get("buys_h1")
+        sh = safety.get("sells_h1")
+        try:
+            if bh is not None and sh is not None and int(bh) + int(sh) >= 20:
+                if int(bh) < int(sh):
+                    fails.append(f"buys_not_up_h1={int(bh)}<{int(sh)}")
+        except (TypeError, ValueError):
+            pass
+    # ideal: some absolute m5 move (not flat dead chart)
+    if pcm5 is not None:
+        try:
+            min_abs = float(os.environ.get("MIN_ABS_PRICE_CHANGE_M5", str(MIN_ABS_PRICE_CHANGE_M5)))
+            if abs(float(pcm5)) < min_abs:
+                fails.append(f"flat_m5={float(pcm5):.1f}")
+        except (TypeError, ValueError):
+            pass
 
     # 4) 24h volume (existing)
     vol_required = env_bool("VOLUME_REQUIRED", True)
@@ -1964,6 +2010,23 @@ def safety_check(ca: str, chain: str) -> dict:
         min_age_sec=float(MIN_TOKEN_AGE_SEC),
         lp_lock_min=float(os.environ.get("LP_LOCK_MIN", str(LP_LOCK_MIN))),
     )
+    # Overlay DexScreener m5 volume / tape / graduation for notify gates (RH+)
+    try:
+        dex = gmgn_tok.market_snapshot(gmgn_chain, ca)
+    except Exception:
+        dex = {}
+    if isinstance(dex, dict) and dex.get("ok"):
+        out = dict(out)
+        for k in (
+            "volume_h24", "volume_h1", "volume_m5", "buys_h24", "buys_m5", "sells_m5",
+            "buys_h1", "sells_h1", "price_change_m5", "price_change_h1",
+            "price_change_h6", "price_change_h24", "graduated", "bondingish",
+            "dex_id", "labels",
+        ):
+            if out.get(k) is None and dex.get(k) is not None:
+                out[k] = dex.get(k)
+        if out.get("holder_count") is None and dex.get("holder_count") is not None:
+            out["holder_count"] = dex.get("holder_count")
     if out.get("ok") and not out.get("fetch_failed"):
         heat = heat_gate_reasons(out)
         # evaluate already checks liq_ratio; still enforce absolute liq/mcap floors
@@ -2969,10 +3032,18 @@ def test_fomo_holders_post() -> int:
 
 
 def scrape_xbtscout_cas() -> list[str]:
-    """Pull new 0x CAs from nitter @xbtscout. Fail soft. Returns new CAs."""
+    """Pull new 0x CAs from nitter @xbtscout. Fail soft. Returns new CA strings.
+    Also stores posted_at when RSS items can be parsed (for pre-post buyer harvest).
+    """
+    recs = scrape_xbtscout_posts()
+    return [r["ca"] for r in recs if r.get("is_new")]
+
+
+def scrape_xbtscout_posts() -> list[dict]:
+    """Return [{ca, posted_at, is_new}, ...] newest first. Persist to xbtscout/cas.jsonl."""
     cas_path = ROOT / "xbtscout" / "cas.jsonl"
     cas_path.parent.mkdir(parents=True, exist_ok=True)
-    have: set[str] = set()
+    have: dict[str, dict] = {}
     rows: list[dict] = []
     if cas_path.exists():
         for line in cas_path.read_text(encoding="utf-8").splitlines():
@@ -2981,16 +3052,20 @@ def scrape_xbtscout_cas() -> list[str]:
             o = json.loads(line)
             ca = (o.get("ca") or "").lower()
             if ca.startswith("0x"):
-                have.add(ca)
+                have[ca] = o
                 rows.append(o)
     ca_re = re.compile(r"0x[a-fA-F0-9]{40}")
     urls = [
         "https://nitter.jaydenha.uk/xbtscout/rss",
+        "https://nitter.privacydev.net/xbtscout/rss",
         "https://nitter.jaydenha.uk/xbtscout",
     ]
     html = ""
     for url in urls:
-        req = urllib.request.Request(url, headers={"User-Agent": "meme-discord-bot/2.0", "Accept": "text/html,application/rss+xml"})
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "meme-discord-bot/2.0", "Accept": "text/html,application/rss+xml"},
+        )
         try:
             with urllib.request.urlopen(req, timeout=18) as resp:
                 html = resp.read().decode("utf-8", errors="ignore")
@@ -3003,30 +3078,76 @@ def scrape_xbtscout_cas() -> list[str]:
     if not html:
         print("xbtscout scrape: no page")
         return []
-    found = []
+
+    # Prefer RSS <item> blocks with pubDate
+    items = re.findall(r"<item>(.*?)</item>", html, flags=re.I | re.S)
+    found_pairs: list[tuple[str, str | None]] = []  # ca, posted_at iso
+    if items:
+        for block in items:
+            pub = None
+            mpub = re.search(r"<pubDate>(.*?)</pubDate>", block, flags=re.I | re.S)
+            if mpub:
+                raw_pub = re.sub(r"<[^>]+>", "", mpub.group(1)).strip()
+                try:
+                    # RFC 2822-ish
+                    from email.utils import parsedate_to_datetime
+                    pub = parsedate_to_datetime(raw_pub).astimezone(timezone.utc).isoformat()
+                except Exception:
+                    pub = raw_pub or None
+            for m in ca_re.finditer(block):
+                ca = m.group(0).lower()
+                if ca in SKIP_CA:
+                    continue
+                found_pairs.append((ca, pub))
+    else:
+        for m in ca_re.finditer(html):
+            ca = m.group(0).lower()
+            if ca in SKIP_CA:
+                continue
+            found_pairs.append((ca, None))
+
+    # dedupe keep first (newest in RSS)
     seen = set()
-    for m in ca_re.finditer(html):
-        ca = m.group(0).lower()
-        if ca in SKIP_CA or ca in seen:
+    ordered: list[tuple[str, str | None]] = []
+    for ca, pub in found_pairs:
+        if ca in seen:
             continue
         seen.add(ca)
-        found.append(ca)
-    added = 0
+        ordered.append((ca, pub))
+
     now = datetime.now(timezone.utc).isoformat()
-    new_rows = []
-    for ca in found:
-        if ca in have:
-            continue
-        new_rows.append({"ca": ca, "source_url_or_text_snip": "nitter_xbtscout", "chain_guess": "robinhood", "date": now, "page": 0})
-        have.add(ca)
-        added += 1
+    out_recs: list[dict] = []
+    new_rows: list[dict] = []
+    for ca, pub in ordered:
+        is_new = ca not in have
+        posted_at = pub or (have.get(ca) or {}).get("posted_at") or (have.get(ca) or {}).get("date")
+        rec = {
+            "ca": ca,
+            "source_url_or_text_snip": "nitter_xbtscout",
+            "chain_guess": "robinhood",
+            "date": (have.get(ca) or {}).get("date") or now,
+            "posted_at": posted_at or now,
+            "page": 0,
+            "is_new": is_new,
+        }
+        out_recs.append(rec)
+        if is_new:
+            store = {k: v for k, v in rec.items() if k != "is_new"}
+            new_rows.append(store)
+            have[ca] = store
     if new_rows:
+        # newest first then old
+        merged = new_rows + [have[c] for c in have if c not in {r["ca"] for r in new_rows}]
+        # unique
+        uniq = {}
+        for r in merged:
+            uniq[r["ca"]] = r
         cas_path.write_text(
-            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in (new_rows + rows)),
+            "".join(json.dumps(uniq[c], ensure_ascii=False) + chr(10) for c in uniq),
             encoding="utf-8",
         )
-    print(f"xbtscout scrape new={added} page_cas={len(found)} total={len(have)}")
-    return [r["ca"] for r in new_rows]
+    print(f"xbtscout scrape new={len(new_rows)} page_cas={len(ordered)} total={len(have)}")
+    return out_recs
 
 
 def harvest_xbtscout_wallets(
@@ -3034,20 +3155,28 @@ def harvest_xbtscout_wallets(
     max_tokens: int | None = None,
     only_cas: list[str] | None = None,
 ) -> int:
-    """GMGN smart_degen on newly scraped xbtscout CAs only (no 261 backlog drain)."""
+    """GMGN early/pre-post buyers on xbtscout CAs (RH). Prefer wallets active before post time."""
     write_gmgn_dotenv()
-    max_n = int(max_tokens if max_tokens is not None else os.environ.get("XBTSCOUT_MAX_TOKENS", "1"))
-    new_cas = [(c or "").lower() for c in (only_cas or []) if str(c).lower().startswith("0x")]
-    if not new_cas:
+    max_n = int(max_tokens if max_tokens is not None else os.environ.get("XBTSCOUT_MAX_TOKENS", "3"))
+    posts: list[dict] = []
+    if only_cas:
+        for c in only_cas:
+            ca = (c or "").lower()
+            if ca.startswith("0x"):
+                posts.append({"ca": ca, "posted_at": None, "is_new": True})
+    else:
         try:
-            new_cas = scrape_xbtscout_cas()
+            posts = scrape_xbtscout_posts()
         except Exception as e:
             print(f"xbtscout scrape err {type(e).__name__}", file=sys.stderr)
-            new_cas = []
-    if not new_cas:
-        print("harvest-xbtscout: no new CAs")
+            posts = []
+    # prefer new posts; fall back to recent known if none new
+    batch = [p for p in posts if p.get("is_new")][:max_n]
+    if not batch:
+        batch = posts[:max_n]
+    if not batch:
+        print("harvest-xbtscout: no CAs")
         return 0
-    batch = [{"ca": c} for c in new_cas[:max_n]]
     cli = shutil.which("gmgn-cli")
     if not cli:
         print("harvest-xbtscout skip: gmgn-cli missing", file=sys.stderr)
@@ -3115,6 +3244,37 @@ def harvest_xbtscout_wallets(
             tagset = {str(t).lower() for t in tags if t}
             if not (tagset & wanted) and "smart_degen" not in tagset:
                 tagset.add("smart_degen")  # endpoint already filtered
+            # Pre-post / early: first buy or last active before xbtscout post
+            posted_at = rec.get("posted_at")
+            buy_ts = _num(
+                r.get("buy_timestamp")
+                or r.get("first_buy_time")
+                or r.get("start_holding_at")
+                or r.get("last_active_timestamp")
+                or r.get("timestamp")
+            )
+            pre_post = False
+            if posted_at and buy_ts:
+                try:
+                    from email.utils import parsedate_to_datetime
+                    try:
+                        post_dt = datetime.fromisoformat(str(posted_at).replace("Z", "+00:00"))
+                    except Exception:
+                        post_dt = parsedate_to_datetime(str(posted_at))
+                    post_ts = post_dt.timestamp()
+                    bt = float(buy_ts)
+                    if bt > 1e12:
+                        bt /= 1000.0
+                    # bought within 6h before post, or up to 2m after (same candle)
+                    if (post_ts - 6 * 3600) <= bt <= (post_ts + 120):
+                        pre_post = True
+                        tagset.add("xbtscout_pre_post")
+                        tagset.add("xbtscout_early")
+                except Exception:
+                    pass
+            if not pre_post:
+                # still mark as xbtscout scout wallet; early if profit-ranked smart
+                tagset.add("xbtscout_gmgn")
             pnl = _num(r.get("profit") or r.get("realized_profit") or r.get("total_profit"))
             if pnl is not None and pnl <= 0:
                 continue
@@ -3145,13 +3305,31 @@ def harvest_xbtscout_wallets(
     now = datetime.now(timezone.utc).isoformat()
     for addr, w in found.items():
         pnl = w.get("gmgn_pnl_usd")
+        gtags = [str(x) for x in (w.get("gmgn_tags") or [])]
+        is_pre = "xbtscout_pre_post" in gtags or "xbtscout_early" in gtags
+        src_add = ["xbtscout_gmgn"]
+        if is_pre:
+            src_add.extend(["xbtscout_pre_post", "xbtscout_early"])
         if addr in existing:
             o = existing[addr]
             srcs = list(o.get("source_endpoints") or [])
-            if "xbtscout_gmgn" not in srcs:
-                srcs.append("xbtscout_gmgn")
+            changed = False
+            for s in src_add:
+                if s not in srcs:
+                    srcs.append(s)
+                    changed = True
+            if changed:
                 o["source_endpoints"] = srcs
                 tagged += 1
+            tags = list(o.get("tags") or [])
+            for s in gtags:
+                if s not in tags:
+                    tags.append(s)
+                    changed = True
+            if is_pre and "xbtscout_early" not in tags:
+                tags.append("xbtscout_early")
+            o["tags"] = tags
+            o["gmgn_tags"] = list({*(o.get("gmgn_tags") or []), *gtags})
             if pnl and (not o.get("realized_pnl_usd") or float(o.get("realized_pnl_usd") or 0) <= 0):
                 o["realized_pnl_usd"] = pnl
                 o["pass_pnl"] = True
@@ -3163,10 +3341,12 @@ def harvest_xbtscout_wallets(
             "realized_pnl_usd": rp,
             "pass_pnl": True,
             "gmgn_pnl_usd": pnl,
-            "gmgn_tags": w.get("gmgn_tags") or ["smart_degen"],
-            "source_endpoints": ["xbtscout_gmgn"],
+            "gmgn_tags": gtags or ["smart_degen"],
+            "tags": gtags + (["xbtscout_early"] if is_pre else []),
+            "source_endpoints": src_add,
             "source_ca": w.get("source_ca"),
             "collected_at": now,
+            "chain": "robinhood",
         }
         added += 1
     watch_path.parent.mkdir(parents=True, exist_ok=True)
