@@ -110,8 +110,20 @@ MIN_HOLDERS = int(os.environ.get("MIN_HOLDERS", "80"))
 HOLDERS_REQUIRED = (os.environ.get("HOLDERS_REQUIRED") or "0").strip().lower() in ("1", "true", "yes")
 MIN_WALLET_QUALITY = float(os.environ.get("MIN_WALLET_QUALITY", "1.0"))  # need ≥1 wallet scoring ≥ this
 MIN_AVG_WALLET_QUALITY = float(os.environ.get("MIN_AVG_WALLET_QUALITY", "0.5"))
-MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # skip if younger than 15m
-MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "21600"))  # skip if older than 6h (0=off)
+MIN_TOKEN_AGE_SEC = int(os.environ.get("MIN_TOKEN_AGE_SEC", "900"))  # legacy floor
+MAX_TOKEN_AGE_SEC = int(os.environ.get("MAX_TOKEN_AGE_SEC", "604800"))  # 7d hard cap (0=off)
+# Playbook windows (sec)
+SET1_MIN_AGE_SEC = int(os.environ.get("SET1_MIN_AGE_SEC", "1800"))  # 30m
+SET1_MAX_AGE_SEC = int(os.environ.get("SET1_MAX_AGE_SEC", "172800"))  # 48h
+SET2_MIN_AGE_SEC = int(os.environ.get("SET2_MIN_AGE_SEC", "172800"))  # 48h
+SET2_MAX_AGE_SEC = int(os.environ.get("SET2_MAX_AGE_SEC", "604800"))  # 7d
+SET1_MIN_PUMP_PCT = float(os.environ.get("SET1_MIN_PUMP_PCT", "40"))  # first leg
+SET1_CORR_M5_MAX = float(os.environ.get("SET1_CORR_M5_MAX", "25"))  # not still parabolic on m5
+SET2_MIN_DUMP_PCT = float(os.environ.get("SET2_MIN_DUMP_PCT", "-50"))  # h24 ≤ this (drawdown)
+SET2_MAX_M5_ABS = float(os.environ.get("SET2_MAX_M5_ABS", "10"))  # sideways
+SET2_MAX_H1_ABS = float(os.environ.get("SET2_MAX_H1_ABS", "30"))
+SET2_MIN_VOLUME_H24 = float(os.environ.get("SET2_MIN_VOLUME_H24", "8000"))
+PLAYBOOK_REQUIRED = (os.environ.get("PLAYBOOK_REQUIRED") or "1").strip().lower() in ("1", "true", "yes")
 LP_LOCK_MIN = 0.01  # locked+burned share of LP
 # LP burn/lock is advisory by default (RH UniV3 often reports locked=0).
 # Set LP_LOCK_REQUIRED=1 to hard-fail unlocked LP again.
@@ -476,6 +488,114 @@ def wallet_quality_score(meta: dict | None) -> float:
     return round(score, 3)
 
 
+
+def _pair_age_sec(safety: dict) -> float | None:
+    for key in ("token_age_sec", "age_sec", "pair_age_sec"):
+        if safety.get(key) is not None:
+            try:
+                return float(safety[key])
+            except (TypeError, ValueError):
+                pass
+    if safety.get("pair_created_at_ms"):
+        try:
+            import time as _time
+            return max(0.0, _time.time() - float(safety["pair_created_at_ms"]) / 1000.0)
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def classify_playbook(safety: dict) -> tuple[str | None, list[str]]:
+    """Return (set1|set2|None, reason bits). OR of two entry playbooks."""
+    notes: list[str] = []
+    age = _pair_age_sec(safety)
+    if age is None:
+        return None, ["age_na"]
+
+    def _f(key):
+        try:
+            v = safety.get(key)
+            return float(v) if v is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    pcm5 = _f("price_change_m5")
+    pch1 = _f("price_change_h1")
+    pch6 = _f("price_change_h6")
+    pch24 = _f("price_change_h24")
+    vol24 = _f("volume_h24")
+    bm = safety.get("buys_m5")
+    sm = safety.get("sells_m5")
+    try:
+        bm_i = int(bm) if bm is not None else None
+        sm_i = int(sm) if sm is not None else None
+    except (TypeError, ValueError):
+        bm_i = sm_i = None
+
+    try:
+        s1_lo = float(os.environ.get("SET1_MIN_AGE_SEC", str(SET1_MIN_AGE_SEC)))
+        s1_hi = float(os.environ.get("SET1_MAX_AGE_SEC", str(SET1_MAX_AGE_SEC)))
+        s2_lo = float(os.environ.get("SET2_MIN_AGE_SEC", str(SET2_MIN_AGE_SEC)))
+        s2_hi = float(os.environ.get("SET2_MAX_AGE_SEC", str(SET2_MAX_AGE_SEC)))
+        min_pump = float(os.environ.get("SET1_MIN_PUMP_PCT", str(SET1_MIN_PUMP_PCT)))
+        corr_m5 = float(os.environ.get("SET1_CORR_M5_MAX", str(SET1_CORR_M5_MAX)))
+        dump_need = float(os.environ.get("SET2_MIN_DUMP_PCT", str(SET2_MIN_DUMP_PCT)))
+        flat_m5 = float(os.environ.get("SET2_MAX_M5_ABS", str(SET2_MAX_M5_ABS)))
+        flat_h1 = float(os.environ.get("SET2_MAX_H1_ABS", str(SET2_MAX_H1_ABS)))
+        s2_vol = float(os.environ.get("SET2_MIN_VOLUME_H24", str(SET2_MIN_VOLUME_H24)))
+    except (TypeError, ValueError):
+        return None, ["playbook_env_bad"]
+
+    # --- Set 1: fresh story coin after first pump + correction → reversal ---
+    if s1_lo <= age <= s1_hi:
+        pump_legs = [x for x in (pch1, pch6, pch24) if x is not None]
+        had_pump = any(x >= min_pump for x in pump_legs) if pump_legs else False
+        # correction: m5 cooled (not parabolic) OR h1 much cooler than h6/h24
+        cooled = False
+        if pcm5 is not None and pcm5 <= corr_m5:
+            cooled = True
+        if pch1 is not None and pch24 is not None and pch24 >= min_pump and pch1 < pch24 * 0.5:
+            cooled = True
+        # reversal: buys > sells on m5 and m5 turning up
+        reversing = False
+        if bm_i is not None and sm_i is not None and bm_i > sm_i and pcm5 is not None and pcm5 > 0:
+            reversing = True
+        if had_pump and cooled and reversing:
+            notes.append(f"set1_age={int(age)}s pump/corr/rev")
+            return "set1", notes
+        notes.append(
+            f"set1_miss pump={had_pump} cool={cooled} rev={reversing} age={int(age)}s"
+        )
+
+    # --- Set 2: 48h–7d survivor, deep dump, real vol, sideways base ---
+    if s2_lo <= age <= s2_hi:
+        dumped = pch24 is not None and pch24 <= dump_need
+        vol_ok = vol24 is not None and vol24 >= s2_vol
+        side = True
+        if pcm5 is not None and abs(pcm5) > flat_m5:
+            side = False
+        if pch1 is not None and abs(pch1) > flat_h1:
+            side = False
+        # some two-way activity if we have tape
+        twoway = True
+        if bm_i is not None and sm_i is not None and (bm_i + sm_i) >= 6:
+            twoway = sm_i >= 1 and bm_i >= 1
+        if dumped and vol_ok and side and twoway:
+            notes.append(f"set2_age={int(age)}s dump={pch24} vol={vol24}")
+            return "set2", notes
+        notes.append(
+            f"set2_miss dump={dumped} vol={vol_ok} side={side} twoway={twoway} age={int(age)}s"
+        )
+
+    if age < s1_lo:
+        notes.append(f"too_new_for_sets={int(age)}s")
+    elif age > s2_hi:
+        notes.append(f"too_old_for_sets={int(age)}s")
+    else:
+        notes.append(f"in_gap_or_miss age={int(age)}s")
+    return None, notes
+
+
 def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: list[float]) -> list[str]:
     """Notify gates: graduated + m5 vol + anti-spike + volume/holders/buys/quality."""
     fails: list[str] = []
@@ -544,34 +664,26 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
             fails.append(f"pre_grad_volume_m5={vol_m5_f or 0:.0f}<{pre_m5:.0f}")
 
 
-    # Launch window: not too fresh, not too stale (pair age)
-    try:
-        min_age = float(os.environ.get("MIN_TOKEN_AGE_SEC", str(MIN_TOKEN_AGE_SEC)))
-    except (TypeError, ValueError):
-        min_age = float(MIN_TOKEN_AGE_SEC)
-    try:
-        max_age = float(os.environ.get("MAX_TOKEN_AGE_SEC", str(MAX_TOKEN_AGE_SEC)))
-    except (TypeError, ValueError):
-        max_age = float(MAX_TOKEN_AGE_SEC)
-    age_sec = None
-    for key in ("token_age_sec", "age_sec", "pair_age_sec"):
-        if safety.get(key) is not None:
-            try:
-                age_sec = float(safety[key])
-                break
-            except (TypeError, ValueError):
-                pass
-    if age_sec is None and safety.get("pair_created_at_ms"):
+    # Dual playbook (set1 reversal / set2 survivor base) — primary age logic
+    playbook, pb_notes = classify_playbook(safety)
+    safety["_playbook"] = playbook
+    safety["_playbook_notes"] = pb_notes
+    if env_bool("PLAYBOOK_REQUIRED", PLAYBOOK_REQUIRED):
+        if playbook is None:
+            fails.append("no_playbook:" + (pb_notes[0] if pb_notes else "miss"))
+    else:
+        # legacy soft floor/ceiling only
+        age_sec = _pair_age_sec(safety)
         try:
-            import time as _time
-            age_sec = max(0.0, _time.time() - float(safety["pair_created_at_ms"]) / 1000.0)
+            min_age = float(os.environ.get("MIN_TOKEN_AGE_SEC", str(MIN_TOKEN_AGE_SEC)))
+            max_age = float(os.environ.get("MAX_TOKEN_AGE_SEC", str(MAX_TOKEN_AGE_SEC)))
         except (TypeError, ValueError):
-            age_sec = None
-    if age_sec is not None:
-        if min_age > 0 and age_sec < min_age:
-            fails.append(f"launch_too_new={int(age_sec)}s<{int(min_age)}s")
-        if max_age > 0 and age_sec > max_age:
-            fails.append(f"launch_too_old={int(age_sec)}s>{int(max_age)}s")
+            min_age, max_age = float(MIN_TOKEN_AGE_SEC), float(MAX_TOKEN_AGE_SEC)
+        if age_sec is not None:
+            if min_age > 0 and age_sec < min_age:
+                fails.append(f"launch_too_new={int(age_sec)}s<{int(min_age)}s")
+            if max_age > 0 and age_sec > max_age:
+                fails.append(f"launch_too_old={int(age_sec)}s>{int(max_age)}s")
 
     # Liquidity axis (hard): absolute liq + ratio already in heat_gate; reinforce here
     try:
@@ -2232,6 +2344,11 @@ def build_embed(
             "value": f"best {max(qscores):.1f} / avg {sum(qscores)/len(qscores):.1f}",
             "inline": True,
         })
+    pb = safety.get("_playbook")
+    if pb == "set1":
+        fields.append({"name": "セット", "value": "①初動調整→反転", "inline": True})
+    elif pb == "set2":
+        fields.append({"name": "セット", "value": "②サバイバル整理", "inline": True})
 
     return {
         "title": title[:256],
