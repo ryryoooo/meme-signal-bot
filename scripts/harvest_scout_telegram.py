@@ -15,7 +15,10 @@ Env:
 Writes:
   rh-wallets/raw/scout_tg_posts.jsonl
   rh-wallets/raw/scout_tg_trunc.jsonl
+  rh-wallets/raw/scout_tg_hits.jsonl
   merges resolved full addrs into WATCHLIST_PATH (no wipe)
+
+Deep harvest tip: SCOUT_TG_PAGES=40..80 (stops early on 3 stale pages).
 """
 from __future__ import annotations
 
@@ -27,6 +30,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from html import unescape
@@ -36,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "rh-wallets" / "raw"
 POSTS_PATH = RAW_DIR / "scout_tg_posts.jsonl"
 TRUNC_PATH = RAW_DIR / "scout_tg_trunc.jsonl"
+HITS_PATH = RAW_DIR / "scout_tg_hits.jsonl"
 RESOLVE_CACHE = RAW_DIR / "scout_tg_resolve_cache.jsonl"
 BASE_URL = "https://t.me/s/scoutrobinhood"
 UA = "Mozilla/5.0 (compatible; ScoutTGHarvester/1.0; +https://github.com/meme-foundation)"
@@ -52,6 +57,7 @@ TRUNC_PLAIN_RE = re.compile(
     re.I,
 )
 TICKER_RE = re.compile(r"EARLY\s+CALL\s*[—\-–]\s*\$?([A-Za-z0-9_]{1,32})", re.I)
+HIT_RE = re.compile(r"\$?([A-Za-z0-9_]{1,32})\s+hit\s+([\d.]+)\s*[xX]", re.I)
 MSG_SPLIT_RE = re.compile(
     r'<div[^>]*class="tgme_widget_message[^"]*"[^>]*data-post="scoutrobinhood/(\d+)"[^>]*>',
     re.I,
@@ -222,16 +228,61 @@ def parse_message(msg_id: str, chunk: str) -> dict | None:
     }
 
 
+
+def parse_hit(msg_id: str, chunk: str) -> dict | None:
+    """Parse "$TICKER hit Nx" posts for token performance context."""
+    text_m = re.search(
+        r'class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)</div>',
+        chunk,
+        re.I,
+    )
+    if not text_m:
+        return None
+    plain = html_to_plain(text_m.group(1))
+    up = plain.upper()
+    if "HIT" not in up or "EARLY CALL" in up:
+        return None
+    hm = HIT_RE.search(plain)
+    if not hm:
+        hm = re.search(
+            r"\$([A-Za-z0-9_]{1,32})[^\n]{0,40}?hit\s+([\d.]+)\s*[xX]",
+            plain,
+            re.I,
+        )
+    if not hm:
+        return None
+    try:
+        mult = float(hm.group(2))
+    except ValueError:
+        mult = None
+    dt_m = re.search(r'datetime="([^"]+)"', chunk)
+    return {
+        "msg_id": str(msg_id),
+        "kind": "hit",
+        "posted_at": dt_m.group(1) if dt_m else None,
+        "ticker": hm.group(1).upper(),
+        "hit_mult": mult,
+        "token_ca": extract_token_ca(chunk),
+        "chain": "robinhood",
+        "source_url": f"https://t.me/scoutrobinhood/{msg_id}",
+        "scraped_at": now_iso(),
+        "plain_snip": plain[:300],
+    }
+
+
 def fetch_page(url: str, timeout: float = 45.0) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read().decode("utf-8", errors="replace")
 
 
-def scrape_pages(n_pages: int) -> list[dict]:
+def scrape_pages(n_pages: int) -> tuple[list[dict], list[dict]]:
+    """Walk ?before= pages. Returns (early_call_posts, hit_posts)."""
     posts: dict[str, dict] = {}
+    hits: dict[str, dict] = {}
     url = BASE_URL
     before: str | None = None
+    stale = 0
     for page in range(max(1, n_pages)):
         if before:
             url = f"{BASE_URL}?before={before}"
@@ -245,6 +296,7 @@ def scrape_pages(n_pages: int) -> list[dict]:
             print(f"scout_tg page={page} no messages")
             break
         min_id = None
+        new_early = new_hits = 0
         for i, m in enumerate(matches):
             msg_id = m.group(1)
             start = m.start()
@@ -259,17 +311,34 @@ def scrape_pages(n_pages: int) -> list[dict]:
             rec = parse_message(msg_id, chunk)
             if rec and rec.get("msg_id"):
                 prev = posts.get(rec["msg_id"])
+                if prev is None:
+                    new_early += 1
                 if prev is None or len(rec.get("live_buys") or []) >= len(prev.get("live_buys") or []):
                     posts[rec["msg_id"]] = rec
+                continue
+            hit = parse_hit(msg_id, chunk)
+            if hit and hit.get("msg_id"):
+                if hit["msg_id"] not in hits:
+                    new_hits += 1
+                hits[hit["msg_id"]] = hit
         print(
-            f"scout_tg page={page} msgs={len(matches)} early={sum(1 for _ in posts)} before={before}"
+            f"scout_tg page={page} msgs={len(matches)} early={len(posts)} hits={len(hits)} "
+            f"new_early={new_early} new_hits={new_hits} before={before}"
         )
+        if new_early == 0 and new_hits == 0:
+            stale += 1
+            if stale >= 3:
+                print(f"scout_tg stop: {stale} stale pages")
+                break
+        else:
+            stale = 0
         if min_id is None:
             break
         before = str(min_id)
-        time.sleep(0.6)
-    # newest first
-    return sorted(posts.values(), key=lambda r: int(r.get("msg_id") or 0), reverse=True)
+        time.sleep(0.55)
+    early = sorted(posts.values(), key=lambda r: int(r.get("msg_id") or 0), reverse=True)
+    hit_list = sorted(hits.values(), key=lambda r: int(r.get("msg_id") or 0), reverse=True)
+    return early, hit_list
 
 
 def load_jsonl_map(path: Path, key: str = "address") -> dict[str, dict]:
@@ -348,6 +417,26 @@ def persist_posts(posts: list[dict]) -> tuple[int, int]:
             )
     write_jsonl(TRUNC_PATH, trunc_rows)
     return len(ordered), len(trunc_rows)
+
+
+def persist_hits(hits: list[dict]) -> int:
+    existing: dict[str, dict] = {}
+    if HITS_PATH.exists():
+        for line in HITS_PATH.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                o = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            mid = str(o.get("msg_id") or "")
+            if mid:
+                existing[mid] = o
+    for h in hits:
+        existing[str(h["msg_id"])] = h
+    ordered = sorted(existing.values(), key=lambda r: int(r.get("msg_id") or 0), reverse=True)
+    write_jsonl(HITS_PATH, ordered)
+    return len(ordered)
 
 
 def gmgn_raw(args: list[str], timeout: int = 90) -> tuple[object | None, str | None]:
@@ -462,6 +551,7 @@ def iter_known_addresses() -> set[str]:
         ROOT / "rh-wallets" / "wallets.jsonl",
         ROOT / "rh-wallets" / "wallets_onchain.jsonl",
         ROOT / "rh-wallets" / "wallets_scout_ranked.jsonl",
+        ROOT / "rh-wallets" / "wallets_ranked_all.jsonl",
         ROOT / "fomo-wallets" / "wallets_evm.jsonl",
         ROOT / "fomo-wallets" / "leaderboard.jsonl",
         ROOT / "arc-wallets" / "wallets.jsonl",
@@ -543,53 +633,70 @@ def resolve_from_known(trunc_rows: list[dict], known: set[str]) -> list[dict]:
     return out
 
 
-def fetch_blockscout_addrs(token_ca: str, max_pages: int = 3) -> list[str]:
-    """Best-effort RH Blockscout holders/transfers (often CF-blocked on box; may work on GHA)."""
+def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[str]:
+    """Best-effort RH Blockscout holders/transfers with pagination (GHA-friendly)."""
+    if max_pages is None:
+        max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "8"))
     hosts = [
         os.environ.get("RH_BLOCKSCOUT_API_V2", "https://robinhoodchain.blockscout.com/api/v2"),
         "https://api.blockscout.com/4663/api/v2",
     ]
     addrs: list[str] = []
     seen: set[str] = set()
+
+    def _absorb(items: list) -> None:
+        for it in items:
+            if not isinstance(it, dict):
+                continue
+            cands = []
+            for key in ("address", "from", "to", "token_holder"):
+                v = it.get(key)
+                if isinstance(v, dict):
+                    cands.append(v.get("hash") or v.get("address"))
+                elif isinstance(v, str):
+                    cands.append(v)
+            for a in cands:
+                if isinstance(a, str) and a.startswith("0x") and len(a) >= 42:
+                    al = a.lower()[:42]
+                    if al not in seen:
+                        seen.add(al)
+                        addrs.append(al)
+
     for host in hosts:
+        got_any = False
         for kind in ("holders", "transfers"):
             url = f"{host.rstrip('/')}/tokens/{token_ca}/{kind}"
             if kind == "transfers":
                 url += "?type=token_transfer"
-            try:
-                req = urllib.request.Request(
-                    url, headers={"User-Agent": UA, "Accept": "application/json"}
-                )
-                with urllib.request.urlopen(req, timeout=25) as resp:
-                    raw = resp.read().decode("utf-8", errors="replace")
-                if raw.lstrip().startswith("<"):
-                    continue
-                data = json.loads(raw)
-            except Exception:
-                continue
-            items = data.get("items") if isinstance(data, dict) else None
-            if not isinstance(items, list):
-                continue
-            for it in items:
-                if not isinstance(it, dict):
-                    continue
-                cands = []
-                for key in ("address", "from", "to", "token_holder"):
-                    v = it.get(key)
-                    if isinstance(v, dict):
-                        cands.append(v.get("hash") or v.get("address"))
-                    elif isinstance(v, str):
-                        cands.append(v)
-                for a in cands:
-                    if isinstance(a, str) and a.startswith("0x") and len(a) >= 42:
-                        al = a.lower()[:42]
-                        if al not in seen:
-                            seen.add(al)
-                            addrs.append(al)
-            if addrs:
-                return addrs
+            for _page in range(max(1, max_pages)):
+                try:
+                    req = urllib.request.Request(
+                        url, headers={"User-Agent": UA, "Accept": "application/json"}
+                    )
+                    with urllib.request.urlopen(req, timeout=25) as resp:
+                        raw = resp.read().decode("utf-8", errors="replace")
+                    if raw.lstrip().startswith("<"):
+                        break
+                    data = json.loads(raw)
+                except Exception:
+                    break
+                items = data.get("items") if isinstance(data, dict) else None
+                if not isinstance(items, list) or not items:
+                    break
+                before = len(addrs)
+                _absorb(items)
+                if len(addrs) > before:
+                    got_any = True
+                nxt = data.get("next_page_params") if isinstance(data, dict) else None
+                if not nxt:
+                    break
+                q = urllib.parse.urlencode({k: v for k, v in nxt.items() if v is not None})
+                base = f"{host.rstrip('/')}/tokens/{token_ca}/{kind}"
+                url = base + "?" + q
+                time.sleep(0.2)
+        if got_any:
+            return addrs
     return addrs
-
 
 def resolve_truncs(
     trunc_rows: list[dict],
@@ -985,12 +1092,13 @@ def main() -> int:
         watch_path = ROOT / watch_path
 
     print(f"scout_tg scrape pages={pages} resolve={do_resolve} cap={vet_cap}")
-    posts = scrape_pages(pages)
+    posts, hits = scrape_pages(pages)
     n_posts, n_trunc = persist_posts(posts)
+    n_hits = persist_hits(hits)
     n_early = sum(1 for p in posts if p.get("live_buys"))
     n_with_ca = sum(1 for p in posts if p.get("token_ca"))
     print(
-        f"scout_tg scraped early_posts={n_early} with_ca={n_with_ca} "
+        f"scout_tg scraped early_posts={n_early} with_ca={n_with_ca} hits={n_hits} "
         f"persisted_posts={n_posts} trunc_rows={n_trunc}"
     )
 
@@ -1027,8 +1135,10 @@ def main() -> int:
         json.dumps(
             {
                 "ok": True,
+                "pages": pages,
                 "posts": n_posts,
                 "early": n_early,
+                "hits": n_hits,
                 "trunc": n_trunc,
                 "resolved": resolved_n,
                 "added": added,
