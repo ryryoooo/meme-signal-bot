@@ -12,7 +12,7 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - **紙トレード**（仮想 **$300**）: 投稿時に仮想ポジション。FOUNDATION準拠。 Discordは `DISCORD_PAPER_WEBHOOK_URL`（紙）と `DISCORD_WEBHOOK_URL`（シグナル）に分離
   - 同時最大5本 / サイズ20%（n≥3は30%）/ +100%半分 / −40%ストップ / 週エントリー・連敗キャップなし（既定）
   - `paper_book.jsonl` + `paper_summary.md`（エクイティ曲線）を Actions cache / artifact で永続
-- **Arc LIVE**（`signal-arc.yml` のみ）: `LIVE_TRADING=1` で gmgn-cli swap（USDC→token / 利確・損切りは自前プロセッサ）。紙と同じリスク上限。キーは Actions に置かない（`GMGN_API_KEY` + `GMGN_ALLOW_AUTOMATED_TRADES` のみ）。**RH は紙/通知のみ**（`signal.yml` は `LIVE_TRADING=0`）
+- **Arc LIVE**（box `live_tick`）: Uniswap V4 Universal Router 直swap（`arc_swap/swap_v4.cjs`、GMGN swapなし）。USDC→token / 利確・損切りは自前プロセッサ。紙と同じリスク上限。秘密鍵は box card `GMGN_PRIVATE_KEY` のみ（Actions に置かない）。GHA `signal-arc.yml` は `LIVE_TRADING=0`（notify/紙）。**RH は紙/通知のみ**
 - **ATH追いフィルタは未実装**（意図的）
 
 ## チェーン
@@ -30,6 +30,10 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 - 週次: `refresh-wallets.yml` → `python3 bot.py --refresh-wallets`（artifact）
 
 ## X / @xbtscout
+
+新CAは Discord 専用チャンネルへ通知（GMGNアプリリンク付き）。
+チャンネル作成 → Integrations → Webhook → GitHub Secret / box に `DISCORD_XBTSCOUT_WEBHOOK_URL`。
+
 - RHジョブ内で **30分おき** に nitter から新CAを取る（X公式は403）
 - **新しく出たCAだけ** GMGN `smart_degen` を1本。既存261の再スキャンはしない
 - 取れた財布は監視リストへ `xbtscout_gmgn`。キャッシュで永続
@@ -50,10 +54,24 @@ Grok Bot のルーチンには載せない（載せると容量を食う）。�
 | `DISCORD_PAPER_WEBHOOK_URL` | 紙トレード専用（未設定時はシグナル側にフォールバック） |
 | `DISCORD_ARC_PAPER` | Arc紙トレード専用（任意。未設定時は紙Webhookへ） |
 | `DISCORD_ARC_LIVE_WEBHOOK_URL` | Arc **実弾**専用チャンネル（推奨。未設定時は Arcシグナル→紙へフォールバック） |
+| `DISCORD_XBTSCOUT_WEBHOOK_URL` | @xbtscout 新CA専用（未設定時は `DISCORD_WEBHOOK_URL`） |
 | `NANSEN_API_KEY` | `--refresh-wallets` 用。定期pollのenvからは外す |
 | `FOMO_API_KEY` | RHジョブ。`/v2/alerts` を25分以上間隔。未設定ならGMGNのみ |
 
-秘密鍵・ウォレット `PRIVATE_KEY` は Actions に置かない（box のみ）。LIVE は API Key バインド財布 + `GMGN_ALLOW_AUTOMATED_TRADES`。
+秘密鍵・ウォレット `PRIVATE_KEY` / `GMGN_PRIVATE_KEY` は Actions に置かない（box card のみ）。Arc LIVE swap は V4 Universal Router（gmgn-cli swap 不使用）。
+
+## Arc LIVE（box）
+```bash
+# card secrets: GMGN_PRIVATE_KEY (+ Discord webhooks). GMGN_API_KEY still used for signals/danger.
+/workspace/meme-foundation/live-arc/run_live_tick.sh
+# or:
+cd /workspace/meme-foundation/discord-bot
+export LIVE_WALLET_ADDRESS=0x822AFdCc7f1Ec829f4456A3921ff54B4a6dBCfAe
+export LIVE_TICK_DIR=/workspace/meme-foundation/live-arc
+python3 -c 'from load_secrets import load; load(["GMGN_PRIVATE_KEY"])'
+python3 live_tick.py
+```
+Swap path: `live_exec.py` → `node arc_swap/swap_v4.cjs` (UR 2.1.1, Permit2, pool fee/tick discover).
 
 ## セットアップ
 ```bash

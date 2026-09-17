@@ -64,6 +64,7 @@ jobs:
           FOMO_API_KEY: ${{ secrets.FOMO_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}
+          DISCORD_XBTSCOUT_WEBHOOK_URL: ${{ secrets.DISCORD_XBTSCOUT_WEBHOOK_URL }}
           NANSEN_FOR_TRADES: "0"
           LIVE_TRADING: "0"
           ALLOW_GMGN_CLUSTER: "0"
