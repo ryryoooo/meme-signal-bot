@@ -4,21 +4,31 @@
 Env:
   SCOUT_TG_ENABLED=1     master switch (default 1 when run directly)
   SCOUT_TG_PAGES=5       how many ?before= pages to walk
-  SCOUT_TG_RESOLVE=1     call gmgn token traders to expand 0xABCD…WXYZ
-  SCOUT_TG_VET_CAP=40    max GMGN token-traders / portfolio calls this run
+  SCOUT_TG_RESOLVE=1     resolve 0xABCD…WXYZ via local/BS/GMGN
+  SCOUT_TG_VET_CAP=40    max GMGN token-traders calls this run (GHA only)
   SCOUT_TG_MAX_TOKENS=8  max distinct token CAs to query traders for
+  SCOUT_TG_BS_PAGES=20   Blockscout holders/transfers/tokentx page depth
+  SCOUT_TG_BLOCKSCOUT=1  enable Blockscout token-scoped resolve
   SCOUT_TG_ELITE_ONLY=0  if 1, only resolve 💎 elite truncs
-  GMGN_DISABLED=1        skip resolve (box IP ban); scrape still runs
+  SCOUT_TG_SKIP_WELL_RESOLVED=0.8  skip GMGN for tokens with >= this fraction resolved
+  GMGN_DISABLED=1        skip GMGN (box IP ban); local+Blockscout still run
   CHAIN=robinhood
   WATCHLIST_PATH=rh-wallets/wallets.jsonl
+
+Resolve order (unique match only — never invent addresses):
+  1) pair-level resolve cache (prefix|suffix → addr) applied across tokens
+  2) token-scoped unique match (holders/transfers/traders of that token_ca)
+  3) global unique match against expanded local pool
+  4) optional: 2 global hits but only 1 in token set → accept that one
 
 Writes:
   rh-wallets/raw/scout_tg_posts.jsonl
   rh-wallets/raw/scout_tg_trunc.jsonl
   rh-wallets/raw/scout_tg_hits.jsonl
+  rh-wallets/raw/scout_tg_resolve_cache.jsonl
   merges resolved full addrs into WATCHLIST_PATH (no wipe)
 
-Deep harvest tip: SCOUT_TG_PAGES=40..80 (stops early on 3 stale pages).
+Deep harvest tip: SCOUT_TG_PAGES=50+ SCOUT_TG_BS_PAGES=20 (stops early on 3 stale pages).
 """
 from __future__ import annotations
 
@@ -517,10 +527,16 @@ def match_trunc(addr: str, prefix: str, suffix: str) -> bool:
     return a.startswith(prefix.lower()) and a.endswith(suffix.lower())
 
 
-def load_resolve_cache() -> dict[str, dict]:
-    out: dict[str, dict] = {}
+def pair_key(prefix: str | None, suffix: str | None) -> str:
+    return f"{(prefix or '').lower()}|{(suffix or '').lower()}"
+
+
+def load_resolve_cache() -> tuple[dict[str, dict], dict[str, str]]:
+    """Return (by_trunc_key, pair_to_addr) where pair_to_addr is unique prefix|suffix → address."""
+    by_key: dict[str, dict] = {}
+    pair_addrs: dict[str, set[str]] = {}
     if not RESOLVE_CACHE.exists():
-        return out
+        return by_key, {}
     for line in RESOLVE_CACHE.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
@@ -528,10 +544,21 @@ def load_resolve_cache() -> dict[str, dict]:
             o = json.loads(line)
         except json.JSONDecodeError:
             continue
+        addr = (o.get("address") or "").lower()
+        if not (addr.startswith("0x") and len(addr) == 42):
+            continue
         k = o.get("trunc_key") or o.get("cache_key")
-        if k and o.get("address"):
-            out[str(k)] = o
-    return out
+        if k:
+            by_key[str(k)] = o
+        pk = pair_key(o.get("prefix"), o.get("suffix"))
+        if pk != "|":
+            pair_addrs.setdefault(pk, set()).add(addr)
+        # also accept explicit pair_key field
+        ep = o.get("pair_key")
+        if isinstance(ep, str) and "|" in ep:
+            pair_addrs.setdefault(ep.lower(), set()).add(addr)
+    pair_to_addr = {pk: next(iter(addrs)) for pk, addrs in pair_addrs.items() if len(addrs) == 1}
+    return by_key, pair_to_addr
 
 
 def append_resolve_cache(rows: list[dict]) -> None:
@@ -540,14 +567,75 @@ def append_resolve_cache(rows: list[dict]) -> None:
     RESOLVE_CACHE.parent.mkdir(parents=True, exist_ok=True)
     with RESOLVE_CACHE.open("a", encoding="utf-8") as f:
         for r in rows:
+            if "pair_key" not in r:
+                r = dict(r)
+                r["pair_key"] = pair_key(r.get("prefix"), r.get("suffix"))
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
+def _absorb_addr(out: set[str], a) -> None:
+    if isinstance(a, str) and a.startswith("0x") and len(a) >= 42:
+        out.add(a.lower()[:42])
+
+
+def _absorb_obj_addrs(out: set[str], o: dict) -> None:
+    for k in ("address", "evm", "wallet_address", "walletAddress", "maker", "owner", "from", "to"):
+        v = o.get(k)
+        if isinstance(v, str):
+            _absorb_addr(out, v)
+        elif isinstance(v, dict):
+            _absorb_addr(out, v.get("hash") or v.get("address") or v.get("wallet_address"))
+    mi = o.get("maker_info")
+    if isinstance(mi, dict):
+        _absorb_addr(out, mi.get("address"))
+
+
+def _load_addrs_from_jsonl_path(path: Path, out: set[str]) -> None:
+    try:
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        try:
+            o = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(o, dict):
+            _absorb_obj_addrs(out, o)
+
+
+def _load_addrs_from_json_path(path: Path, out: set[str]) -> None:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    rows: list = []
+    if isinstance(data, list):
+        rows = data
+    elif isinstance(data, dict):
+        for k in ("list", "data", "traders", "holders", "result", "items"):
+            v = data.get(k)
+            if isinstance(v, list):
+                rows = v
+                break
+            if isinstance(v, dict):
+                for k2 in ("list", "traders", "holders", "data", "items"):
+                    if isinstance(v.get(k2), list):
+                        rows = v[k2]
+                        break
+                if rows:
+                    break
+    for r in rows:
+        if isinstance(r, dict):
+            _absorb_obj_addrs(out, r)
+
 
 def iter_known_addresses() -> set[str]:
-    """Local free pool for trunc matching (no API)."""
+    """Expanded local free pool for trunc matching (no API). Includes bak dumps."""
     out: set[str] = set()
-    paths = [
+    fixed = [
         ROOT / "rh-wallets" / "wallets.jsonl",
         ROOT / "rh-wallets" / "wallets_onchain.jsonl",
         ROOT / "rh-wallets" / "wallets_scout_ranked.jsonl",
@@ -555,92 +643,132 @@ def iter_known_addresses() -> set[str]:
         ROOT / "fomo-wallets" / "wallets_evm.jsonl",
         ROOT / "fomo-wallets" / "leaderboard.jsonl",
         ROOT / "arc-wallets" / "wallets.jsonl",
+        ROOT / "arc-wallets" / "wallets_quality.jsonl",
+        ROOT / "arc-wallets" / "wallets_early.jsonl",
         RESOLVE_CACHE,
     ]
-    for path in paths:
-        if not path.exists():
+    for path in fixed:
+        if path.exists() and path.is_file():
+            if path.suffix == ".json":
+                _load_addrs_from_json_path(path, out)
+            else:
+                _load_addrs_from_jsonl_path(path, out)
+
+    # bak / alternate dumps under rh/arc/fomo
+    for folder in (ROOT / "rh-wallets", ROOT / "arc-wallets", ROOT / "fomo-wallets"):
+        if not folder.is_dir():
             continue
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
+        for path in folder.iterdir():
+            if not path.is_file():
                 continue
-            try:
-                o = json.loads(line)
-            except json.JSONDecodeError:
+            name = path.name
+            if name.endswith(".jsonl") or ".bak" in name or name.endswith(".jsonl.bak") or ".bak_" in name:
+                if path.suffix in (".jsonl",) or ".jsonl" in name or name.endswith(".bak") or ".bak_" in name:
+                    # treat as line-json if looks like jsonl/bak of wallets
+                    if path.suffix == ".json":
+                        _load_addrs_from_json_path(path, out)
+                    else:
+                        _load_addrs_from_jsonl_path(path, out)
+
+    # GMGN raw lists + any other raw json/jsonl
+    if RAW_DIR.is_dir():
+        for path in RAW_DIR.iterdir():
+            if not path.is_file():
                 continue
-            for k in ("address", "evm"):
-                a = (o.get(k) or "").lower()
-                if a.startswith("0x") and len(a) >= 42:
-                    out.add(a[:42])
-    for name in ("gmgn_kol_buy.json", "gmgn_track_kol.json"):
-        path = RAW_DIR / name
-        if not path.exists() or path.stat().st_size < 2:
-            continue
+            if path.suffix == ".json":
+                _load_addrs_from_json_path(path, out)
+            elif path.suffix == ".jsonl" or ".bak" in path.name:
+                _load_addrs_from_jsonl_path(path, out)
+    return out
+
+
+def match_hits(pool: set[str] | list[str], prefix: str, suffix: str) -> list[str]:
+    pref, suf = prefix.lower(), suffix.lower()
+    if not pref or not suf:
+        return []
+    hits = [a for a in pool if a.startswith(pref) and a.endswith(suf)]
+    return list(dict.fromkeys(hits))
+
+
+def make_resolve_rec(t: dict, addr: str, source: str, label: str = "") -> dict:
+    pref = (t.get("prefix") or "").lower()
+    suf = (t.get("suffix") or "").lower()
+    return {
+        "cache_key": t.get("trunc_key"),
+        "trunc_key": t.get("trunc_key"),
+        "pair_key": pair_key(pref, suf),
+        "address": addr.lower()[:42],
+        "trunc": t.get("trunc"),
+        "prefix": pref,
+        "suffix": suf,
+        "tier": t.get("tier"),
+        "usd": t.get("usd"),
+        "token_ca": t.get("token_ca"),
+        "ticker": t.get("ticker"),
+        "msg_id": t.get("msg_id"),
+        "posted_at": t.get("posted_at"),
+        "address_label": label or "",
+        "resolved_at": now_iso(),
+        "source": source,
+    }
+
+
+def http_get_json(url: str, timeout: float = 25.0, retries: int = 3) -> tuple[object | None, str | None]:
+    last_err = None
+    for attempt in range(max(1, retries)):
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            continue
-        rows = data if isinstance(data, list) else []
-        if isinstance(data, dict):
-            rows = data.get("list") or data.get("data") or []
-            if isinstance(rows, dict):
-                rows = rows.get("list") or []
-        for r in rows if isinstance(rows, list) else []:
-            if not isinstance(r, dict):
+            req = urllib.request.Request(
+                url, headers={"User-Agent": UA, "Accept": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = resp.read().decode("utf-8", errors="replace")
+            if raw.lstrip().startswith("<"):
+                return None, "html"
+            return json.loads(raw), None
+        except urllib.error.HTTPError as e:
+            last_err = f"http_{e.code}"
+            # 422 = bad query params — don't retry same URL
+            if e.code in (400, 404, 422):
+                return None, last_err
+            if e.code == 429:
+                time.sleep(0.8 * (attempt + 1))
                 continue
-            for k in ("maker", "address", "wallet_address"):
-                a = r.get(k)
-                if isinstance(a, str) and a.startswith("0x") and len(a) >= 42:
-                    out.add(a.lower()[:42])
-            mi = r.get("maker_info")
-            if isinstance(mi, dict):
-                a = mi.get("address")
-                if isinstance(a, str) and a.startswith("0x") and len(a) >= 42:
-                    out.add(a.lower()[:42])
-    return out
+            if e.code in (403, 402, 401):
+                return None, last_err
+            time.sleep(0.35 * (attempt + 1))
+        except Exception as e:
+            last_err = type(e).__name__
+            time.sleep(0.35 * (attempt + 1))
+    return None, last_err or "error"
 
 
-def resolve_from_known(trunc_rows: list[dict], known: set[str]) -> list[dict]:
-    """Unique prefix/suffix match against local address pool."""
-    out: list[dict] = []
-    for t in trunc_rows:
-        pref, suf = (t.get("prefix") or "").lower(), (t.get("suffix") or "").lower()
-        if not pref or not suf:
-            continue
-        hits = [a for a in known if a.startswith(pref) and a.endswith(suf)]
-        uniq = list(dict.fromkeys(hits))
-        if len(uniq) != 1:
-            continue
-        addr = uniq[0]
-        out.append(
-            {
-                "cache_key": t.get("trunc_key"),
-                "trunc_key": t.get("trunc_key"),
-                "address": addr,
-                "trunc": t.get("trunc"),
-                "prefix": pref,
-                "suffix": suf,
-                "tier": t.get("tier"),
-                "usd": t.get("usd"),
-                "token_ca": t.get("token_ca"),
-                "ticker": t.get("ticker"),
-                "msg_id": t.get("msg_id"),
-                "posted_at": t.get("posted_at"),
-                "address_label": "",
-                "resolved_at": now_iso(),
-                "source": "scout_tg_local_cache",
-            }
-        )
-    return out
+# Hosts that returned hard auth/paywall errors this process — skip immediately.
+_BS_DEAD_HOSTS: set[str] = set()
 
 
 def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[str]:
-    """Best-effort RH Blockscout holders/transfers with pagination (GHA-friendly)."""
+    """Deep holders/transfers + etherscan-compat tokentx. Avoid fragile type= filters."""
     if max_pages is None:
-        max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "8"))
-    hosts = [
-        os.environ.get("RH_BLOCKSCOUT_API_V2", "https://robinhoodchain.blockscout.com/api/v2"),
-        "https://api.blockscout.com/4663/api/v2",
+        max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "20"))
+    hosts_v2 = [
+        h
+        for h in [
+            os.environ.get("RH_BLOCKSCOUT_API_V2", "https://robinhoodchain.blockscout.com/api/v2"),
+            "https://api.blockscout.com/4663/api/v2",
+        ]
+        if h and h not in _BS_DEAD_HOSTS
     ]
+    hosts_es = [
+        h
+        for h in [
+            os.environ.get("RH_BLOCKSCOUT_API", "https://robinhoodchain.blockscout.com/api"),
+            "https://api.blockscout.com/4663/api",
+        ]
+        if h and h not in _BS_DEAD_HOSTS
+    ]
+    if not hosts_v2 and not hosts_es:
+        return []
+
     addrs: list[str] = []
     seen: set[str] = set()
 
@@ -649,7 +777,7 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
             if not isinstance(it, dict):
                 continue
             cands = []
-            for key in ("address", "from", "to", "token_holder"):
+            for key in ("address", "from", "to", "token_holder", "owner"):
                 v = it.get(key)
                 if isinstance(v, dict):
                     cands.append(v.get("hash") or v.get("address"))
@@ -662,271 +790,444 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> list[
                         seen.add(al)
                         addrs.append(al)
 
-    for host in hosts:
+    def _paginate_v2(host: str, kind: str, extra_q: str | None = None) -> bool:
+        base = f"{host.rstrip('/')}/tokens/{token_ca}/{kind}"
+        url = base + (("?" + extra_q) if extra_q else "")
+        got = False
+        for _page in range(max(1, max_pages)):
+            data, err = http_get_json(url, timeout=20.0, retries=1)
+            if err in ("http_401", "http_402", "http_403"):
+                _BS_DEAD_HOSTS.add(host)
+                return got
+            if err or not isinstance(data, dict):
+                break
+            items = data.get("items")
+            if not isinstance(items, list) or not items:
+                break
+            before = len(addrs)
+            _absorb(items)
+            if len(addrs) > before:
+                got = True
+            nxt = data.get("next_page_params")
+            if not nxt:
+                break
+            q = urllib.parse.urlencode({k: v for k, v in nxt.items() if v is not None})
+            url = base + "?" + q
+            time.sleep(0.22)
+        return got
+
+    # 1) v2 holders + transfers (no type filter first — type=token_transfer often 422)
+    for host in hosts_v2:
         got_any = False
-        for kind in ("holders", "transfers"):
-            url = f"{host.rstrip('/')}/tokens/{token_ca}/{kind}"
-            if kind == "transfers":
-                url += "?type=token_transfer"
-            for _page in range(max(1, max_pages)):
-                try:
-                    req = urllib.request.Request(
-                        url, headers={"User-Agent": UA, "Accept": "application/json"}
-                    )
-                    with urllib.request.urlopen(req, timeout=25) as resp:
-                        raw = resp.read().decode("utf-8", errors="replace")
-                    if raw.lstrip().startswith("<"):
-                        break
-                    data = json.loads(raw)
-                except Exception:
+        if _paginate_v2(host, "holders"):
+            got_any = True
+        if _paginate_v2(host, "transfers"):
+            got_any = True
+        # soft retry with type only if bare transfers yielded nothing
+        if not got_any:
+            if _paginate_v2(host, "transfers", "type=ERC-20"):
+                got_any = True
+        if got_any:
+            break
+
+    # 2) etherscan-compat tokentx page offsets
+    if len(addrs) < 20:
+        for host in hosts_es:
+            es_got = False
+            for page in range(1, max(1, max_pages) + 1):
+                qs = urllib.parse.urlencode(
+                    {
+                        "module": "account",
+                        "action": "tokentx",
+                        "contractaddress": token_ca,
+                        "page": str(page),
+                        "offset": "100",
+                        "sort": "desc",
+                    }
+                )
+                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=20.0, retries=1)
+                if err in ("http_401", "http_402", "http_403"):
+                    _BS_DEAD_HOSTS.add(host)
                     break
-                items = data.get("items") if isinstance(data, dict) else None
-                if not isinstance(items, list) or not items:
+                if err or not isinstance(data, dict):
+                    break
+                if str(data.get("status")) != "1":
+                    break
+                result = data.get("result") or []
+                if not isinstance(result, list) or not result:
                     break
                 before = len(addrs)
-                _absorb(items)
+                _absorb(result)
                 if len(addrs) > before:
-                    got_any = True
-                nxt = data.get("next_page_params") if isinstance(data, dict) else None
-                if not nxt:
-                    break
-                q = urllib.parse.urlencode({k: v for k, v in nxt.items() if v is not None})
-                base = f"{host.rstrip('/')}/tokens/{token_ca}/{kind}"
-                url = base + "?" + q
-                time.sleep(0.2)
-        if got_any:
-            return addrs
+                    es_got = True
+                time.sleep(0.18)
+            if es_got:
+                break
+
     return addrs
+
+
+class ResolveStats:
+    __slots__ = (
+        "attempted",
+        "token_scoped_hits",
+        "global_hits",
+        "pair_cache_hits",
+        "collisions_skipped",
+        "two_hit_token_accept",
+        "gmgn_calls",
+        "bs_tokens",
+        "unresolved_remaining",
+        "unique_pairs_total",
+        "unique_pairs_resolved",
+    )
+
+    def __init__(self) -> None:
+        self.attempted = 0
+        self.token_scoped_hits = 0
+        self.global_hits = 0
+        self.pair_cache_hits = 0
+        self.collisions_skipped = 0
+        self.two_hit_token_accept = 0
+        self.gmgn_calls = 0
+        self.bs_tokens = 0
+        self.unresolved_remaining = 0
+        self.unique_pairs_total = 0
+        self.unique_pairs_resolved = 0
+
+    def as_dict(self) -> dict:
+        return {k: getattr(self, k) for k in self.__slots__}
+
 
 def resolve_truncs(
     trunc_rows: list[dict],
     call_cap: int,
     max_tokens: int,
     elite_only: bool,
-) -> tuple[dict[str, dict], int, str | None]:
-    """Return (resolved_by_addr, calls_used, err_kind)."""
-    cache = load_resolve_cache()
+) -> tuple[dict[str, dict], int, str | None, ResolveStats]:
+    """Return (resolved_by_addr, calls_used, err_kind, stats).
+
+    Prefer token-scoped unique match, then global unique. Never invent addresses.
+    """
+    stats = ResolveStats()
+    cache, pair_to_addr = load_resolve_cache()
     resolved: dict[str, dict] = {}
-    # seed from cache
-    for k, o in cache.items():
+    new_cache: list[dict] = []
+    # track which trunc_keys / pairs we resolved this run
+    resolved_keys: set[str] = set()
+    # seed addresses from cache
+    for _k, o in cache.items():
         addr = (o.get("address") or "").lower()
         if addr.startswith("0x") and len(addr) == 42:
-            prev = resolved.get(addr)
-            if prev is None:
-                resolved[addr] = dict(o)
-            else:
-                # merge frequency
-                resolved[addr] = _merge_resolved(prev, o)
+            resolved[addr] = _merge_resolved(resolved.get(addr), o)
+            if o.get("trunc_key"):
+                resolved_keys.add(str(o["trunc_key"]))
 
-    # Free local unique matches (watchlist / onchain / fomo / kol raw)
-    pending_for_local = [
-        t
-        for t in trunc_rows
-        if not (elite_only and t.get("tier") != "elite")
-        and (t.get("trunc_key") not in cache or not (cache.get(t.get("trunc_key") or "") or {}).get("address"))
-    ]
-    known = iter_known_addresses()
-    local_hits = resolve_from_known(pending_for_local, known)
-    new_cache: list[dict] = []
-    if local_hits:
-        for rec in local_hits:
-            new_cache.append(rec)
-            resolved[rec["address"]] = _merge_resolved(resolved.get(rec["address"]), rec)
-        append_resolve_cache(local_hits)
-        print(f"scout_tg local_cache resolved_rows={len(local_hits)} addrs={len({r['address'] for r in local_hits})} known_pool={len(known)}")
-    else:
-        print(f"scout_tg local_cache hits=0 known_pool={len(known)}")
-
-    if env_bool("GMGN_DISABLED", False):
-        print("scout_tg GMGN resolve skip: GMGN_DISABLED=1", flush=True)
-        # still try blockscout if enabled
-        if not env_bool("SCOUT_TG_BLOCKSCOUT", True):
-            return resolved, 0, "gmgn_disabled"
-
-    # group pending truncs by token_ca
-    by_ca: dict[str, list[dict]] = {}
-    for t in trunc_rows:
-        if elite_only and t.get("tier") != "elite":
-            continue
-        ca = (t.get("token_ca") or "").lower()
-        if not ca.startswith("0x"):
-            continue
-        ck = t.get("trunc_key") or ""
-        if ck in cache and cache[ck].get("address"):
-            continue
-        by_ca.setdefault(ca, []).append(t)
-
-    # prefer tokens with more elite buys
-    def ca_score(items: list[dict]) -> tuple:
-        n_elite = sum(1 for x in items if x.get("tier") == "elite")
-        n = len(items)
-        return (-n_elite, -n)
-
-    cas_ordered = sorted(by_ca.keys(), key=lambda c: ca_score(by_ca[c]))
-    calls = 0
-    err_kind = None
-    # new_cache already seeded from local hits
-    chain = os.environ.get("CHAIN", "robinhood")
-    gmgn_off = env_bool("GMGN_DISABLED", False)
-
-    if gmgn_off:
-        err_kind = "gmgn_disabled"
-        cas_ordered = []  # skip GMGN traders
-    for ca in cas_ordered[: max(1, max_tokens)]:
-        if calls >= call_cap:
-            break
-        pending = by_ca[ca]
-        data, err = gmgn_raw(
-            [
-                "token",
-                "traders",
-                "--chain",
-                chain,
-                "--address",
-                ca,
-                "--limit",
-                "100",
-                "--order-by",
-                "profit",
-            ],
-            timeout=90,
-        )
-        calls += 1
-        if err == "rate_limited":
-            print(f"scout_tg traders rate-limited after calls={calls}", file=sys.stderr)
-            err_kind = "rate_limited"
-            break
-        if err:
-            print(f"scout_tg traders fail {ca[:10]}… {err}", file=sys.stderr)
-            err_kind = err
-            # try holders as soft fallback once
-            if calls < call_cap:
-                data2, err2 = gmgn_raw(
-                    [
-                        "token",
-                        "holders",
-                        "--chain",
-                        chain,
-                        "--address",
-                        ca,
-                        "--limit",
-                        "100",
-                    ],
-                    timeout=90,
-                )
-                calls += 1
-                if err2 == "rate_limited":
-                    err_kind = "rate_limited"
-                    break
-                if not err2:
-                    data, err = data2, None
-                else:
-                    continue
-            else:
-                continue
-        rows = extract_traders(data)
-        addrs = []
-        for r in rows:
-            a = trader_addr(r)
-            if a:
-                addrs.append((a, r))
-        print(f"scout_tg traders {ca[:10]}… n={len(addrs)} pending_trunc={len(pending)}")
-        for t in pending:
-            pref, suf = t.get("prefix") or "", t.get("suffix") or ""
-            hits = [a for a, _ in addrs if match_trunc(a, pref, suf)]
-            # unique match only
-            uniq = list(dict.fromkeys(hits))
-            if len(uniq) != 1:
-                continue
-            addr = uniq[0]
-            meta_row = next((r for a, r in addrs if a == addr), {})
-            label = ""
-            mi = meta_row.get("maker_info") if isinstance(meta_row, dict) else None
-            if isinstance(mi, dict):
-                label = str(mi.get("name") or "")
-            rec = {
-                "cache_key": t.get("trunc_key"),
-                "trunc_key": t.get("trunc_key"),
-                "address": addr,
-                "trunc": t.get("trunc"),
-                "prefix": pref,
-                "suffix": suf,
-                "tier": t.get("tier"),
-                "usd": t.get("usd"),
-                "token_ca": ca,
-                "ticker": t.get("ticker"),
-                "msg_id": t.get("msg_id"),
-                "posted_at": t.get("posted_at"),
-                "address_label": label,
-                "resolved_at": now_iso(),
-                "source": "scout_tg",
-            }
-            new_cache.append(rec)
-            resolved[addr] = _merge_resolved(resolved.get(addr), rec)
-        time.sleep(1.0)
-
-    # Blockscout fallback when GMGN rate-limited / disabled (unique match only)
-    if env_bool("SCOUT_TG_BLOCKSCOUT", True) and (
-        err_kind in ("rate_limited", "gmgn_disabled", None) or gmgn_off
-    ):
-        still_pending: dict[str, list[dict]] = {}
-        cached_keys = {r.get("trunc_key") for r in new_cache} | set(cache.keys())
+    def pending_rows() -> list[dict]:
+        out = []
         for t in trunc_rows:
             if elite_only and t.get("tier") != "elite":
                 continue
             ck = t.get("trunc_key") or ""
-            if ck in cached_keys:
+            if ck in resolved_keys:
                 continue
-            ca = (t.get("token_ca") or "").lower()
-            if ca.startswith("0x"):
-                still_pending.setdefault(ca, []).append(t)
-        bs_cas = sorted(
-            still_pending.keys(),
-            key=lambda c: (
-                -sum(1 for x in still_pending[c] if x.get("tier") == "elite"),
-                -len(still_pending[c]),
-            ),
-        )[: max(1, max_tokens)]
-        for ca in bs_cas:
-            if calls >= call_cap:
-                break
+            if ck in cache and cache[ck].get("address"):
+                continue
+            out.append(t)
+        return out
+
+    def accept(t: dict, addr: str, source: str, label: str = "", bucket: str = "global") -> None:
+        nonlocal pair_to_addr
+        rec = make_resolve_rec(t, addr, source, label=label)
+        new_cache.append(rec)
+        resolved[addr] = _merge_resolved(resolved.get(addr), rec)
+        ck = t.get("trunc_key") or ""
+        if ck:
+            resolved_keys.add(ck)
+            cache[ck] = rec
+        pk = pair_key(t.get("prefix"), t.get("suffix"))
+        if pk != "|":
+            # only set if unique / consistent
+            existing = pair_to_addr.get(pk)
+            if existing and existing != addr:
+                return
+            pair_to_addr[pk] = addr
+        if bucket == "token":
+            stats.token_scoped_hits += 1
+        elif bucket == "pair_cache":
+            stats.pair_cache_hits += 1
+        elif bucket == "two_hit":
+            stats.two_hit_token_accept += 1
+            stats.token_scoped_hits += 1
+        else:
+            stats.global_hits += 1
+
+    # --- Pass 0: apply pair-level cache across ALL trunc rows (cross-token) ---
+    for t in pending_rows():
+        pk = pair_key(t.get("prefix"), t.get("suffix"))
+        addr = pair_to_addr.get(pk)
+        if not addr:
+            continue
+        accept(t, addr, "scout_tg_pair_cache", bucket="pair_cache")
+    if stats.pair_cache_hits:
+        print(f"scout_tg pair_cache applied_rows={stats.pair_cache_hits} unique_pairs={len(pair_to_addr)}")
+
+    known = iter_known_addresses()
+    print(f"scout_tg known_pool={len(known)}")
+
+    # --- Pass 1: token-scoped pools (Blockscout first — free / GHA-friendly) ---
+    by_ca: dict[str, list[dict]] = {}
+    for t in pending_rows():
+        ca = (t.get("token_ca") or "").lower()
+        if ca.startswith("0x"):
+            by_ca.setdefault(ca, []).append(t)
+
+    def ca_score(items: list[dict]) -> tuple:
+        n_elite = sum(1 for x in items if x.get("tier") == "elite")
+        return (-n_elite, -len(items))
+
+    skip_frac = float(os.environ.get("SCOUT_TG_SKIP_WELL_RESOLVED", "0.8"))
+    cas_ordered = sorted(by_ca.keys(), key=lambda c: ca_score(by_ca[c]))
+
+    token_pools: dict[str, set[str]] = {}
+    calls = 0
+    err_kind = None
+    gmgn_off = env_bool("GMGN_DISABLED", False)
+    chain = os.environ.get("CHAIN", "robinhood")
+
+    def token_resolved_frac(ca: str) -> float:
+        items = by_ca.get(ca) or []
+        if not items:
+            return 1.0
+        done = 0
+        for t in items:
+            ck = t.get("trunc_key") or ""
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            if ck in resolved_keys or pk in pair_to_addr:
+                done += 1
+        return done / max(1, len(items))
+
+    if env_bool("SCOUT_TG_BLOCKSCOUT", True):
+        bs_limit = max(1, max_tokens * 3)  # deepen: more tokens via BS than GMGN
+        for ca in cas_ordered[:bs_limit]:
+            # refresh pending for this CA
+            pending = [
+                t
+                for t in by_ca[ca]
+                if (t.get("trunc_key") or "") not in resolved_keys
+                and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr
+            ]
+            if not pending:
+                continue
             addrs = fetch_blockscout_addrs(ca)
             calls += 1
+            stats.bs_tokens += 1
+            pool = set(addrs)
+            token_pools[ca] = pool | token_pools.get(ca, set())
             if not addrs:
                 print(f"scout_tg blockscout empty {ca[:10]}…")
                 continue
-            print(f"scout_tg blockscout {ca[:10]}… n={len(addrs)}")
-            for t in still_pending[ca]:
-                pref, suf = t.get("prefix") or "", t.get("suffix") or ""
-                hits = [a for a in addrs if match_trunc(a, pref, suf)]
-                uniq = list(dict.fromkeys(hits))
-                if len(uniq) != 1:
-                    continue
-                rec = {
-                    "cache_key": t.get("trunc_key"),
-                    "trunc_key": t.get("trunc_key"),
-                    "address": uniq[0],
-                    "trunc": t.get("trunc"),
-                    "prefix": pref,
-                    "suffix": suf,
-                    "tier": t.get("tier"),
-                    "usd": t.get("usd"),
-                    "token_ca": ca,
-                    "ticker": t.get("ticker"),
-                    "msg_id": t.get("msg_id"),
-                    "posted_at": t.get("posted_at"),
-                    "address_label": "",
-                    "resolved_at": now_iso(),
-                    "source": "scout_tg_blockscout",
-                }
-                new_cache.append(rec)
-                resolved[uniq[0]] = _merge_resolved(resolved.get(uniq[0]), rec)
-            time.sleep(0.4)
+            print(f"scout_tg blockscout {ca[:10]}… n={len(addrs)} pending={len(pending)}")
+            for t in pending:
+                pref, suf = (t.get("prefix") or "").lower(), (t.get("suffix") or "").lower()
+                hits = match_hits(pool, pref, suf)
+                if len(hits) == 1:
+                    accept(t, hits[0], "scout_tg_blockscout", bucket="token")
+                elif len(hits) > 1:
+                    stats.collisions_skipped += 1
+            time.sleep(0.25)
 
-    # only append GMGN/blockscout rows not already flushed from local
-    to_append = [r for r in new_cache if r.get("source") != "scout_tg_local_cache"]
-    append_resolve_cache(to_append)
-    return resolved, calls, err_kind
+    # --- Pass 2: GMGN traders (GHA; skip well-resolved tokens; don't burn box) ---
+    if gmgn_off:
+        print("scout_tg GMGN resolve skip: GMGN_DISABLED=1", flush=True)
+        err_kind = "gmgn_disabled"
+    else:
+        gmgn_cas = []
+        for ca in cas_ordered:
+            if token_resolved_frac(ca) >= skip_frac:
+                continue
+            pending = [
+                t
+                for t in by_ca.get(ca, [])
+                if (t.get("trunc_key") or "") not in resolved_keys
+                and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr
+            ]
+            if pending:
+                gmgn_cas.append(ca)
+        for ca in gmgn_cas[: max(1, max_tokens)]:
+            if calls >= call_cap:
+                break
+            pending = [
+                t
+                for t in by_ca[ca]
+                if (t.get("trunc_key") or "") not in resolved_keys
+                and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr
+            ]
+            if not pending:
+                continue
+            data, err = gmgn_raw(
+                [
+                    "token",
+                    "traders",
+                    "--chain",
+                    chain,
+                    "--address",
+                    ca,
+                    "--limit",
+                    "100",
+                    "--order-by",
+                    "profit",
+                ],
+                timeout=90,
+            )
+            calls += 1
+            stats.gmgn_calls += 1
+            if err == "rate_limited":
+                print(f"scout_tg traders rate-limited after calls={calls}", file=sys.stderr)
+                err_kind = "rate_limited"
+                break
+            if err:
+                print(f"scout_tg traders fail {ca[:10]}… {err}", file=sys.stderr)
+                err_kind = err
+                if calls < call_cap:
+                    data2, err2 = gmgn_raw(
+                        [
+                            "token",
+                            "holders",
+                            "--chain",
+                            chain,
+                            "--address",
+                            ca,
+                            "--limit",
+                            "100",
+                        ],
+                        timeout=90,
+                    )
+                    calls += 1
+                    stats.gmgn_calls += 1
+                    if err2 == "rate_limited":
+                        err_kind = "rate_limited"
+                        break
+                    if not err2:
+                        data, err = data2, None
+                    else:
+                        continue
+                else:
+                    continue
+            rows = extract_traders(data)
+            addrs_meta: list[tuple[str, dict]] = []
+            for r in rows:
+                a = trader_addr(r)
+                if a:
+                    addrs_meta.append((a, r))
+            pool = {a for a, _ in addrs_meta}
+            token_pools[ca] = pool | token_pools.get(ca, set())
+            print(f"scout_tg traders {ca[:10]}… n={len(pool)} pending_trunc={len(pending)}")
+            for t in pending:
+                pref, suf = (t.get("prefix") or "").lower(), (t.get("suffix") or "").lower()
+                hits = match_hits(pool, pref, suf)
+                if len(hits) == 1:
+                    meta_row = next((r for a, r in addrs_meta if a == hits[0]), {})
+                    label = ""
+                    mi = meta_row.get("maker_info") if isinstance(meta_row, dict) else None
+                    if isinstance(mi, dict):
+                        label = str(mi.get("name") or "")
+                    accept(t, hits[0], "scout_tg", label=label, bucket="token")
+                elif len(hits) > 1:
+                    stats.collisions_skipped += 1
+            time.sleep(1.0)
+
+    # --- Pass 3: global unique against local pool (+ optional 2-hit ∩ token) ---
+    still = pending_rows()
+    stats.attempted = len(
+        [
+            t
+            for t in trunc_rows
+            if not (elite_only and t.get("tier") != "elite")
+        ]
+    )
+    # Also re-check rows that may have been filled via pair during earlier accepts
+    for t in still:
+        pref = (t.get("prefix") or "").lower()
+        suf = (t.get("suffix") or "").lower()
+        pk = pair_key(pref, suf)
+        if pk in pair_to_addr:
+            accept(t, pair_to_addr[pk], "scout_tg_pair_cache", bucket="pair_cache")
+            continue
+        hits = match_hits(known, pref, suf)
+        if len(hits) == 1:
+            accept(t, hits[0], "scout_tg_local_cache", bucket="global")
+            continue
+        if len(hits) > 1:
+            # optional: exactly 2 global hits, only 1 in token transfer set
+            ca = (t.get("token_ca") or "").lower()
+            tpool = token_pools.get(ca) or set()
+            if len(hits) == 2 and tpool:
+                in_tok = [a for a in hits if a in tpool]
+                if len(in_tok) == 1:
+                    accept(t, in_tok[0], "scout_tg_global2_token", bucket="two_hit")
+                    continue
+            stats.collisions_skipped += 1
+
+    # Pass 3b: after new global accepts, re-apply pair cache to remaining
+    for t in pending_rows():
+        pk = pair_key(t.get("prefix"), t.get("suffix"))
+        addr = pair_to_addr.get(pk)
+        if addr:
+            accept(t, addr, "scout_tg_pair_cache", bucket="pair_cache")
+
+    # Also index newly resolved pairs as standalone cache rows (dedupe by pair)
+    pair_index_rows = []
+    seen_pair_write: set[str] = set()
+    for r in new_cache:
+        pk = r.get("pair_key") or pair_key(r.get("prefix"), r.get("suffix"))
+        if pk in seen_pair_write or pk == "|":
+            continue
+        seen_pair_write.add(pk)
+        pair_index_rows.append(
+            {
+                "cache_key": f"pair|{pk}",
+                "trunc_key": f"pair|{pk}",
+                "pair_key": pk,
+                "address": r["address"],
+                "trunc": r.get("trunc"),
+                "prefix": r.get("prefix"),
+                "suffix": r.get("suffix"),
+                "tier": r.get("tier"),
+                "usd": r.get("usd"),
+                "token_ca": "",
+                "ticker": "",
+                "msg_id": "",
+                "posted_at": None,
+                "address_label": "",
+                "resolved_at": now_iso(),
+                "source": "scout_tg_pair_index",
+            }
+        )
+
+    append_resolve_cache(new_cache + pair_index_rows)
+
+    # final unresolved stats
+    all_pairs = {
+        pair_key(t.get("prefix"), t.get("suffix"))
+        for t in trunc_rows
+        if not (elite_only and t.get("tier") != "elite")
+        and pair_key(t.get("prefix"), t.get("suffix")) != "|"
+    }
+    stats.unique_pairs_total = len(all_pairs)
+    stats.unique_pairs_resolved = sum(1 for pk in all_pairs if pk in pair_to_addr)
+    stats.unresolved_remaining = sum(
+        1
+        for t in trunc_rows
+        if not (elite_only and t.get("tier") != "elite")
+        and (t.get("trunc_key") or "") not in resolved_keys
+        and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr
+    )
+    print(
+        "scout_tg resolve_stats "
+        + json.dumps(stats.as_dict(), ensure_ascii=False)
+    )
+    return resolved, calls, err_kind, stats
 
 
 def _merge_resolved(prev: dict | None, cur: dict) -> dict:
@@ -1105,6 +1406,7 @@ def main() -> int:
     resolved_n = 0
     added = tagged = 0
     err = None
+    resolve_stats: dict = {}
     if do_resolve and n_trunc > 0:
         # reload trunc from disk (merged history)
         trunc_rows = []
@@ -1120,12 +1422,13 @@ def main() -> int:
         trunc_rows.sort(
             key=lambda t: (0 if t.get("tier") == "elite" else 1, -(t.get("usd") or 0))
         )
-        resolved, calls, err = resolve_truncs(trunc_rows, vet_cap, max_tokens, elite_only)
+        resolved, calls, err, rstats = resolve_truncs(trunc_rows, vet_cap, max_tokens, elite_only)
         resolved_n = len(resolved)
         print(f"scout_tg resolved_full={resolved_n} gmgn_calls={calls} err={err}")
         if resolved:
             added, tagged = merge_into_watchlist(resolved, watch_path)
             print(f"scout_tg watch merge added={added} tagged={tagged} path={watch_path}")
+        resolve_stats = rstats.as_dict()
     elif do_resolve:
         print("scout_tg resolve skip: no trunc rows")
     else:
@@ -1144,6 +1447,7 @@ def main() -> int:
                 "added": added,
                 "tagged": tagged,
                 "err": err,
+                "resolve_stats": resolve_stats,
             }
         )
     )
