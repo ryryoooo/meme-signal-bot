@@ -3460,6 +3460,20 @@ def _xbtscout_x_url(raw: str | None) -> str | None:
     return f"https://x.com/{user}/status/{sid}"
 
 
+def _xbtscout_chain_guess(text: str | None, default: str = "robinhood") -> str:
+    """Infer chain from post text. Default robinhood."""
+    s = (text or "").lower()
+    if re.search(r"#\s*bsc\b|\bbsc\b|binance\s*smart", s):
+        return "bsc"
+    if re.search(r"#\s*base\b|\bon\s*base\b", s):
+        return "base"
+    if re.search(r"#\s*eth\b|\bethereum\b", s):
+        return "eth"
+    if re.search(r"robinhood|\brh\b|#\s*rh\b", s):
+        return "robinhood"
+    return default
+
+
 def _xbtscout_post_url_from_rec(rec: dict) -> str | None:
     for key in ("post_url", "tweet_url", "x_url", "status_url"):
         u = _xbtscout_x_url(rec.get(key))
@@ -3528,6 +3542,16 @@ def notify_xbtscout_new_cas(
     cas_path = ROOT / "xbtscout" / "cas.jsonl"
     have = _xbtscout_load_cas(cas_path)
     posted_n = 0
+    # Only Robinhood unless XBTSCOUT_NOTIFY_CHAINS overrides (comma list)
+    allow_chains = {
+        x.strip().lower()
+        for x in (os.environ.get("XBTSCOUT_NOTIFY_CHAINS") or "robinhood,rh").split(",")
+        if x.strip()
+    }
+    if "rh" in allow_chains:
+        allow_chains.add("robinhood")
+    notify_after = (os.environ.get("XBTSCOUT_NOTIFY_AFTER") or "").strip()
+
     for rec in new_recs:
         ca = (rec.get("ca") or "").lower().strip()
         if not ca.startswith("0x"):
@@ -3536,8 +3560,39 @@ def notify_xbtscout_new_cas(
         row = have.get(ca) or rec
         if row.get("discord_notified_at") or ca in notified:
             continue
-        guess = (row.get("chain_guess") or rec.get("chain_guess") or chain or "robinhood")
-        # RH signal channel: still post BSC with correct GMGN slug
+        blob = " ".join(
+            str(x or "")
+            for x in (
+                row.get("source_url_or_text_snip"),
+                rec.get("source_url_or_text_snip"),
+                row.get("snip"),
+                rec.get("snip"),
+            )
+        )
+        guess = (
+            row.get("chain_guess")
+            or rec.get("chain_guess")
+            or _xbtscout_chain_guess(blob, "robinhood")
+        )
+        guess = str(guess).lower()
+        if guess in ("rh", "robinhoodchain"):
+            guess = "robinhood"
+        if guess not in allow_chains:
+            # mark skipped non-RH so we don't retry forever
+            if ca in have:
+                have[ca]["discord_skipped_chain"] = guess
+                have[ca]["discord_notified_at"] = have[ca].get("discord_notified_at") or f"skipped:{guess}"
+            else:
+                have[ca] = {**row, **rec, "ca": ca, "chain_guess": guess,
+                            "discord_notified_at": f"skipped:{guess}",
+                            "discord_skipped_chain": guess}
+            print(f"xbtscout notify skip chain={guess} {ca[:10]}…", flush=True)
+            continue
+        # optional: only posts after baseline (next-post mode)
+        if notify_after:
+            posted = str(row.get("posted_at") or rec.get("posted_at") or "")
+            if posted and posted < notify_after:
+                continue
         embed = build_xbtscout_embed({**row, **rec, "ca": ca, "chain_guess": guess}, chain)
         try:
             gurl = gmgn_tok.token_app_url(guess, ca)
@@ -3558,8 +3613,8 @@ def notify_xbtscout_new_cas(
         else:
             have[ca] = {**row, "discord_notified_at": ts}
         print(f"xbtscout notify ok {ca[:10]}…", flush=True)
-    if posted_n:
-        _xbtscout_write_cas(cas_path, have)
+    # persist notifies + chain-skips
+    _xbtscout_write_cas(cas_path, have)
     if state is not None:
         # keep last 500
         state["xbtscout_notified_cas"] = list(notified)[-500:]
@@ -3716,7 +3771,7 @@ def scrape_xbtscout_posts() -> list[dict]:
             "ca": ca,
             "source_url_or_text_snip": snip_store,
             "post_url": post_store,
-            "chain_guess": prev.get("chain_guess") or "robinhood",
+            "chain_guess": prev.get("chain_guess") or _xbtscout_chain_guess(snip_store, "robinhood"),
             "date": prev.get("date") if prev.get("date") and str(prev.get("date")).lower() != "scout" else now,
             "posted_at": posted_at,
             "page": prev.get("page", 0),

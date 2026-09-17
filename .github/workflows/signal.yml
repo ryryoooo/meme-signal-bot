@@ -143,6 +143,8 @@ jobs:
           XBTSCOUT_SCRAPE_SECONDS: "300"
           XBTSCOUT_MAX_TOKENS: "3"
           XBTSCOUT_NOTIFY: "1"
+          XBTSCOUT_NOTIFY_CHAINS: "robinhood"
+          XBTSCOUT_NOTIFY_AFTER: "2026-09-17T08:07:36.351932+00:00"
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           STATE_PATH: state.json
           PAPER_LOG_PATH: paper_log.jsonl
