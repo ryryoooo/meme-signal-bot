@@ -1,7 +1,9 @@
 # RH wallets
 
-- Updated JST: 2026-09-17T16:24:05.501502+09:00
-- Watchlist wallets.jsonl: **683** (purged realized_pnl &lt; $500 onchain placeholders)
-- On-chain wallets_onchain.jsonl: **1457**
-- Merge-to-watch: **off** by default (`RH_ONCHAIN_MERGE_TO_WATCH=0`); vet via `vet_rh_onchain.py`
-- Hard floor: `WATCH_MIN_REALIZED_HARD=500`
+- Updated JST: 2026-09-17T19:38:09.588229+09:00
+- Watchlist wallets.jsonl: **593**
+- On-chain wallets_onchain.jsonl: **2696**
+- New on-chain merges this run: **0** (touched existing: 0)
+- Merge-to-watch: **False** (floor=500.0)
+- Source: Robinhood Blockscout `https://robinhoodchain.blockscout.com/api/v2` (+ etherscan-compat if allowed)
+- Notes: Blockscout /api etherscan-compat reachable; tokentx 0xf3081494 http=429; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
