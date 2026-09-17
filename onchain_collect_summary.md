@@ -1,37 +1,37 @@
 # On-chain wallet collect summary
 
-- JST: 2026-09-17T11:20:31.297321+09:00
-- UTC: 2026-09-17T02:20:31.297321+00:00
+- JST: 2026-09-17T15:17:21.577704+09:00
+- UTC: 2026-09-17T06:17:21.577704+00:00
 - Keeper floors: Arc=0.01 RH_onchain=0.01
 
 ## Arc
 
 - **ok**: True
 - **mode**: inline
-- **total**: 1194
-- **added**: 34
-- **refreshed**: 65
-- **transfers_scanned**: 0
-- **accounts_scanned**: 100
+- **total**: 1400
+- **added**: 206
+- **refreshed**: 194
+- **transfers_scanned**: 600
+- **accounts_scanned**: 300
 - notes: arcscan chain_id=5042
 
-- file wallets_quality.jsonl rows: **1194**
-- file wallets.jsonl rows: **1194**
+- file wallets_quality.jsonl rows: **1400**
+- file wallets.jsonl rows: **1400**
 
 ## Robinhood
 
 - **ok**: True
-- **watchlist_n**: 1000
-- **onchain_n**: 1369
+- **watchlist_n**: 995
+- **onchain_n**: 1444
 - **added**: 299
 - **touched**: 1
-- **xfers_scanned**: 300
-- **addrs_scanned**: 150
-- **etherscan_xfers**: 900
-- notes: Blockscout /api etherscan-compat reachable; tokentx 0xf3081494 http=429; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429
+- **xfers_scanned**: 150
+- **addrs_scanned**: 50
+- **etherscan_xfers**: 600
+- notes: Blockscout /api etherscan-compat reachable; v2 /token-transfers → http=500 "Internal server error"; v2 /addresses → http=500 "Internal server error"; tokentx 0xcec185eb http=500; tokentx 0x5fc5360d http=500; tokentx 0xf3081494 http=500; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x39dbed3a http=429
 
-- file wallets.jsonl rows: **1000**
-- file wallets_onchain.jsonl rows: **1369**
+- file wallets.jsonl rows: **995**
+- file wallets_onchain.jsonl rows: **1444**
 
 ## Credit policy
 
