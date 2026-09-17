@@ -324,7 +324,7 @@ def discord_webhook(url: str, content: str = "", embeds: list | None = None) -> 
 
 
 def _wallet_realized(o: dict) -> float:
-    for key in ("realized_pnl_usd", "pnlUsd", "pnl_usd", "gmgn_pnl_usd"):
+    for key in ("realized_pnl_usd", "fomo_pnl_usd", "pnlUsd", "pnl_usd", "gmgn_pnl_usd"):
         v = _num(o.get(key))
         if v is not None:
             return v
@@ -332,8 +332,16 @@ def _wallet_realized(o: dict) -> float:
 
 
 def _is_fomo_only(o: dict) -> bool:
+    if o.get("fomo_handle"):
+        return True
+    tags = " ".join(str(t) for t in (o.get("tags") or [])).lower()
+    srcs_all = " ".join(str(s) for s in (o.get("sources") or [])).lower()
+    if any(x in tags or x in srcs_all for x in (
+        "fomo", "themaran", "985monitor", "degentape", "alphawallets", "scout_tg"
+    )):
+        return True
     srcs = [str(s) for s in (o.get("source_endpoints") or [])]
-    others = [s for s in srcs if s != "fomo_leaderboard"]
+    others = [s for s in srcs if s not in ("fomo_leaderboard", "985monitor:leaderboard", "985monitor:profile", "degentape:tape", "degentape:catchup", "themaran")]
     return (not others) and bool(srcs or o.get("fomo_handle"))
 
 
@@ -457,6 +465,20 @@ def wallet_is_consistent(o: dict) -> bool:
     nt = _wallet_n_trades(o)
     rp = _wallet_realized(o)
     if env_bool("ALLOW_FOMO_WITHOUT_WR", False) and _is_fomo_only(o) and wrn is None:
+        # Curated scout / live-tape seeds may have 0 realized until GMGN fills
+        tags_blob = " ".join(str(x) for x in (o.get("tags") or [])).lower()
+        if any(x in tags_blob for x in ("scout_elite", "scout_tg_early", "rank_s", "rank_a", "degentape", "live_tape", "985monitor", "themaran")):
+            try:
+                hits = int(float(o.get("scout_hit_count") or o.get("scout_hits") or o.get("hits") or 0))
+            except (TypeError, ValueError):
+                hits = 0
+            try:
+                elite = int(float(o.get("scout_elite_count") or o.get("elite_hits") or 0))
+            except (TypeError, ValueError):
+                elite = 0
+            buy_usd = _num(o.get("buyUsd") or o.get("buy_usd") or o.get("scout_sum_buy_usd")) or 0.0
+            if elite >= 1 or hits >= 2 or buy_usd >= 400 or rp > 0:
+                return True
         return rp > 0
     # High-PnL FOMO (EVM) for signal overlap even without WR
     try:
@@ -465,6 +487,36 @@ def wallet_is_consistent(o: dict) -> bool:
         fomo_floor = 20000.0
     if (o.get("fomo_handle") or _is_fomo_only(o)) and wrn is None and rp >= fomo_floor:
         return True
+    # Live-tape / TheMaran buyers: allow without WR when recent buy size is meaningful
+    try:
+        tape_floor = float(os.environ.get("FOMO_TAPE_MIN_BUY_USD", "400"))
+    except (TypeError, ValueError):
+        tape_floor = 400.0
+    buy_usd = _num(o.get("buyUsd") or o.get("buy_usd")) or 0.0
+    tags_blob = " ".join(str(t) for t in (o.get("tags") or [])).lower()
+    if wrn is None and buy_usd >= tape_floor and any(t in tags_blob for t in ("degentape", "live_tape", "themaran")):
+        return True
+    # Scout TG elite / ranked seeds: keep in notify overlap even before GMGN WR fill
+    if wrn is None and any(t in tags_blob for t in ("scout_elite", "scout_tg_early", "rank_s", "rank_a")):
+        try:
+            hits = int(float(
+                o.get("scout_hit_count")
+                or o.get("scout_hits")
+                or o.get("elite_hits")
+                or o.get("hits")
+                or 0
+            ))
+        except (TypeError, ValueError):
+            hits = 0
+        try:
+            elite = int(float(o.get("scout_elite_count") or o.get("elite_hits") or 0))
+        except (TypeError, ValueError):
+            elite = 0
+        min_hits = int(float(os.environ.get("SCOUT_NOTIFY_MIN_HITS", "2") or 2))
+        if elite >= 1 or hits >= min_hits or rp >= max(300.0, fomo_floor * 0.05):
+            return True
+        if "rank_s" in tags_blob or "scout_elite" in tags_blob or "scout_tg_early" in tags_blob:
+            return True
     # Path A: win-rate track record (preferred)
     if wrn is not None and nt >= min_n:
         if wrn < min_wr:
@@ -481,9 +533,15 @@ def wallet_is_consistent(o: dict) -> bool:
 def wallet_passes_filter(o: dict, min_realized: float) -> bool:
     """Keep consistent average winners. Lucky one-shot PnL is noise."""
     rp = _wallet_realized(o)
-    if rp <= 0:
+    tags_blob = " ".join(str(x) for x in (o.get("tags") or [])).lower()
+    curated = any(
+        x in tags_blob
+        for x in ("scout_elite", "scout_tg_early", "rank_s", "rank_a", "themaran", "985monitor", "degentape", "alphawallets")
+    )
+    buy_usd = _num(o.get("buyUsd") or o.get("buy_usd")) or 0.0
+    if rp <= 0 and not curated and buy_usd <= 0:
         return False
-    if min_realized > 0 and rp < min_realized:
+    if min_realized > 0 and rp < min_realized and not curated:
         return False
     if wallet_label_banned(o):
         return False
@@ -519,6 +577,11 @@ def wallet_is_early_stage(meta: dict | None) -> bool:
             "scout_tg_early",
             "scout_elite",
             "scout_tg",
+            "985monitor",
+            "degentape",
+            "live_tape",
+            "themaran",
+            "alphawallets",
             "nansen",
             "smart trader",
             "30d smart",
@@ -1055,8 +1118,11 @@ def load_watchlist(path: Path, min_realized: float) -> tuple[dict[str, dict], in
         kept = {}
         for a, o in filtered.items():
             rp = _wallet_realized(o)
+            tags_blob = " ".join(str(x) for x in (o.get("tags") or [])).lower()
+            scoutish = any(x in tags_blob for x in ("scout_elite", "scout_tg_early", "rank_s", "rank_a", "themaran", "985monitor", "degentape"))
             # Average winners only. Early-tag alone is not enough if PnL is lucky/one-shot.
-            if rp < min_rp:
+            # Exception: curated scout/themaran seeds may lack GMGN WR/PnL yet.
+            if rp < min_rp and not scoutish:
                 continue
             if not wallet_is_consistent(o):
                 continue
