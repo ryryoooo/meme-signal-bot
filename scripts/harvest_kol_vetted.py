@@ -362,47 +362,31 @@ def parse_portfolio_row(row: dict) -> dict:
             return num(val)
         if isinstance(val, dict):
             for ck in (
-                "count", "tx", "txs", "num", "n", "total", "buy", "sell",
+                "count", "tx", "txs", "num", "n", "buy", "sell",
                 "30d", "7d", "1d", "all",
             ):
                 n = _count(val.get(ck))
                 if n is not None:
                     return n
-            # sum numeric leaves
-            nums = [float(v) for v in val.values() if isinstance(v, (int, float))]
-            if nums:
-                return float(sum(nums))
             return None
-        if isinstance(val, list) and val:
-            return float(len(val))
         return None
 
-    if nt is None:
-        b = _count(
-            flat.get("buy")
-            or flat.get("buy_tx_count")
-            or flat.get("buy_count")
-            or flat.get("buy_num")
-            or flat.get("buys")
-        )
-        s = _count(
-            flat.get("sell")
-            or flat.get("sell_tx_count")
-            or flat.get("sell_count")
-            or flat.get("sell_num")
-            or flat.get("sells")
-        )
-        if b is not None or s is not None:
-            nt = int((b or 0) + (s or 0))
-        else:
-            for k in ("token_num", "total_num", "trade_num", "history_bought_income"):
-                # token_num = distinct tokens traded — weaker but better than None for Path A floor
-                if k == "history_bought_income":
-                    continue
-                v = _count(flat.get(k))
-                if v is not None and v > 0:
-                    nt = int(v)
-                    break
+    buy_n = _count(
+        flat.get("buy")
+        or flat.get("buy_tx_count")
+        or flat.get("buy_count")
+        or flat.get("buy_num")
+        or flat.get("buys")
+    )
+    sell_n = _count(
+        flat.get("sell")
+        or flat.get("sell_tx_count")
+        or flat.get("sell_count")
+        or flat.get("sell_num")
+        or flat.get("sells")
+    )
+    if nt is None and (buy_n is not None or sell_n is not None):
+        nt = int((buy_n or 0) + (sell_n or 0))
 
     addr = None
     for k in ("address", "wallet_address", "walletAddress", "maker", "wallet"):
@@ -415,6 +399,8 @@ def parse_portfolio_row(row: dict) -> dict:
         "realized_pnl_usd": rp,
         "win_rate": wr,
         "n_trades": nt,
+        "gmgn_buy": int(buy_n) if buy_n is not None else None,
+        "gmgn_sell": int(sell_n) if sell_n is not None else None,
         "raw_keys": sorted(flat.keys())[:50],
     }
 
@@ -553,22 +539,23 @@ def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dic
                 buy_v = sdata["data"].get("buy")
                 sell_v = sdata["data"].get("sell")
         # last-resort: if n still None but buy/sell are numeric on wire
-        if nt is None:
-            bn = num(buy_v) if not isinstance(buy_v, dict) else None
-            sn = num(sell_v) if not isinstance(sell_v, dict) else None
-            if isinstance(buy_v, dict) or isinstance(sell_v, dict):
-                def _c(v):
-                    if not isinstance(v, dict):
-                        return num(v)
-                    for ck in ("count", "num", "n", "30d", "7d"):
-                        if num(v.get(ck)) is not None:
-                            return num(v.get(ck))
-                    return None
-                bn = _c(buy_v)
-                sn = _c(sell_v)
-            if bn is not None or sn is not None:
-                nt = int((bn or 0) + (sn or 0))
-                out[a]["n_trades"] = nt
+        bn = (out.get(a) or {}).get("gmgn_buy")
+        sn = (out.get(a) or {}).get("gmgn_sell")
+        if bn is None and not isinstance(buy_v, dict):
+            bn = num(buy_v)
+        if sn is None and not isinstance(sell_v, dict):
+            sn = num(sell_v)
+        if bn is not None or sn is not None:
+            total = int((bn or 0) + (sn or 0))
+            out[a]["gmgn_buy"] = int(bn or 0)
+            out[a]["gmgn_sell"] = int(sn or 0)
+            if total > 0:
+                out[a]["n_trades"] = total
+                nt = total
+            else:
+                # buy=0 sell=0 → no RH activity; do not invent n_trades
+                out[a]["n_trades"] = None
+                nt = None
         print(
             f"[{chain}] stats {a[:10]}… wr={wr} rp={rp} n={nt} "
             f"buy={buy_v!r}"[:120] + f" sell={sell_v!r}"[:80]
@@ -952,13 +939,38 @@ def main() -> int:
     stats_map: dict[str, dict] = {}
     if not skip_vet and combined and remaining > 0:
         addrs = [c["address"] for _, c in combined]
-        # remaining_cap: allow stats + optional profits fill (=2)
-        sm, used, verr = batch_vet("robinhood", addrs, min(remaining, max(5, fomo_vet_cap)))
-        remaining -= used
-        summary["vetted"] += len(sm)
-        stats_map.update(sm)
-        if verr == "rate_limited":
-            summary["rate_limited"] = True
+        # FOMO EVM may be idle on robinhood — try RH then base then eth per wallet until budget gone
+        chains_try = ["robinhood", "base", "eth"]
+        for a in addrs:
+            if remaining <= 0 or summary["rate_limited"]:
+                break
+            got = None
+            for ch in chains_try:
+                if remaining <= 0:
+                    break
+                sm, used, verr = batch_vet(ch, [a], 1)
+                remaining -= used
+                summary["vetted"] += len(sm)
+                if verr == "rate_limited":
+                    summary["rate_limited"] = True
+                    break
+                st = sm.get(a)
+                if not st:
+                    continue
+                b = st.get("gmgn_buy")
+                s = st.get("gmgn_sell")
+                active = (b is not None or s is not None) and int((b or 0) + (s or 0)) > 0
+                # prefer first chain with real trades; else keep best WR so far
+                if active and st.get("win_rate") is not None:
+                    st["vet_chain"] = ch
+                    got = st
+                    break
+                if got is None and st.get("win_rate") is not None:
+                    st["vet_chain"] = ch
+                    got = st
+            if got:
+                stats_map[a] = got
+        print(f"[rh-vet] stats_map={len(stats_map)} remaining={remaining} rate_limited={summary['rate_limited']}")
     elif skip_vet:
         print("[rh-vet] skip_vet")
 
@@ -999,10 +1011,21 @@ def main() -> int:
                 "source_endpoints": ["fomo_leaderboard", "gmgn:portfolio"],
                 "fomo_handle": c.get("fomo_handle"),
             }
-            ok = bot.wallet_passes_filter(trial, min_realized) and bot.wallet_is_consistent(trial)
+            buy_n = st.get("gmgn_buy")
+            sell_n = st.get("gmgn_sell")
+            real_n = st.get("n_trades")
+            if (buy_n is not None or sell_n is not None) and int((buy_n or 0) + (sell_n or 0)) <= 0:
+                real_n = None
+                trial["n_trades"] = 0
+            ok = (
+                real_n is not None
+                and int(real_n) >= 15
+                and bot.wallet_passes_filter(trial, min_realized)
+                and bot.wallet_is_consistent(trial)
+            )
             print(
                 f"  fomo-vet {c['address'][:10]}… rp={rp} wr={st.get('win_rate')} "
-                f"n={st.get('n_trades')} board={c.get('fomo_pnl_usd')} pass={ok}"
+                f"n={real_n} buy={buy_n} sell={sell_n} board={c.get('fomo_pnl_usd')} pass={ok}"
             )
             if not ok:
                 continue
