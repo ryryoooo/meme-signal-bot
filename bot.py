@@ -92,6 +92,11 @@ CHAIN_META = {
 # Heat gates from 2x+ alert sample (provisional): winners had cluster≥~$208, liq≥~$1.6k
 LIQ_MCAP_MIN = float(os.environ.get("LIQ_MCAP_MIN", "0.10"))
 MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "2500"))
+
+def liq_gate_enabled() -> bool:
+    """RH notify can disable liquidity checks via LIQ_REQUIRED=0."""
+    return env_bool("LIQ_REQUIRED", True)
+
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
 MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "8000"))
@@ -878,13 +883,13 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
     liq = safety.get("liq_usd")
     mcap = safety.get("mcap_usd") or safety.get("fdv")
     if liq is None:
-        fails.append("liq_na")
+        liq_gate_enabled() and fails.append("liq_na")
     else:
         try:
             if float(liq) < min_liq:
-                fails.append(f"liq_thin={float(liq):.0f}<{min_liq:.0f}")
+                liq_gate_enabled() and fails.append(f"liq_thin={float(liq):.0f}<{min_liq:.0f}")
         except (TypeError, ValueError):
-            fails.append("liq_na")
+            liq_gate_enabled() and fails.append("liq_na")
     ratio = safety.get("ratio")
     if ratio is None and liq is not None and mcap:
         try:
@@ -894,7 +899,7 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
     if ratio is not None:
         try:
             if float(ratio) < liq_mcap_min:
-                fails.append(f"liq_ratio={float(ratio):.2f}<{liq_mcap_min:.2f}")
+                liq_gate_enabled() and fails.append(f"liq_ratio={float(ratio):.2f}<{liq_mcap_min:.2f}")
         except (TypeError, ValueError):
             pass
 
@@ -2370,13 +2375,13 @@ def heat_gate_reasons(safety: dict) -> list[str]:
     except (TypeError, ValueError):
         liq_mcap_min = LIQ_MCAP_MIN
     if liq is None:
-        fails.append("liq_na")
+        liq_gate_enabled() and fails.append("liq_na")
     else:
         try:
             if float(liq) < min_liq:
-                fails.append(f"liq_thin={float(liq):.0f}<{min_liq:.0f}")
+                liq_gate_enabled() and fails.append(f"liq_thin={float(liq):.0f}<{min_liq:.0f}")
         except (TypeError, ValueError):
-            fails.append("liq_na")
+            liq_gate_enabled() and fails.append("liq_na")
     if mcap is None:
         fails.append("no_mcap")
     else:
@@ -2394,7 +2399,7 @@ def heat_gate_reasons(safety: dict) -> list[str]:
     if ratio is None:
         fails.append("liq_ratio=na")
     elif float(ratio) < liq_mcap_min:
-        fails.append(f"liq_ratio={float(ratio):.2f}")
+        liq_gate_enabled() and fails.append(f"liq_ratio={float(ratio):.2f}")
     return fails
 
 
