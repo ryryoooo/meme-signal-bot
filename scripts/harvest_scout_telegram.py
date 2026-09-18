@@ -15,6 +15,7 @@ Env:
   SCOUT_TG_MULTI_UNION=1 union transfer graphs for pairs on ≥2 tokens
   SCOUT_TG_MEGA_UNION=1  unique-match against union of ALL token pools
   SCOUT_TG_BS_DEEPEN_MISS=1 re-fetch BS when reused pool misses pending truncs (counts toward TOKEN_CAP)
+  SCOUT_TG_BS_DEEPEN_PLATEAU_MIN=120  skip deepen-miss when prior pool already >= this (true-dead)
   SCOUT_TG_ELITE_ONLY=0  if 1, only resolve 💎 elite truncs
   SCOUT_TG_SKIP_WELL_RESOLVED=0.8  skip GMGN for tokens with >= this fraction resolved
   SCOUT_TG_BS_SLEEP_MS=400  pause between Blockscout token fetches
@@ -1275,9 +1276,14 @@ def resolve_truncs(
             ]
             if pending:
                 pending_cas.append(ca)
+        # Prefer shallow / never-fetched pools first so TOKEN_CAP grows mega coverage
+        # instead of re-deepening plateau tokens whose miss truncs are true-dead.
+        min_reuse_sort = int(os.environ.get("SCOUT_TG_BS_REUSE_MIN", "80"))
         pending_cas.sort(
             key=lambda c: (
+                0 if len(token_pools.get(c) or set()) < min_reuse_sort else 1,
                 -no_match_ca_score.get(c, 0),
+                -len([t for t in by_ca[c] if (t.get("trunc_key") or "") not in resolved_keys and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr]),
                 -ca_multi_score.get(c, 0),
                 ca_score(by_ca[c]),
             )
@@ -1319,6 +1325,9 @@ def resolve_truncs(
             reuse_ok = bool(prior) and len(prior) >= min_reuse and not force
             need_deepen = False
             # If pending truncs have zero hits in the reused pool, deepen (counts toward cap).
+            # Skip deepen when pool is already past plateau — remaining misses are almost
+            # always true-dead (wallet never in any BS pool); spend cap on shallow tokens.
+            plateau_min = int(os.environ.get("SCOUT_TG_BS_DEEPEN_PLATEAU_MIN", "120"))
             if reuse_ok and env_bool("SCOUT_TG_BS_DEEPEN_MISS", True):
                 miss = 0
                 for t in pending:
@@ -1327,13 +1336,21 @@ def resolve_truncs(
                     if not match_hits(prior, pref, suf):
                         miss += 1
                 if miss:
-                    need_deepen = True
-                    reuse_ok = False
-                    print(
-                        f"scout_tg blockscout deepen-miss {ca[:10]}… "
-                        f"prior={len(prior)} miss={miss}/{len(pending)}",
-                        flush=True,
-                    )
+                    if len(prior) >= plateau_min:
+                        print(
+                            f"scout_tg blockscout deepen-skip-plateau {ca[:10]}… "
+                            f"prior={len(prior)} miss={miss}/{len(pending)} "
+                            f"plateau_min={plateau_min}",
+                            flush=True,
+                        )
+                    else:
+                        need_deepen = True
+                        reuse_ok = False
+                        print(
+                            f"scout_tg blockscout deepen-miss {ca[:10]}… "
+                            f"prior={len(prior)} miss={miss}/{len(pending)}",
+                            flush=True,
+                        )
             will_fetch = (not reuse_ok) or force
             if will_fetch:
                 if bs_cap >= 0 and bs_fetch_n >= bs_cap:

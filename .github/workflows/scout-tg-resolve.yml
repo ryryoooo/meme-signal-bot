@@ -91,6 +91,7 @@ jobs:
           SCOUT_TG_MULTI_UNION: "1"
           SCOUT_TG_MEGA_UNION: "1"
           SCOUT_TG_BS_DEEPEN_MISS: "1"
+          SCOUT_TG_BS_DEEPEN_PLATEAU_MIN: "120"
           SCOUT_TG_BS_ES_ALWAYS: "1"
           SCOUT_TG_BS_SLEEP_MS: "600"
           SCOUT_TG_SKIP_WELL_RESOLVED: "0.95"
