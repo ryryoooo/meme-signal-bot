@@ -32,3 +32,10 @@
 - 出来高緩和: h24/m5 required off、閾値低下
 - 値動き必須オフ、クールダウン1h、cluster $80、弱ウォレットdropオフ
 - 流動性・急騰ゲートは引き続き無効
+
+## RH passthrough (never-stop notify)
+- `NOTIFY_PASSTHROUGH=1`（or `RH_NOTIFY_ALWAYS=1` when `CHAIN=robinhood`）
+- Post **all** watchlist buy overlaps to Discord; GMGN fail / safety fail / notify_gate fail do **not** block
+- Still runs `safety_check` for card fields; prefers Dex `market_snapshot` when GMGN failed
+- Keeps `already_seen` duplicate skip; shorten via `COOLDOWN_SECONDS` (RH: 900)
+- Live trading stays off (`LIVE_TRADING=0`)

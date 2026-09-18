@@ -102,6 +102,51 @@ def anti_spike_enabled() -> bool:
     """RH notify can ignore pump/spike rejects via ANTI_SPIKE_REQUIRED=0."""
     return env_bool("ANTI_SPIKE_REQUIRED", True)
 
+
+def notify_passthrough_enabled(chain: str | None = None) -> bool:
+    """Never-stop Discord notify: post all watchlist overlaps despite safety/gate fails."""
+    if env_bool("NOTIFY_PASSTHROUGH", False):
+        return True
+    ch = (chain or os.environ.get("CHAIN") or "").strip().lower()
+    if ch in ("robinhood", "rh") and env_bool("RH_NOTIFY_ALWAYS", False):
+        return True
+    return False
+
+
+def merge_dex_fields_for_passthrough(safety: dict, ca: str, chain: str) -> dict:
+    """Prefer Dex market_snapshot card fields when GMGN safety fetch failed."""
+    out = dict(safety)
+    try:
+        gmgn_chain = CHAIN_META.get(chain, {}).get("gmgn_chain") or chain
+        dex = gmgn_tok.market_snapshot(gmgn_chain, ca)
+    except Exception:
+        dex = {}
+    if not isinstance(dex, dict) or not dex.get("ok"):
+        return out
+    for k in (
+        "volume_h24", "volume_h1", "volume_m5", "buys_h24", "buys_m5", "sells_m5",
+        "buys_h1", "sells_h1", "price_change_m5", "price_change_h1",
+        "price_change_h6", "price_change_h24", "graduated", "bondingish",
+        "dex_id", "labels", "holder_count", "liq_usd", "mcap_usd", "fdv",
+        "price_usd", "pair_created_at_ms",
+    ):
+        if out.get(k) is None and dex.get(k) is not None:
+            out[k] = dex.get(k)
+    if out.get("symbol_hint") is None and dex.get("symbol") is not None:
+        out["symbol_hint"] = dex.get("symbol")
+    if not out.get("dex_url") and dex.get("url"):
+        out["dex_url"] = dex.get("url")
+    if out.get("ratio") is None:
+        liq, mcap = out.get("liq_usd"), out.get("mcap_usd") or out.get("fdv")
+        if liq is not None and mcap:
+            try:
+                out["ratio"] = float(liq) / float(mcap)
+            except (TypeError, ValueError, ZeroDivisionError):
+                pass
+    out["dex_overlay"] = True
+    return out
+
+
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
 MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "8000"))
@@ -3262,35 +3307,53 @@ def run_once(args: argparse.Namespace) -> int:
 
         safety = safety_check(ca, chain)
         s["safety"] = safety
-        if not safety["ok"]:
-            reason = "safety_fail:" + ",".join(safety.get("reasons") or ["unknown"])
-            print(f"skip {ca} {reason}")
-            append_paper_log(
-                paper_path,
-                {
-                    **base_row,
-                    "posted": False,
-                    "reason": reason,
-                    "safety_jp": safety.get("jp"),
-                    "ratio": safety.get("ratio"),
-                    "goplus": safety.get("goplus"),
-                    "fetch_failed": bool(safety.get("fetch_failed")),
-                    "mcap": safety.get("mcap_usd"),
-                    "liq": safety.get("liq_usd"),
-                },
-            )
-            # Don't Discord-notify empty "GMGN取得失敗" — looks out of sync with the app
-            if safety.get("fetch_failed"):
-                print(f"skip notice suppressed (gmgn fetch failed) {ca[:10]}…")
-            elif skip_notices < MAX_SKIP_NOTICES_PER_RUN:
-                try:
-                    discord_webhook(webhook, embeds=[build_skip_embed(s, safety, chain)])
-                    skip_notices += 1
-                except Exception as e:
-                    print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)
-            seen.add(s["key"])
-            skipped += 1
-            continue
+        passthrough = notify_passthrough_enabled(chain)
+        pt_reasons: list[str] = []
+        post_skip = env_bool("POST_SKIP_NOTICES", True)
+
+        if (not safety.get("ok")) or safety.get("fetch_failed"):
+            if passthrough:
+                safety = merge_dex_fields_for_passthrough(dict(safety), ca, chain)
+                fail_rs = [r for r in (safety.get("reasons") or []) if r and r != "ok"]
+                if safety.get("fetch_failed") and "fetch_failed" not in fail_rs:
+                    fail_rs.append("fetch_failed")
+                pt_reasons.extend(fail_rs)
+                safety["ok"] = True
+                safety["passthrough"] = True
+                note = "passthrough・部分データ" if safety.get("fetch_failed") else "passthrough"
+                prev_jp = safety.get("jp") or ""
+                if "passthrough" not in prev_jp:
+                    safety["jp"] = (prev_jp + f"（{note}）") if prev_jp else f"（{note}）"
+                s["safety"] = safety
+            else:
+                reason = "safety_fail:" + ",".join(safety.get("reasons") or ["unknown"])
+                print(f"skip {ca} {reason}")
+                append_paper_log(
+                    paper_path,
+                    {
+                        **base_row,
+                        "posted": False,
+                        "reason": reason,
+                        "safety_jp": safety.get("jp"),
+                        "ratio": safety.get("ratio"),
+                        "goplus": safety.get("goplus"),
+                        "fetch_failed": bool(safety.get("fetch_failed")),
+                        "mcap": safety.get("mcap_usd"),
+                        "liq": safety.get("liq_usd"),
+                    },
+                )
+                # Don't Discord-notify empty "GMGN取得失敗" — looks out of sync with the app
+                if safety.get("fetch_failed"):
+                    print(f"skip notice suppressed (gmgn fetch failed) {ca[:10]}…")
+                elif post_skip and skip_notices < MAX_SKIP_NOTICES_PER_RUN:
+                    try:
+                        discord_webhook(webhook, embeds=[build_skip_embed(s, safety, chain)])
+                        skip_notices += 1
+                    except Exception as e:
+                        print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)
+                seen.add(s["key"])
+                skipped += 1
+                continue
 
         # 出来高 / ホルダー / 買い金額 / 財布質
         wallet_scores = [
@@ -3305,42 +3368,52 @@ def run_once(args: argparse.Namespace) -> int:
             flush=True,
         )
         if market_fails:
-            reason = "notify_gate:" + ",".join(market_fails)
-            print(f"skip {ca} {reason}", flush=True)
-            append_paper_log(
-                paper_path,
-                {
-                    **base_row,
-                    "posted": False,
-                    "reason": reason,
-                    "volume_h24": safety.get("volume_h24"),
-                    "holders": safety.get("holder_count"),
-                    "wallet_scores": wallet_scores,
-                    "mcap": safety.get("mcap_usd"),
-                    "liq": safety.get("liq_usd"),
-                },
-            )
-            if skip_notices < MAX_SKIP_NOTICES_PER_RUN:
-                try:
-                    safety_skip = dict(safety)
-                    safety_skip["reasons"] = market_fails
-                    safety_skip["jp"] = "見送り（" + "・".join(
-                        (
-                            "出来高薄い" if str(r).startswith("volume") else
-                            "ホルダー少ない" if str(r).startswith("holders") else
-                            "買い合計小さい" if str(r).startswith("weak_cluster") else
-                            "財布の質不足" if str(r).startswith("quality") else
-                            "検査NG"
-                        )
-                        for r in market_fails
-                    ) + "）"
-                    discord_webhook(webhook, embeds=[build_skip_embed(s, safety_skip, chain)])
-                    skip_notices += 1
-                except Exception as e:
-                    print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)
-            seen.add(s["key"])
-            skipped += 1
-            continue
+            if passthrough:
+                pt_reasons.extend(market_fails)
+                print(
+                    f"passthrough ignore notify_gate ca={ca[:10]}… fails={market_fails}",
+                    flush=True,
+                )
+            else:
+                reason = "notify_gate:" + ",".join(market_fails)
+                print(f"skip {ca} {reason}", flush=True)
+                append_paper_log(
+                    paper_path,
+                    {
+                        **base_row,
+                        "posted": False,
+                        "reason": reason,
+                        "volume_h24": safety.get("volume_h24"),
+                        "holders": safety.get("holder_count"),
+                        "wallet_scores": wallet_scores,
+                        "mcap": safety.get("mcap_usd"),
+                        "liq": safety.get("liq_usd"),
+                    },
+                )
+                if post_skip and skip_notices < MAX_SKIP_NOTICES_PER_RUN:
+                    try:
+                        safety_skip = dict(safety)
+                        safety_skip["reasons"] = market_fails
+                        safety_skip["jp"] = "見送り（" + "・".join(
+                            (
+                                "出来高薄い" if str(r).startswith("volume") else
+                                "ホルダー少ない" if str(r).startswith("holders") else
+                                "買い合計小さい" if str(r).startswith("weak_cluster") else
+                                "財布の質不足" if str(r).startswith("quality") else
+                                "検査NG"
+                            )
+                            for r in market_fails
+                        ) + "）"
+                        discord_webhook(webhook, embeds=[build_skip_embed(s, safety_skip, chain)])
+                        skip_notices += 1
+                    except Exception as e:
+                        print(f"skip notice failed: {type(e).__name__}", file=sys.stderr)
+                seen.add(s["key"])
+                skipped += 1
+                continue
+
+        if passthrough and pt_reasons:
+            print(f"passthrough post {ca} reasons={pt_reasons}", flush=True)
 
         embed = build_embed(s, chain, safety, source_mode, watch=watch)
         resp = discord_webhook(webhook, content="", embeds=[embed])
