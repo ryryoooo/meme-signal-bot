@@ -8,12 +8,13 @@ Env:
   SCOUT_TG_VET_CAP=40    max GMGN token-traders calls this run (GHA only)
   SCOUT_TG_MAX_TOKENS=8  max distinct token CAs for GMGN traders
   SCOUT_TG_BS_PAGES=20   Blockscout holders/transfers/tokentx page depth
-  SCOUT_TG_BS_TOKEN_CAP  Blockscout token cap (-1 = all unresolved tokens)
-  SCOUT_TG_BS_ALL=1      alias: set BS token cap to all unresolved
+  SCOUT_TG_BS_TOKEN_CAP  max BS fetch/deepen tokens per run (default 80; -1 = unlimited)
+  SCOUT_TG_BS_TIME_BUDGET_SEC  stop NEW BS fetches after N seconds (default 1200; 0 = off)
+  SCOUT_TG_BS_ALL=1      fetch unresolved tokens (still respects TOKEN_CAP / TIME_BUDGET)
   SCOUT_TG_BLOCKSCOUT=1  enable Blockscout token-scoped resolve
   SCOUT_TG_MULTI_UNION=1 union transfer graphs for pairs on ≥2 tokens
   SCOUT_TG_MEGA_UNION=1  unique-match against union of ALL token pools
-  SCOUT_TG_BS_DEEPEN_MISS=1 re-fetch BS when reused pool misses pending truncs
+  SCOUT_TG_BS_DEEPEN_MISS=1 re-fetch BS when reused pool misses pending truncs (counts toward TOKEN_CAP)
   SCOUT_TG_ELITE_ONLY=0  if 1, only resolve 💎 elite truncs
   SCOUT_TG_SKIP_WELL_RESOLVED=0.8  skip GMGN for tokens with >= this fraction resolved
   SCOUT_TG_BS_SLEEP_MS=400  pause between Blockscout token fetches
@@ -39,7 +40,7 @@ Writes:
   rh-wallets/summary_scout_resolve.md
   merges resolved full addrs into WATCHLIST_PATH (no wipe)
 
-Deep harvest tip: SCOUT_TG_PAGES=80–100 SCOUT_TG_BS_ALL=1 SCOUT_TG_BS_PAGES=40 (GHA).
+Deep harvest tip: chunked BS — SCOUT_TG_BS_ALL=1 SCOUT_TG_BS_TOKEN_CAP=80 SCOUT_TG_BS_TIME_BUDGET_SEC=1500 SCOUT_TG_PAGES=0 (resolve-only) on GHA.
 """
 from __future__ import annotations
 
@@ -1213,29 +1214,43 @@ def resolve_truncs(
 
     bs_sleep = max(0, int(os.environ.get("SCOUT_TG_BS_SLEEP_MS", "400"))) / 1000.0
     bs_all = env_bool("SCOUT_TG_BS_ALL", False)
-    bs_cap_env = os.environ.get("SCOUT_TG_BS_TOKEN_CAP")
-    if bs_cap_env is not None and str(bs_cap_env).strip() != "":
-        try:
-            bs_cap = int(bs_cap_env)
-        except ValueError:
-            bs_cap = max(1, max_tokens * 3)
-    elif bs_all:
-        bs_cap = -1
-    else:
-        bs_cap = max(1, max_tokens * 3)
+    # Cap fetch/deepen ops per run so GHA can commit progress (default 80).
+    # -1 = unlimited (legacy). bs_all=1 no longer implies unlimited.
+    bs_cap_raw = os.environ.get("SCOUT_TG_BS_TOKEN_CAP", "80")
+    try:
+        bs_cap = int(str(bs_cap_raw).strip() or "80")
+    except ValueError:
+        bs_cap = 80 if bs_all else max(1, max_tokens * 3)
+    try:
+        bs_budget = float(os.environ.get("SCOUT_TG_BS_TIME_BUDGET_SEC", "1200") or "1200")
+    except ValueError:
+        bs_budget = 1200.0
+    bs_deadline = (time.monotonic() + bs_budget) if bs_budget > 0 else None
 
     if env_bool("SCOUT_TG_BLOCKSCOUT", True):
-        # Prefer tokens that still have unresolved truncs; optional: skip well-pooled
-        # Prefer tokens that share unresolved pairs with other tokens (union leverage)
-        pair_cas_count: dict[str, int] = {}
-        for t in trunc_rows:
-            pk = pair_key(t.get("prefix"), t.get("suffix"))
-            if pk == "|" or pk in pair_to_addr:
-                continue
-            ca = (t.get("token_ca") or "").lower()
-            if ca.startswith("0x"):
-                pair_cas_count[pk] = pair_cas_count.get(pk, 0) + 0  # placeholder
-        # recount unique cas per pair
+        # Prefer tokens tied to prior no_match truncs (elite first), then multi-token union leverage.
+        no_match_ca_score: dict[str, int] = {}
+        if UNRESOLVED_PATH.exists():
+            try:
+                with UNRESOLVED_PATH.open(encoding="utf-8") as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            o = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if o.get("reason") != "no_match":
+                            continue
+                        tier_w = 10 if o.get("tier") == "elite" else 1
+                        for ca0 in o.get("token_cas") or []:
+                            ca_l = str(ca0).lower()
+                            if ca_l.startswith("0x"):
+                                no_match_ca_score[ca_l] = no_match_ca_score.get(ca_l, 0) + tier_w
+            except OSError as e:
+                print(f"scout_tg unresolved load skip: {type(e).__name__}", flush=True)
+
         _pcs: dict[str, set[str]] = {}
         for t in trunc_rows:
             pk = pair_key(t.get("prefix"), t.get("suffix"))
@@ -1260,16 +1275,35 @@ def resolve_truncs(
             ]
             if pending:
                 pending_cas.append(ca)
-        pending_cas.sort(key=lambda c: (-ca_multi_score.get(c, 0), ca_score(by_ca[c])))
-        if bs_cap < 0:
-            bs_targets = pending_cas
-        else:
-            bs_targets = pending_cas[: max(1, bs_cap)]
-        print(
-            f"scout_tg blockscout targets={len(bs_targets)}/{len(pending_cas)} "
-            f"cap={bs_cap} pages={os.environ.get('SCOUT_TG_BS_PAGES', '20')}"
+        pending_cas.sort(
+            key=lambda c: (
+                -no_match_ca_score.get(c, 0),
+                -ca_multi_score.get(c, 0),
+                ca_score(by_ca[c]),
+            )
         )
-        for i, ca in enumerate(bs_targets):
+        # Walk ALL pending tokens for cheap reuse matches, but only fetch/deepen up to cap.
+        print(
+            f"scout_tg blockscout pending={len(pending_cas)} "
+            f"fetch_cap={bs_cap} budget_sec={bs_budget:g} "
+            f"no_match_cas={len(no_match_ca_score)} "
+            f"pages={os.environ.get('SCOUT_TG_BS_PAGES', '20')}",
+            flush=True,
+        )
+        bs_fetch_n = 0
+        bs_reuse_n = 0
+        bs_skipped_cap = 0
+        bs_stopped_budget = False
+        for i, ca in enumerate(pending_cas):
+            if bs_deadline is not None and time.monotonic() >= bs_deadline:
+                bs_stopped_budget = True
+                print(
+                    f"scout_tg blockscout time budget exhausted "
+                    f"after fetch={bs_fetch_n} reuse={bs_reuse_n} "
+                    f"seen={i}/{len(pending_cas)}",
+                    flush=True,
+                )
+                break
             pending = [
                 t
                 for t in by_ca[ca]
@@ -1283,7 +1317,8 @@ def resolve_truncs(
             min_reuse = int(os.environ.get("SCOUT_TG_BS_REUSE_MIN", "80"))
             force = env_bool("SCOUT_TG_BS_FORCE", False)
             reuse_ok = bool(prior) and len(prior) >= min_reuse and not force
-            # If pending truncs have zero hits in the reused pool, deepen (free BS).
+            need_deepen = False
+            # If pending truncs have zero hits in the reused pool, deepen (counts toward cap).
             if reuse_ok and env_bool("SCOUT_TG_BS_DEEPEN_MISS", True):
                 miss = 0
                 for t in pending:
@@ -1292,17 +1327,36 @@ def resolve_truncs(
                     if not match_hits(prior, pref, suf):
                         miss += 1
                 if miss:
+                    need_deepen = True
                     reuse_ok = False
                     print(
                         f"scout_tg blockscout deepen-miss {ca[:10]}… "
                         f"prior={len(prior)} miss={miss}/{len(pending)}",
                         flush=True,
                     )
-            if reuse_ok:
-                addrs = list(prior)
-                err = None
-                print(f"scout_tg blockscout reuse {ca[:10]}… n={len(addrs)} pending={len(pending)}")
-            else:
+            will_fetch = (not reuse_ok) or force
+            if will_fetch:
+                if bs_cap >= 0 and bs_fetch_n >= bs_cap:
+                    bs_skipped_cap += 1
+                    # Still apply prior pool matches if any (no network).
+                    if prior:
+                        pool = set(prior)
+                        for t in pending:
+                            pref, suf = (t.get("prefix") or "").lower(), (t.get("suffix") or "").lower()
+                            hits = match_hits(pool, pref, suf)
+                            if len(hits) == 1:
+                                accept(t, hits[0], "scout_tg_blockscout", bucket="token")
+                            elif len(hits) > 1:
+                                stats.collisions_skipped += 1
+                    continue
+                if bs_deadline is not None and time.monotonic() >= bs_deadline:
+                    bs_stopped_budget = True
+                    print(
+                        f"scout_tg blockscout time budget before fetch "
+                        f"fetch={bs_fetch_n} seen={i}/{len(pending_cas)}",
+                        flush=True,
+                    )
+                    break
                 addrs, err = [], None
                 attempts = int(os.environ.get("SCOUT_TG_BS_TOKEN_RETRIES", "3"))
                 for attempt in range(max(1, attempts)):
@@ -1313,9 +1367,23 @@ def resolve_truncs(
                         time.sleep(float(os.environ.get("SCOUT_TG_BS_429_PAUSE", "25")))
                         continue
                     break
+                bs_fetch_n += 1
                 stats.bs_tokens += 1
                 if err and err not in ("empty",) and not addrs:
                     stats.bs_api_fail += 1
+                if need_deepen:
+                    print(
+                        f"scout_tg blockscout deepen-fetch {ca[:10]}… "
+                        f"[{bs_fetch_n}/{bs_cap if bs_cap >= 0 else '∞'}]",
+                        flush=True,
+                    )
+            else:
+                addrs, err = list(prior), None
+                bs_reuse_n += 1
+                print(
+                    f"scout_tg blockscout reuse {ca[:10]}… n={len(addrs)} pending={len(pending)}",
+                    flush=True,
+                )
             pool = set(addrs) | prior
             if pool:
                 token_pools[ca] = pool
@@ -1334,7 +1402,8 @@ def resolve_truncs(
                 continue
             print(
                 f"scout_tg blockscout {ca[:10]}… n={len(pool)} pending={len(pending)} "
-                f"[{i+1}/{len(bs_targets)}]"
+                f"fetch={bs_fetch_n} reuse={bs_reuse_n} [{i+1}/{len(pending_cas)}]",
+                flush=True,
             )
             for t in pending:
                 pref, suf = (t.get("prefix") or "").lower(), (t.get("suffix") or "").lower()
@@ -1343,11 +1412,20 @@ def resolve_truncs(
                     accept(t, hits[0], "scout_tg_blockscout", bucket="token")
                 elif len(hits) > 1:
                     stats.collisions_skipped += 1
-            if bs_sleep:
+            if will_fetch and bs_sleep:
                 time.sleep(bs_sleep)
-            # periodic pool flush every 25 tokens
-            if (i + 1) % 25 == 0:
+            # periodic pool flush every 25 fetches (or every 50 seen)
+            if will_fetch and bs_fetch_n > 0 and bs_fetch_n % 25 == 0:
                 save_token_pools(token_pools)
+            elif (i + 1) % 50 == 0:
+                save_token_pools(token_pools)
+
+        print(
+            f"scout_tg blockscout done fetch={bs_fetch_n} reuse={bs_reuse_n} "
+            f"skipped_cap={bs_skipped_cap} budget_stop={int(bs_stopped_budget)} "
+            f"cap={bs_cap}",
+            flush=True,
+        )
 
         # --- Pass 2: GMGN traders (GHA; skip well-resolved tokens; don't burn box) ---
     if gmgn_off:

@@ -1,5 +1,10 @@
 name: scout-tg-resolve
 
+# Chunked Blockscout resolve: bs_all walks unresolved tokens but only
+# fetch/deepens SCOUT_TG_BS_TOKEN_CAP per run (default 80) within
+# SCOUT_TG_BS_TIME_BUDGET_SEC (default 1500). Re-dispatch until unique% climbs.
+# pages=0 = resolve-only from disk (no TG scrape). MEGA_UNION stays on.
+
 on:
   workflow_dispatch:
     inputs:
@@ -20,9 +25,17 @@ on:
         required: false
         default: "80"
       bs_all:
-        description: "Fetch Blockscout for ALL unresolved tokens (1/0)"
+        description: "Walk ALL unresolved tokens (still respects bs_token_cap/time_budget)"
         required: false
         default: "1"
+      bs_token_cap:
+        description: "Max BS fetch/deepen tokens this run (default 80; -1=unlimited)"
+        required: false
+        default: "80"
+      time_budget:
+        description: "Stop NEW BS fetches after N seconds (default 1500; 0=off)"
+        required: false
+        default: "1500"
 
 permissions:
   contents: write
@@ -72,7 +85,8 @@ jobs:
           SCOUT_TG_MAX_TOKENS: ${{ inputs.max_tokens || '80' }}
           SCOUT_TG_BS_PAGES: ${{ inputs.bs_pages || '40' }}
           SCOUT_TG_BS_ALL: ${{ inputs.bs_all || '1' }}
-          SCOUT_TG_BS_TOKEN_CAP: "-1"
+          SCOUT_TG_BS_TOKEN_CAP: ${{ inputs.bs_token_cap || '80' }}
+          SCOUT_TG_BS_TIME_BUDGET_SEC: ${{ inputs.time_budget || '1500' }}
           SCOUT_TG_BLOCKSCOUT: "1"
           SCOUT_TG_MULTI_UNION: "1"
           SCOUT_TG_MEGA_UNION: "1"
