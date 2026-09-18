@@ -1,25 +1,25 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-09-18T06:34:30.296059+00:00
-- Ranked wallets: **784**
-- Portfolio vetted this run: **0** (cap=40)
-- GMGN calls: **1** err=rate_limited
+- Updated (UTC): 2026-09-18T07:28:49.627038+00:00
+- Ranked wallets: **817**
+- Portfolio vetted this run: **3** (cap=40)
+- GMGN calls: **4** err=rate_limited
 - FOMO overlaps: **0**
-- Merged to main watch: **784**
+- Merged to main watch: **817**
 
 ## Top by scout_rank_score
 
 | # | addr | tier | hits | elite | buy$ | WR | n | realized | FOMO | score |
 |---|------|------|------|-------|------|----|---|----------|------|-------|
-| 1 | `0x2fd1…003d` | elite | 45 | 45 | 16,016 | 38% | 3591 | 154,935 | — | 43.74 |
+| 1 | `0x2fd1…003d` | elite | 47 | 47 | 16,494 | 38% | 3591 | 154,935 | — | 45.34 |
 | 2 | `0x6078…58b2` | elite | 40 | 40 | 17,081 | 47% | 25226 | 319,008 | — | 42.12 |
 | 3 | `0xe7db…e602` | elite | 34 | 34 | 6,681 | 22% | 8992 | 109,068 | — | 34.86 |
 | 4 | `0x24e9…7ba3` | elite | 32 | 32 | 12,161 | 26% | 14175 | 63,992 | — | 33.34 |
-| 5 | `0x4d96…26f3` | elite | 23 | 23 | 7,365 | 59% | 6384 | 194,086 | — | 28.52 |
-| 6 | `0x3a13…e4ef` | elite | 26 | 26 | 12,031 | — | — | — | — | 26.54 |
-| 7 | `0xa053…4f0b` | elite | 25 | 25 | 4,089 | — | — | — | — | 25.74 |
-| 8 | `0x8ee9…3e7b` | elite | 22 | 22 | 4,523 | 37% | 2916 | 43,989 | — | 25.26 |
-| 9 | `0x48cf…c1fd` | elite | 24 | 24 | 3,337 | — | — | — | — | 24.94 |
+| 5 | `0x3a13…e4ef` | elite | 26 | 26 | 12,031 | 85% | 2661 | 168,644 | — | 31.0 |
+| 6 | `0x48cf…c1fd` | elite | 24 | 24 | 3,337 | 51% | 5264 | 148,478 | — | 29.4 |
+| 7 | `0x4d96…26f3` | elite | 23 | 23 | 7,365 | 59% | 6384 | 194,086 | — | 28.52 |
+| 8 | `0xa053…4f0b` | elite | 25 | 25 | 4,089 | 31% | 15919 | 74,277 | — | 27.74 |
+| 9 | `0x8ee9…3e7b` | elite | 22 | 22 | 4,523 | 37% | 2916 | 43,989 | — | 25.26 |
 | 10 | `0xfbcf…1f29` | elite | 23 | 23 | 3,702 | — | — | — | — | 24.14 |
 | 11 | `0xa83b…8811` | elite | 20 | 18 | 9,928 | 44% | 9666 | 96,740 | — | 23.56 |
 | 12 | `0xffe5…1ecf` | elite | 22 | 22 | 7,082 | — | — | — | — | 23.34 |
@@ -54,13 +54,13 @@
 
 ## Top elite by frequency
 
-- `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` elite=45 hits=45 buy=$16,016 rp=154934.98827501526 wr=0.3822695035460993
+- `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` elite=47 hits=47 buy=$16,494 rp=154934.98827501526 wr=0.3822695035460993
 - `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` elite=40 hits=40 buy=$17,081 rp=319007.74516258715 wr=0.46974236069502695
 - `0xe7db4e546edc6a341a6d63475d5238b4cc1be602` elite=34 hits=34 buy=$6,681 rp=109067.83451501447 wr=0.22186322024771135
 - `0x24e91130ba7fb21f853d709a1ffb8dee99ba7ba3` elite=32 hits=32 buy=$12,161 rp=63991.810839523016 wr=0.26048218029350106
-- `0x3a1345bc81e8479438234826f52e885f6817e4ef` elite=26 hits=26 buy=$12,031 rp=None wr=None
-- `0xa053641c649d93b51ce88eafec998ffb9f534f0b` elite=25 hits=25 buy=$4,089 rp=None wr=None
-- `0x48cfadf0b1f29883e09c0a2a5d90066b27d9c1fd` elite=24 hits=24 buy=$3,337 rp=None wr=None
+- `0x3a1345bc81e8479438234826f52e885f6817e4ef` elite=26 hits=26 buy=$12,031 rp=168643.79928354445 wr=0.851010101010101
+- `0xa053641c649d93b51ce88eafec998ffb9f534f0b` elite=25 hits=25 buy=$4,089 rp=74276.63032988658 wr=0.3077311773623042
+- `0x48cfadf0b1f29883e09c0a2a5d90066b27d9c1fd` elite=24 hits=24 buy=$3,337 rp=148478.24969902117 wr=0.5109060402684564
 - `0x4d9644d05fe2123b4eafa8d7fd31b0ea430726f3` elite=23 hits=23 buy=$7,365 rp=194085.51639457344 wr=0.5876494023904383
 - `0xfbcf26e80231fea6c310263920bbf3f7cecf1f29` elite=23 hits=23 buy=$3,702 rp=None wr=None
 - `0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b` elite=22 hits=22 buy=$4,523 rp=43988.51354884907 wr=0.3743482794577685
@@ -78,12 +78,12 @@
 - `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` rp=$319,008 wr=0.46974236069502695 n=25226 elite=40 hits=40
 - `0x814a128c8b65e428dc9864cac3d3031b03e677bc` rp=$283,332 wr=0.49473684210526314 n=4304 elite=2 hits=2
 - `0x4d9644d05fe2123b4eafa8d7fd31b0ea430726f3` rp=$194,086 wr=0.5876494023904383 n=6384 elite=23 hits=23
-- `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` rp=$154,935 wr=0.3822695035460993 n=3591 elite=45 hits=45
+- `0x3a1345bc81e8479438234826f52e885f6817e4ef` rp=$168,644 wr=0.851010101010101 n=2661 elite=26 hits=26
+- `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` rp=$154,935 wr=0.3822695035460993 n=3591 elite=47 hits=47
+- `0x48cfadf0b1f29883e09c0a2a5d90066b27d9c1fd` rp=$148,478 wr=0.5109060402684564 n=5264 elite=24 hits=24
 - `0xe7db4e546edc6a341a6d63475d5238b4cc1be602` rp=$109,068 wr=0.22186322024771135 n=8992 elite=34 hits=34
 - `0xa83b73f5644cde337b61da79589f10ea15548811` rp=$96,740 wr=0.44047619047619047 n=9666 elite=18 hits=20
+- `0xa053641c649d93b51ce88eafec998ffb9f534f0b` rp=$74,277 wr=0.3077311773623042 n=15919 elite=25 hits=25
 - `0x7f4d036153c1acb0f180407e8e5c6cd0f972234e` rp=$70,840 wr=0.39399293286219084 n=4693 elite=11 hits=14
 - `0x0fc735ce54de29d20aedef289e9f0c1551de2608` rp=$67,284 wr=0.6637630662020906 n=12287 elite=15 hits=15
 - `0x24e91130ba7fb21f853d709a1ffb8dee99ba7ba3` rp=$63,992 wr=0.26048218029350106 n=14175 elite=32 hits=32
-- `0xb0b72fd48bd4212c77e75756a7ec977165a41657` rp=$48,328 wr=0.47701149425287354 n=928 elite=13 hits=13
-- `0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b` rp=$43,989 wr=0.3743482794577685 n=2916 elite=22 hits=22
-- `0xd632a243fb30cbf5f53a78fa0ed01e7ba13d1718` rp=$28,336 wr=0.300531914893617 n=6162 elite=16 hits=21
