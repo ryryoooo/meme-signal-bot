@@ -6,11 +6,11 @@ on:
       pages:
         description: "TG scrape pages (0=resolve-only from disk)"
         required: false
-        default: "90"
+        default: "100"
       bs_pages:
         description: "Blockscout page depth per token"
         required: false
-        default: "25"
+        default: "50"
       vet_cap:
         description: "GMGN traders call cap (stop on 429)"
         required: false
@@ -75,9 +75,12 @@ jobs:
           SCOUT_TG_BS_TOKEN_CAP: "-1"
           SCOUT_TG_BLOCKSCOUT: "1"
           SCOUT_TG_MULTI_UNION: "1"
-          SCOUT_TG_BS_SLEEP_MS: "900"
+          SCOUT_TG_MEGA_UNION: "1"
+          SCOUT_TG_BS_DEEPEN_MISS: "1"
+          SCOUT_TG_BS_ES_ALWAYS: "1"
+          SCOUT_TG_BS_SLEEP_MS: "600"
           SCOUT_TG_SKIP_WELL_RESOLVED: "0.95"
-          SCOUT_TG_BS_REUSE_MIN: "40"
+          SCOUT_TG_BS_REUSE_MIN: "60"
           SCOUT_TG_BS_429_PAUSE: "30"
           SCOUT_TG_BS_COOLDOWN_WAIT: "120"
           CHAIN: robinhood

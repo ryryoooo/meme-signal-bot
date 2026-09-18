@@ -12,6 +12,8 @@ Env:
   SCOUT_TG_BS_ALL=1      alias: set BS token cap to all unresolved
   SCOUT_TG_BLOCKSCOUT=1  enable Blockscout token-scoped resolve
   SCOUT_TG_MULTI_UNION=1 union transfer graphs for pairs on ≥2 tokens
+  SCOUT_TG_MEGA_UNION=1  unique-match against union of ALL token pools
+  SCOUT_TG_BS_DEEPEN_MISS=1 re-fetch BS when reused pool misses pending truncs
   SCOUT_TG_ELITE_ONLY=0  if 1, only resolve 💎 elite truncs
   SCOUT_TG_SKIP_WELL_RESOLVED=0.8  skip GMGN for tokens with >= this fraction resolved
   SCOUT_TG_BS_SLEEP_MS=400  pause between Blockscout token fetches
@@ -23,8 +25,9 @@ Resolve order (unique match only — never invent addresses):
   1) pair-level resolve cache (prefix|suffix → addr) applied across tokens
   2) token-scoped unique match (holders/transfers/traders of that token_ca)
   3) multi-token union unique match (pairs seen on ≥2 tokens)
-  4) global unique match against expanded local pool
-  5) optional: 2 global hits but only 1 in token set → accept that one
+  4) mega-union unique match across ALL token pools (no false positives)
+  5) global unique match against expanded local pool
+  6) optional: 2 global hits but only 1 in token set → accept that one
 
 Writes:
   rh-wallets/raw/scout_tg_posts.jsonl
@@ -983,9 +986,10 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
         if got_any:
             break
 
-    # 2) etherscan-compat tokentx — always try to deepen / fill empties
+    # 2) etherscan-compat tokentx — deepen even when holders already nonempty
     es_offset = int(os.environ.get("SCOUT_TG_BS_ES_OFFSET", "100"))
-    if len(addrs) < max(50, max_pages * 5):
+    es_always = env_bool("SCOUT_TG_BS_ES_ALWAYS", True)
+    if es_always or len(addrs) < max(50, max_pages * 5):
         for host in list(hosts_es):
             if host in _BS_DEAD_HOSTS:
                 continue
@@ -1050,6 +1054,7 @@ class ResolveStats:
         "global_hits",
         "pair_cache_hits",
         "multi_union_hits",
+        "mega_pool_hits",
         "collisions_skipped",
         "two_hit_token_accept",
         "gmgn_calls",
@@ -1071,6 +1076,7 @@ class ResolveStats:
         self.global_hits = 0
         self.pair_cache_hits = 0
         self.multi_union_hits = 0
+        self.mega_pool_hits = 0
         self.collisions_skipped = 0
         self.two_hit_token_accept = 0
         self.gmgn_calls = 0
@@ -1146,6 +1152,8 @@ def resolve_truncs(
             stats.token_scoped_hits += 1
         elif bucket == "multi":
             stats.multi_union_hits += 1
+        elif bucket == "mega":
+            stats.mega_pool_hits += 1
         elif bucket == "pair_cache":
             stats.pair_cache_hits += 1
         elif bucket == "two_hit":
@@ -1274,7 +1282,23 @@ def resolve_truncs(
             prior = token_pools.get(ca) or set()
             min_reuse = int(os.environ.get("SCOUT_TG_BS_REUSE_MIN", "80"))
             force = env_bool("SCOUT_TG_BS_FORCE", False)
-            if prior and len(prior) >= min_reuse and not force:
+            reuse_ok = bool(prior) and len(prior) >= min_reuse and not force
+            # If pending truncs have zero hits in the reused pool, deepen (free BS).
+            if reuse_ok and env_bool("SCOUT_TG_BS_DEEPEN_MISS", True):
+                miss = 0
+                for t in pending:
+                    pref = (t.get("prefix") or "").lower()
+                    suf = (t.get("suffix") or "").lower()
+                    if not match_hits(prior, pref, suf):
+                        miss += 1
+                if miss:
+                    reuse_ok = False
+                    print(
+                        f"scout_tg blockscout deepen-miss {ca[:10]}… "
+                        f"prior={len(prior)} miss={miss}/{len(pending)}",
+                        flush=True,
+                    )
+            if reuse_ok:
                 addrs = list(prior)
                 err = None
                 print(f"scout_tg blockscout reuse {ca[:10]}… n={len(addrs)} pending={len(pending)}")
@@ -1469,6 +1493,32 @@ def resolve_truncs(
             if addr:
                 accept(t, addr, "scout_tg_pair_cache", bucket="pair_cache")
 
+    # --- Pass 2.75: mega-union of ALL token pools (unique prefix|suffix only) ---
+    # Wallets often appear in another Scout token's holders/transfers graph.
+    if env_bool("SCOUT_TG_MEGA_UNION", True) and token_pools:
+        mega: set[str] = set()
+        for _ca, pool in token_pools.items():
+            mega |= pool
+        print(f"scout_tg mega_union pool_addrs={len(mega)} tokens={len(token_pools)}")
+        for t in pending_rows():
+            pref = (t.get("prefix") or "").lower()
+            suf = (t.get("suffix") or "").lower()
+            pk = pair_key(pref, suf)
+            if pk in pair_to_addr or pk == "|":
+                continue
+            hits = match_hits(mega, pref, suf)
+            if len(hits) == 1:
+                accept(t, hits[0], "scout_tg_mega_union", bucket="mega")
+            elif len(hits) > 1:
+                stats.collisions_skipped += 1
+        for t in pending_rows():
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            addr = pair_to_addr.get(pk)
+            if addr:
+                accept(t, addr, "scout_tg_pair_cache", bucket="pair_cache")
+        if stats.mega_pool_hits:
+            print(f"scout_tg mega_union hits={stats.mega_pool_hits}")
+
     # --- Pass 3: global unique against local pool (+ optional 2-hit ∩ token) ---
     still = pending_rows()
     stats.attempted = len(
@@ -1632,8 +1682,8 @@ def resolve_truncs(
             f"({(100.0 * stats.unique_pairs_resolved / max(1, stats.unique_pairs_total)):.1f}%)",
             f"- Trunc rows still unresolved: **{stats.unresolved_remaining}**",
             f"- Methods: pair_cache={stats.pair_cache_hits} token_scoped={stats.token_scoped_hits} "
-            f"multi_union={stats.multi_union_hits} global={stats.global_hits} "
-            f"two_hit={stats.two_hit_token_accept}",
+            f"multi_union={stats.multi_union_hits} mega={stats.mega_pool_hits} "
+            f"global={stats.global_hits} two_hit={stats.two_hit_token_accept}",
             f"- Blockscout: tokens_fetched={stats.bs_tokens} nonempty={stats.bs_tokens_nonempty} "
             f"api_fail={stats.bs_api_fail} gmgn_calls={stats.gmgn_calls}",
             f"- Unresolved reasons (unique pairs): no_token_pool={stats.reason_no_token_pool} "
