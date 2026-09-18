@@ -14,7 +14,7 @@ on:
       vet_cap:
         description: "GMGN traders call cap (stop on 429)"
         required: false
-        default: "120"
+        default: "0"
       max_tokens:
         description: "GMGN max tokens"
         required: false
@@ -29,7 +29,8 @@ permissions:
   actions: read
 
 concurrency:
-  group: scout-tg-resolve
+  # share with gmgn-vet-throttle so portfolio + traders never overlap
+  group: gmgn-gha
   cancel-in-progress: false
 
 jobs:
@@ -86,6 +87,8 @@ jobs:
       - name: Rank scout wallets + promote
         env:
           SCOUT_RANK_MERGE: "1"
+          SCOUT_TG_VET_CAP: "0"
+          GMGN_DISABLED: "1"
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           REQUIRE_CONSISTENT_PNL: "1"

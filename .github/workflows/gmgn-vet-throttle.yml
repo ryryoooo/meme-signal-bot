@@ -1,0 +1,105 @@
+name: gmgn-vet-throttle
+
+# Tiny GHA-only GMGN portfolio fills. Box stays GMGN_DISABLED=1.
+on:
+  schedule:
+    # every 2 hours — keep under rate limits
+    - cron: "20 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      cap:
+        description: "Max GMGN portfolio calls this run"
+        required: false
+        default: "8"
+      sleep_sec:
+        description: "Sleep seconds between calls"
+        required: false
+        default: "12"
+      priority:
+        description: "elite or all"
+        required: false
+        default: "elite"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: gmgn-gha
+  cancel-in-progress: false
+
+jobs:
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install gmgn-cli
+        run: npm install -g gmgn-cli
+
+      - name: Configure GMGN env (no echo)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
+        run: |
+          mkdir -p "$HOME/.config/gmgn"
+          python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
+
+      - name: Throttled portfolio vet (elite missing WR)
+        env:
+          GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
+          GMGN_DISABLED: "0"
+          CHAIN: robinhood
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          GMGN_VET_CAP: ${{ inputs.cap || '8' }}
+          GMGN_VET_SLEEP_SEC: ${{ inputs.sleep_sec || '12' }}
+          GMGN_VET_COOLDOWN_HOURS: "6"
+          GMGN_VET_PRIORITY: ${{ inputs.priority || 'elite' }}
+        run: python3 scripts/vet_gmgn_throttled.py
+
+      - name: Commit vet fills
+        continue-on-error: true
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            rh-wallets/wallets.jsonl \
+            rh-wallets/wallets_scout_ranked.jsonl \
+            rh-wallets/summary_gmgn_vet.md \
+            rh-wallets/raw/gmgn_vet_throttle_state.json || true
+          if git diff --cached --quiet; then
+            echo "no vet changes"
+          else
+            git commit -m "chore: throttled GMGN portfolio vet (elite WR fill)"
+            if ! git pull --rebase origin main; then
+              echo "rebase conflict — prefer GHA vet fields"
+              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/summary_gmgn_vet.md rh-wallets/raw/gmgn_vet_throttle_state.json; do
+                if [ -f "$f" ] && git status --porcelain "$f" | grep -q .; then
+                  git checkout --theirs -- "$f" || true
+                  git add "$f" || true
+                fi
+              done
+              GIT_EDITOR=true git rebase --continue || git rebase --abort || true
+            fi
+            git push || git push --rebase origin main || true
+          fi
+
+      - name: Upload vet summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmgn-vet-throttle
+          path: |
+            rh-wallets/summary_gmgn_vet.md
+            rh-wallets/raw/gmgn_vet_throttle_state.json
+          if-no-files-found: warn
