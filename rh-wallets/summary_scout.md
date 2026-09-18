@@ -1,11 +1,11 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-09-18T05:01:35.796789+00:00
-- Ranked wallets: **780**
+- Updated (UTC): 2026-09-18T05:33:20.957260+00:00
+- Ranked wallets: **782**
 - Portfolio vetted this run: **0** (cap=40)
 - GMGN calls: **1** err=rate_limited
 - FOMO overlaps: **0**
-- Merged to main watch: **780**
+- Merged to main watch: **782**
 
 ## Top by scout_rank_score
 
