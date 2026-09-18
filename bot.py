@@ -97,6 +97,11 @@ def liq_gate_enabled() -> bool:
     """RH notify can disable liquidity checks via LIQ_REQUIRED=0."""
     return env_bool("LIQ_REQUIRED", True)
 
+
+def anti_spike_enabled() -> bool:
+    """RH notify can ignore pump/spike rejects via ANTI_SPIKE_REQUIRED=0."""
+    return env_bool("ANTI_SPIKE_REQUIRED", True)
+
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
 MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "8000"))
@@ -917,24 +922,9 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
             if vol_m5_req:
                 fails.append("volume_m5_na")
 
-    # 3) Anti-spike / natural tape
+    # 3) Anti-spike / natural tape (disabled when ANTI_SPIKE_REQUIRED=0)
     pcm5 = safety.get("price_change_m5")
     pch1 = safety.get("price_change_h1")
-    if pcm5 is not None:
-        try:
-            if float(pcm5) >= max_m5:
-                fails.append(f"spike_m5={float(pcm5):.0f}>={max_m5:.0f}")
-            if float(pcm5) <= -max_m5:  # dump candle also unnatural for entry
-                fails.append(f"dump_m5={float(pcm5):.0f}")
-        except (TypeError, ValueError):
-            pass
-    if pch1 is not None:
-        try:
-            if float(pch1) >= max_h1:
-                fails.append(f"spike_h1={float(pch1):.0f}>={max_h1:.0f}")
-        except (TypeError, ValueError):
-            pass
-    # one-sided 5m buys (no natural two-way flow)
     bm = safety.get("buys_m5")
     sm = safety.get("sells_m5")
     try:
@@ -942,17 +932,33 @@ def notify_market_gate_reasons(safety: dict, total_usd: float, wallet_scores: li
         sm_i = int(sm) if sm is not None else None
     except (TypeError, ValueError):
         bm_i = sm_i = None
-    if bm_i is not None and sm_i is not None and (bm_i + sm_i) >= 8:
-        ratio = bm_i / max(1, bm_i + sm_i)
-        if ratio >= max_buy_ratio:
-            fails.append(f"onesided_m5={ratio:.2f}")
-        try:
-            min_sell_r = float(os.environ.get("MIN_M5_SELL_RATIO", str(MIN_M5_SELL_RATIO)))
-        except (TypeError, ValueError):
-            min_sell_r = MIN_M5_SELL_RATIO
-        sell_r = sm_i / max(1, bm_i + sm_i)
-        if sell_r < min_sell_r:
-            fails.append(f"no_two_way_m5={sell_r:.2f}<{min_sell_r:.2f}")
+    if anti_spike_enabled():
+        if pcm5 is not None:
+            try:
+                if float(pcm5) >= max_m5:
+                    fails.append(f"spike_m5={float(pcm5):.0f}>={max_m5:.0f}")
+                if float(pcm5) <= -max_m5:  # dump candle also unnatural for entry
+                    fails.append(f"dump_m5={float(pcm5):.0f}")
+            except (TypeError, ValueError):
+                pass
+        if pch1 is not None:
+            try:
+                if float(pch1) >= max_h1:
+                    fails.append(f"spike_h1={float(pch1):.0f}>={max_h1:.0f}")
+            except (TypeError, ValueError):
+                pass
+        # one-sided 5m buys (no natural two-way flow)
+        if bm_i is not None and sm_i is not None and (bm_i + sm_i) >= 8:
+            ratio = bm_i / max(1, bm_i + sm_i)
+            if ratio >= max_buy_ratio:
+                fails.append(f"onesided_m5={ratio:.2f}")
+            try:
+                min_sell_r = float(os.environ.get("MIN_M5_SELL_RATIO", str(MIN_M5_SELL_RATIO)))
+            except (TypeError, ValueError):
+                min_sell_r = MIN_M5_SELL_RATIO
+            sell_r = sm_i / max(1, bm_i + sm_i)
+            if sell_r < min_sell_r:
+                fails.append(f"no_two_way_m5={sell_r:.2f}<{min_sell_r:.2f}")
     # buys increasing vs sells (候補: 買い優勢だが片側すぎない)
     if env_bool("REQUIRE_BUY_INCREASE", REQUIRE_BUY_INCREASE):
         if bm_i is not None and sm_i is not None:

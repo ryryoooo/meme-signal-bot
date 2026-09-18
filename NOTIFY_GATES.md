@@ -9,7 +9,8 @@
 - **買いボリュームは命** — 5分買い側USD・買い件数・買い＞売り
 - しょーもないSM除外（質スコア低＆実現益薄い）
 - **値動き必須**: `REQUIRE_PRICE_MOVE=1` — |m5|≥`MIN_ABS_PRICE_CHANGE_M5`(3) または |h1|≥`MIN_ABS_PRICE_MOVE_H1`(5)。m5≈h1≈h6≈0 は即除外
-- 監視交差 ≥2、急騰しすぎ上限
+- 監視交差 ≥2
+- （RH）急騰見送り無効 `ANTI_SPIKE_REQUIRED=0`（spike/dump/onesided 不問）
 - RH watch: `WATCH_MIN_REALIZED_HARD=500`（$0.01 onchain 偽PnLは除外）
 
 ## 第一セット — 初動ストーリー → 調整後の反転
