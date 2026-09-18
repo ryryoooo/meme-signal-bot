@@ -21,6 +21,7 @@ import urllib.parse
 import urllib.request
 from collections import defaultdict
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -2587,6 +2588,17 @@ def _wallet_tag(w: dict, watch: dict[str, dict] | None) -> str:
     return "sm"
 
 
+def _discord_notify_stamp(footer_base: str) -> tuple[str, dict]:
+    """UTC ISO8601 for embed.timestamp + Tokyo wall-time footer text."""
+    now_utc = datetime.now(timezone.utc)
+    now_jst = now_utc.astimezone(ZoneInfo("Asia/Tokyo"))
+    ts = now_utc.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    jst = f"投稿 {now_jst.strftime('%Y-%m-%d %H:%M')} JST"
+    base = (footer_base or "").strip()
+    footer_text = f"{base} · {jst}" if base else jst
+    return ts, {"text": footer_text[:2048]}
+
+
 def build_embed(
     s: dict,
     chain: str,
@@ -2694,13 +2706,15 @@ def build_embed(
     elif pb == "set2":
         fields.append({"name": "セット", "value": "②サバイバル整理", "inline": True})
 
+    ts, footer = _discord_notify_stamp("数値はGMGN取得時点 · お知らせのみ・自動では買いません")
     return {
         "title": title[:256],
         "url": gmgn_url,
         "description": description[:4000],
         "color": color,
         "fields": fields,
-        "footer": {"text": "数値はGMGN取得時点 · お知らせのみ・自動では買いません"},
+        "timestamp": ts,
+        "footer": footer,
     }
 
 
@@ -2713,6 +2727,7 @@ def build_multiplier_embed(alert: dict, mult: float, dex: dict, milestone: float
     if milestone:
         title = f"さっきの通知から {milestone:g}倍到達 · ${sym}"
     gmgn_url = gmgn_tok.token_app_url("robinhood", ca or "", dex.get("url"))
+    ts, footer = _discord_notify_stamp("数値はGMGN · 倍率フォローアップ・自動売買なし")
     return {
         "title": title[:256],
         "url": gmgn_url,
@@ -2727,7 +2742,8 @@ def build_multiplier_embed(alert: dict, mult: float, dex: dict, milestone: float
             {"name": "流動性", "value": fmt_usd(liq), "inline": True},
             {"name": "リンク", "value": f"[GMGNアプリで開く]({gmgn_url})", "inline": False},
         ],
-        "footer": {"text": "数値はGMGN · 倍率フォローアップ・自動売買なし"},
+        "timestamp": ts,
+        "footer": footer,
     }
 
 
@@ -2782,6 +2798,7 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
     reason_jp = "・".join(bits) if bits else (safety.get("jp") or "見送り")
     meta = CHAIN_META.get(chain, {})
     gmgn_url = gmgn_tok.token_app_url(meta.get("gmgn_chain") or chain, str(s.get("ca") or ""), safety.get("gmgn_url"))
+    ts, footer = _discord_notify_stamp(f"数値はGMGN · スキップ通知 · {meta.get('jp') or chain}")
     return {
         "title": f"見送り · ${sym}"[:256],
         "url": gmgn_url,
@@ -2798,7 +2815,8 @@ def build_skip_embed(s: dict, safety: dict, chain: str) -> dict:
             {"name": "流動性", "value": fmt_usd(safety.get("liq_usd")), "inline": True},
             {"name": "リンク", "value": f"[GMGNアプリで開く]({gmgn_url})", "inline": False},
         ],
-        "footer": {"text": f"数値はGMGN · スキップ通知 · {meta.get('jp') or chain}"},
+        "timestamp": ts,
+        "footer": footer,
     }
 
 
@@ -3614,7 +3632,8 @@ def test_fomo_holders_post() -> int:
     safety = safety_check(ca, chain)
     embed = build_embed(s, chain, safety, "fomo_holders", watch=load_watchlist(default_watchlist_path(chain), 0)[0])
     embed["title"] = ("【仮投稿】" + (embed.get("title") or ""))[:256]
-    embed["footer"] = {"text": "仮投稿・紙も実弾もなし・ホルダー重なりの見た目確認"}
+    _, footer = _discord_notify_stamp("仮投稿・紙も実弾もなし・ホルダー重なりの見た目確認")
+    embed["footer"] = footer
     discord_webhook(webhook, content="", embeds=[embed])
     print(f"test-fomo-holders posted ca={ca[:10]}… n={len(wallets)} safety_ok={safety.get('ok')}")
     return 0
@@ -3742,13 +3761,15 @@ def build_xbtscout_embed(rec: dict, chain: str) -> dict:
     if posted:
         fields.append({"name": "⏰", "value": str(posted), "inline": True})
 
+    ts, footer = _discord_notify_stamp(f"@xbtscout · {guess}")
     return {
         "title": title[:250],
         "description": desc[:4000],
         "url": link,
         "color": 0x22C55E,
         "fields": fields,
-        "footer": {"text": f"@xbtscout · {guess}"},
+        "timestamp": ts,
+        "footer": footer,
     }
 
 
