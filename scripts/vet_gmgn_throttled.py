@@ -122,8 +122,8 @@ def main() -> int:
 
     st = load_state()
     last_rl = parse_ts(st.get("last_rate_limit_at"))
-    if last_rl and now() - last_rl < timedelta(hours=1):
-        print(f"vet_gmgn_throttled: cooling after rate_limit until {last_rl + timedelta(hours=1)}", flush=True)
+    if last_rl and now() - last_rl < timedelta(hours=float(os.environ.get("GMGN_VET_RATE_LIMIT_COOLDOWN_HOURS", "6"))):
+        cd_h=float(os.environ.get("GMGN_VET_RATE_LIMIT_COOLDOWN_HOURS", "6")); print(f"vet_gmgn_throttled: cooling after rate_limit until {last_rl + timedelta(hours=cd_h)}", flush=True)
         Path(SUMMARY).write_text(
             f"# GMGN throttled vet\n\n- skipped: post-429 cooldown (last={st.get('last_rate_limit_at')})\n",
             encoding="utf-8",

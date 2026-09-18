@@ -4,17 +4,17 @@ name: gmgn-vet-throttle
 on:
   schedule:
     # every 2 hours — keep under rate limits
-    - cron: "20 */2 * * *"
+    - cron: "35 */3 * * *"
   workflow_dispatch:
     inputs:
       cap:
         description: "Max GMGN portfolio calls this run"
         required: false
-        default: "8"
+        default: "5"
       sleep_sec:
         description: "Sleep seconds between calls"
         required: false
-        default: "12"
+        default: "20"
       priority:
         description: "elite or all"
         required: false
@@ -62,9 +62,10 @@ jobs:
           GMGN_DISABLED: "0"
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
-          GMGN_VET_CAP: ${{ inputs.cap || '8' }}
-          GMGN_VET_SLEEP_SEC: ${{ inputs.sleep_sec || '12' }}
+          GMGN_VET_CAP: ${{ inputs.cap || '5' }}
+          GMGN_VET_SLEEP_SEC: ${{ inputs.sleep_sec || '20' }}
           GMGN_VET_COOLDOWN_HOURS: "6"
+          GMGN_VET_RATE_LIMIT_COOLDOWN_HOURS: "6"
           GMGN_VET_PRIORITY: ${{ inputs.priority || 'elite' }}
         run: python3 scripts/vet_gmgn_throttled.py
 
