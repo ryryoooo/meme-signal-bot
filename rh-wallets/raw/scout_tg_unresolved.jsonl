@@ -55,6 +55,7 @@
 {"pair_key": "0x0fb5|1b94", "prefix": "0x0fb5", "suffix": "1b94", "trunc": "0x0fb5…1b94", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x0b9e643b53ebfb71779cbfb1e72a65d30cab0063"], "union_pool_size": 122, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x1002|b2f5", "prefix": "0x1002", "suffix": "b2f5", "trunc": "0x1002…b2f5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2697, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x1002|b2f5", "prefix": "0x1002", "suffix": "b2f5", "trunc": "0x1002…b2f5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2798, "global_hits": 0, "token_hits": 0}
@@ -62,6 +63,9 @@
 =======
 {"pair_key": "0x1002|b2f5", "prefix": "0x1002", "suffix": "b2f5", "trunc": "0x1002…b2f5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2935, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x1002|b2f5", "prefix": "0x1002", "suffix": "b2f5", "trunc": "0x1002…b2f5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 3129, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x1023|d2dc", "prefix": "0x1023", "suffix": "d2dc", "trunc": "0x1023…d2dc", "tier": "good", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x4a3fea61cd1c3f6ded65524765620b6dfe601e18", "0xa605875d620753f4fb06024b788b2b6552a81e18", "0xb0ba876447b18ea94f65f9209ae00e428d0a8175"], "union_pool_size": 348, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x1066|f23f", "prefix": "0x1066", "suffix": "f23f", "trunc": "0x1066…f23f", "tier": "good", "reason": "no_match", "n_tokens": 14, "token_cas": ["0x081355c18fd0878a972b1d69c6b4b46cb1e2a44d", "0x0c3959c0e934d6cf9d10377c6862f9493ea361ea", "0x0c9ef6d80e6279c3a214a5e3c7aad4417e3d1e18", "0x322b14a118ac14ab8e97a469b331bb874f6a0654", "0x54cc79e7e6a6e8150f1da7cc195be1ce22a81e18", "0x75d27c7aa55685bc58ff010493dee95b93937777", "0x9530ee2a21c51e2e0f76fc710293578b73bc6340", "0xa07b414d06e951f452a52699dcbd99653e4a1e18", "0xa605875d620753f4fb06024b788b2b6552a81e18", "0xba3a841b1bc0e2308ba1871060b8c7e9cf7e1007", "0xbb09abb73f766f00625852894eb5c9cf08a94ba3", "0xda676183b8ab58faae24392442fc13cb515cf923", "0xeacc54586456f03e7f1f32068157586774535c0f", "0xec78bc0f815cdfdb4ad9fd11bcfba418a48d1e18"], "union_pool_size": 1520, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x10b1|5c78", "prefix": "0x10b1", "suffix": "5c78", "trunc": "0x10b1…5c78", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa1c447a2cda0548427cd8a5321d3bbac077c6afe"], "union_pool_size": 130, "global_hits": 0, "token_hits": 0}
@@ -73,10 +77,6 @@
 {"pair_key": "0x113f|ac20", "prefix": "0x113f", "suffix": "ac20", "trunc": "0x113f…ac20", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x045b7bf3ad0173f2a71c5c6b1a34225b523abd82"], "union_pool_size": 89, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x11ed|3019", "prefix": "0x11ed", "suffix": "3019", "trunc": "0x11ed…3019", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xe17f790572593e71117501735a65b116b964011f"], "union_pool_size": 111, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x11fb|12e6", "prefix": "0x11fb", "suffix": "12e6", "trunc": "0x11fb…12e6", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xbd78b72c6e4ba8a4a19c5ae7194c733871fe32c2"], "union_pool_size": 441, "global_hits": 0, "token_hits": 0}
-<<<<<<< HEAD
-=======
-{"pair_key": "0x1210|8244", "prefix": "0x1210", "suffix": "8244", "trunc": "0x1210…8244", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x09952a5a5783e9752a2c2098d3a63476ffdc1e18"], "union_pool_size": 248, "global_hits": 0, "token_hits": 0}
->>>>>>> 80337bc (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x1211|c383", "prefix": "0x1211", "suffix": "c383", "trunc": "0x1211…c383", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x67d8f0b7791568710a3f2d8c41b81791066fcd2b"], "union_pool_size": 140, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x1238|871b", "prefix": "0x1238", "suffix": "871b", "trunc": "0x1238…871b", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xb3353e2670bf8f15f1fde18b8725952270a1d232"], "union_pool_size": 150, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x1245|0df3", "prefix": "0x1245", "suffix": "0df3", "trunc": "0x1245…0df3", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x541ddb0453528ffb64296506c2301b7a0edb060b"], "union_pool_size": 249, "global_hits": 0, "token_hits": 0}
@@ -124,7 +124,7 @@
 {"pair_key": "0x2015|792a", "prefix": "0x2015", "suffix": "792a", "trunc": "0x2015…792a", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x299fa1d127f84cbbefd4ff53ab27e7b09c5d17ae", "0x2a28d1654d64c1142c7c47324e802a7192837135"], "union_pool_size": 195, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2071|7186", "prefix": "0x2071", "suffix": "7186", "trunc": "0x2071…7186", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x3e9f0b7dcbd211450ad966862c997f9fb587a3c7"], "union_pool_size": 89, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x20f4|21c8", "prefix": "0x20f4", "suffix": "21c8", "trunc": "0x20f4…21c8", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x76a218d74e016d9a57319bc24f4e297001c6ce85"], "union_pool_size": 91, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0x210b|3e69", "prefix": "0x210b", "suffix": "3e69", "trunc": "0x210b…3e69", "tier": "good", "reason": "no_match", "n_tokens": 9, "token_cas": ["0x1072091a4488ba92e6039606cf014b49e4de381c", "0x19b3228bd97aafc57f1dd3bb50d8151207dd99f0", "0x2debbdcc2959211169ef0c77bfd4c1caed435dee", "0x41b98e35257ea596477b0fe194fe6ebbe97bcb5b", "0x46d7b18f7c0a946298ce7ae400df5384bf5addef", "0x4bf13c1098d99235929e444f85d87af283ffb528", "0x707575e8261aa68186cab8ec025f090d40593817", "0x850b103d7a1011da168d7eed3af892435efe7bc6", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 1265, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x210b|3e69", "prefix": "0x210b", "suffix": "3e69", "trunc": "0x210b…3e69", "tier": "good", "reason": "no_match", "n_tokens": 9, "token_cas": ["0x1072091a4488ba92e6039606cf014b49e4de381c", "0x19b3228bd97aafc57f1dd3bb50d8151207dd99f0", "0x2debbdcc2959211169ef0c77bfd4c1caed435dee", "0x41b98e35257ea596477b0fe194fe6ebbe97bcb5b", "0x46d7b18f7c0a946298ce7ae400df5384bf5addef", "0x4bf13c1098d99235929e444f85d87af283ffb528", "0x707575e8261aa68186cab8ec025f090d40593817", "0x850b103d7a1011da168d7eed3af892435efe7bc6", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 1801, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2122|a2c2", "prefix": "0x2122", "suffix": "a2c2", "trunc": "0x2122…a2c2", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xf8c5e1f9b14398f1a814561c9694ac5b36c3f21f"], "union_pool_size": 125, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2189|76a6", "prefix": "0x2189", "suffix": "76a6", "trunc": "0x2189…76a6", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x012876fdd1895e947db81aade25b45d88d1b6a94"], "union_pool_size": 153, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x21cf|2798", "prefix": "0x21cf", "suffix": "2798", "trunc": "0x21cf…2798", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xe92ff48b6f9737433b38ea02c14b496b03c21e18"], "union_pool_size": 44, "global_hits": 0, "token_hits": 0}
@@ -137,7 +137,11 @@
 {"pair_key": "0x24f0|40f8", "prefix": "0x24f0", "suffix": "40f8", "trunc": "0x24f0…40f8", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xaba8866fec42d193373e251d3ed200320d220503"], "union_pool_size": 111, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x253d|5277", "prefix": "0x253d", "suffix": "5277", "trunc": "0x253d…5277", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa2729f032cb417df436c8e242693d096b8d40071"], "union_pool_size": 107, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2591|8b19", "prefix": "0x2591", "suffix": "8b19", "trunc": "0x2591…8b19", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x22893d5ff262f32faee1a141b652f49a80b58eab"], "union_pool_size": 85, "global_hits": 0, "token_hits": 0}
+<<<<<<< HEAD
 {"pair_key": "0x25bd|2202", "prefix": "0x25bd", "suffix": "2202", "trunc": "0x25bd…2202", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x6e7c924b9150ddf1cdb73b58b4285d10cd65690b", "0x922510f672c68bc85ff890623695c64ba7b96ca3", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 646, "global_hits": 0, "token_hits": 0}
+=======
+{"pair_key": "0x25bd|2202", "prefix": "0x25bd", "suffix": "2202", "trunc": "0x25bd…2202", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x6e7c924b9150ddf1cdb73b58b4285d10cd65690b", "0x922510f672c68bc85ff890623695c64ba7b96ca3", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 648, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x26cd|ff99", "prefix": "0x26cd", "suffix": "ff99", "trunc": "0x26cd…ff99", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x9df364f469143defdd925f762ac3358c3cdf768a"], "union_pool_size": 86, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x26ef|997e", "prefix": "0x26ef", "suffix": "997e", "trunc": "0x26ef…997e", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x1e3b9bbc5de7151dc860d7c3fd9d78b5453e73aa"], "union_pool_size": 77, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2759|016c", "prefix": "0x2759", "suffix": "016c", "trunc": "0x2759…016c", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x0d4cafb3e843df98e0ddc42b638ce995aa442e23", "0x7e96b6bab9a9043400d454ca03fa121c5eed1e18", "0xfc920df31d8382137f77548c838486ce5d8981d0"], "union_pool_size": 227, "global_hits": 0, "token_hits": 0}
@@ -162,6 +166,7 @@
 {"pair_key": "0x2c3b|ccf7", "prefix": "0x2c3b", "suffix": "ccf7", "trunc": "0x2c3b…ccf7", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xa0f46f3868c7f4f8cb2a2a6c929310af4a879d90", "0xaec740ec67f68d9b50b197d9504b11045b498d7a"], "union_pool_size": 226, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x2c9f|5a50", "prefix": "0x2c9f", "suffix": "5a50", "trunc": "0x2c9f…5a50", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2697, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x2c9f|5a50", "prefix": "0x2c9f", "suffix": "5a50", "trunc": "0x2c9f…5a50", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2798, "global_hits": 0, "token_hits": 0}
@@ -169,6 +174,9 @@
 =======
 {"pair_key": "0x2c9f|5a50", "prefix": "0x2c9f", "suffix": "5a50", "trunc": "0x2c9f…5a50", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2935, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x2c9f|5a50", "prefix": "0x2c9f", "suffix": "5a50", "trunc": "0x2c9f…5a50", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 3129, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x2d1a|aaf8", "prefix": "0x2d1a", "suffix": "aaf8", "trunc": "0x2d1a…aaf8", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x308bbe0cffec5fb649bd2006f9648209ec31221c"], "union_pool_size": 109, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2e56|75ab", "prefix": "0x2e56", "suffix": "75ab", "trunc": "0x2e56…75ab", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x073407b2ba247e88a3183849ec2817512171d7ef"], "union_pool_size": 129, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x2ea9|a0c6", "prefix": "0x2ea9", "suffix": "a0c6", "trunc": "0x2ea9…a0c6", "tier": "good", "reason": "no_match", "n_tokens": 10, "token_cas": ["0x1d6dad7bb044d683bd2bdff12b47a15214cfa08b", "0x34c65bd35d0a081b3a2dee84856dddd8fd00e69e", "0x41b98e35257ea596477b0fe194fe6ebbe97bcb5b", "0x5bb0610fcba39f66a3f2c2fa8bd0cc51e22e30b2", "0x5f85f16c1053af2a86fc7c7dcb7c6862d72118ae", "0x621d458dad6679cdf27c0d06578f4474fe6e7a43", "0x76c9ac06fe4a66f1a4a96ba876343bb485c39e3a", "0xb5ea2ac972e2525af51d55020940ee36c0d461d7", "0xf8ca129e1fd98284938fec72e0fd1222fc107c86", "0xfeed82759031ac026e74ea0dbc4bcecfafd18e23"], "union_pool_size": 1515, "global_hits": 0, "token_hits": 0}
@@ -179,6 +187,7 @@
 {"pair_key": "0x2fd8|2906", "prefix": "0x2fd8", "suffix": "2906", "trunc": "0x2fd8…2906", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xad0759e2651d5e4cc09e4c9577cc80d8382a6ae9"], "union_pool_size": 63, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x3038|d95a", "prefix": "0x3038", "suffix": "d95a", "trunc": "0x3038…d95a", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x35a79120e07bae083045d44b8349c5d47f37ac13"], "union_pool_size": 151, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x305b|a85c", "prefix": "0x305b", "suffix": "a85c", "trunc": "0x305b…a85c", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x0542d61e72055ff2b53c1e3874d8b7a1a4e38da1", "0x40ca6cdbf6a160917ba5eb0915ce588ad54f1e38"], "union_pool_size": 242, "global_hits": 0, "token_hits": 0}
+<<<<<<< HEAD
 {"pair_key": "0x305c|cd60", "prefix": "0x305c", "suffix": "cd60", "trunc": "0x305c…cd60", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x7a2b9fca40ffd30b4985dd1d7dc2b6aaabb0ba25"], "union_pool_size": 929, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x30bb|eeba", "prefix": "0x30bb", "suffix": "eeba", "trunc": "0x30bb…eeba", "tier": "good", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x63751d63a10a346d2e66c1f2e1e6842b04fd1e18", "0x84baff039dfb04bc18801a9a6cc1558f7d84c630", "0xbd466dfd8ac3e1f23c0045b7cd4fa5deab522e59"], "union_pool_size": 258, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x30fa|cea9", "prefix": "0x30fa", "suffix": "cea9", "trunc": "0x30fa…cea9", "tier": "elite", "reason": "no_match", "n_tokens": 6, "token_cas": ["0x193edcc2804712b98b149e8be69f39fec04d67ba", "0x52dd2528d114cb7ee02682788796af5369a92f03", "0x639a13cdfe0ff0146401666159265875a0f07777", "0x8c2a0a5d638e251d2ab84f1491237060bb259fef", "0xb406c12ed0e44caa1e2ac9f3ed57692dae053979", "0xd061442e8a6292e0d4fd9a7090e8ace484b1f2ca"], "union_pool_size": 559, "global_hits": 0, "token_hits": 0}
@@ -195,6 +204,14 @@
 {"pair_key": "0x328b|ad42", "prefix": "0x328b", "suffix": "ad42", "trunc": "0x328b…ad42", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 397, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x328d|9e90", "prefix": "0x328d", "suffix": "9e90", "trunc": "0x328d…9e90", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1415, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x305c|cd60", "prefix": "0x305c", "suffix": "cd60", "trunc": "0x305c…cd60", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x7a2b9fca40ffd30b4985dd1d7dc2b6aaabb0ba25"], "union_pool_size": 150, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x30fa|cea9", "prefix": "0x30fa", "suffix": "cea9", "trunc": "0x30fa…cea9", "tier": "elite", "reason": "no_match", "n_tokens": 6, "token_cas": ["0x193edcc2804712b98b149e8be69f39fec04d67ba", "0x52dd2528d114cb7ee02682788796af5369a92f03", "0x639a13cdfe0ff0146401666159265875a0f07777", "0x8c2a0a5d638e251d2ab84f1491237060bb259fef", "0xb406c12ed0e44caa1e2ac9f3ed57692dae053979", "0xd061442e8a6292e0d4fd9a7090e8ace484b1f2ca"], "union_pool_size": 559, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x3110|220e", "prefix": "0x3110", "suffix": "220e", "trunc": "0x3110…220e", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xce18f64df1bf2908e1c293bbe9ffe55048d21337"], "union_pool_size": 49, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x31e4|0552", "prefix": "0x31e4", "suffix": "0552", "trunc": "0x31e4…0552", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x4a800a6c51e3e51e462967b5072fa779224c3d2d"], "union_pool_size": 83, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x328b|ad42", "prefix": "0x328b", "suffix": "ad42", "trunc": "0x328b…ad42", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 399, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x328d|9e90", "prefix": "0x328d", "suffix": "9e90", "trunc": "0x328d…9e90", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1422, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x32ef|e0da", "prefix": "0x32ef", "suffix": "e0da", "trunc": "0x32ef…e0da", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x46f3c721d8ce66865bc7d598b3b8ba7fd6badaac", "0xef3f0f9051816b047164235893ed79974bee15ba"], "union_pool_size": 265, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x3313|ecaf", "prefix": "0x3313", "suffix": "ecaf", "trunc": "0x3313…ecaf", "tier": "elite", "reason": "no_match", "n_tokens": 4, "token_cas": ["0x0fffd5f819317f886cd46eebdffdebc2e872b80c", "0x6c6b6fd36d28715be2d241d36c5521f98e5e7777", "0x7b130028b077e5c0cd28fc1e8d477285c4622df3", "0x9ec1b1ddfc4123770ba194c3afd8235aea4a469a"], "union_pool_size": 1159, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x3326|4b04", "prefix": "0x3326", "suffix": "4b04", "trunc": "0x3326…4b04", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x38931debc7bbde1a248d9bd45b0f708d9133d125"], "union_pool_size": 68, "global_hits": 0, "token_hits": 0}
@@ -220,6 +237,7 @@
 {"pair_key": "0x3632|f511", "prefix": "0x3632", "suffix": "f511", "trunc": "0x3632…f511", "tier": "elite", "reason": "no_match", "n_tokens": 4, "token_cas": ["0x01fe9116a3e8f2b68fd4529944676773a6237d1f", "0xb7b0cad6e560bda279f238a42c695cb2b1681227", "0xcec3262b2bb304522b502a327d9e64793675b57f", "0xf04c4b18cd3f6ca926dc14816e17bace56b2ca62"], "union_pool_size": 467, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x365e|74aa", "prefix": "0x365e", "suffix": "74aa", "trunc": "0x365e…74aa", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4f68f95990d915f1d2473f79dabc6099c82f802b", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 413, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x365e|74aa", "prefix": "0x365e", "suffix": "74aa", "trunc": "0x365e…74aa", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4f68f95990d915f1d2473f79dabc6099c82f802b", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 414, "global_hits": 0, "token_hits": 0}
@@ -227,6 +245,9 @@
 =======
 {"pair_key": "0x365e|74aa", "prefix": "0x365e", "suffix": "74aa", "trunc": "0x365e…74aa", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4f68f95990d915f1d2473f79dabc6099c82f802b", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 415, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x365e|74aa", "prefix": "0x365e", "suffix": "74aa", "trunc": "0x365e…74aa", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4f68f95990d915f1d2473f79dabc6099c82f802b", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 415, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x369f|4109", "prefix": "0x369f", "suffix": "4109", "trunc": "0x369f…4109", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x67d8f0b7791568710a3f2d8c41b81791066fcd2b"], "union_pool_size": 140, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x36dd|750e", "prefix": "0x36dd", "suffix": "750e", "trunc": "0x36dd…750e", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x0308818140d5a43cda5c8eafd039c2e52c29b15c", "0xfb7710bc08fe297d648b2617b8c1e25129d1a2f5"], "union_pool_size": 289, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x3757|0b92", "prefix": "0x3757", "suffix": "0b92", "trunc": "0x3757…0b92", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xd8fdedc5305308b4beeea618eb54941c38861e18", "0xddcbdcb74aeb724276162c824b8474c056e64c9d"], "union_pool_size": 119, "global_hits": 0, "token_hits": 0}
@@ -275,6 +296,7 @@
 {"pair_key": "0x463e|27c8", "prefix": "0x463e", "suffix": "27c8", "trunc": "0x463e…27c8", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4a3fea61cd1c3f6ded65524765620b6dfe601e18", "0xb637aca85041fdf8a1fa85926fc93120ce261ce7"], "union_pool_size": 180, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x4683|5ca3", "prefix": "0x4683", "suffix": "5ca3", "trunc": "0x4683…5ca3", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1358, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x4683|5ca3", "prefix": "0x4683", "suffix": "5ca3", "trunc": "0x4683…5ca3", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1365, "global_hits": 0, "token_hits": 0}
@@ -282,6 +304,9 @@
 =======
 {"pair_key": "0x4683|5ca3", "prefix": "0x4683", "suffix": "5ca3", "trunc": "0x4683…5ca3", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1415, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x4683|5ca3", "prefix": "0x4683", "suffix": "5ca3", "trunc": "0x4683…5ca3", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1422, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x4693|15e4", "prefix": "0x4693", "suffix": "15e4", "trunc": "0x4693…15e4", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x6aa6b603fe854e90bc87a9ef7a45a4b3e3e6338c"], "union_pool_size": 124, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x46e0|aa34", "prefix": "0x46e0", "suffix": "aa34", "trunc": "0x46e0…aa34", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa4f9145d8d02b74dd30c44d94e7c479eb6103ab4"], "union_pool_size": 122, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x46e6|d2a6", "prefix": "0x46e6", "suffix": "d2a6", "trunc": "0x46e6…d2a6", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x20b9b30f33cbd3c16df2dfe889cadbb97622940e"], "union_pool_size": 135, "global_hits": 0, "token_hits": 0}
@@ -296,7 +321,7 @@
 {"pair_key": "0x48e2|970f", "prefix": "0x48e2", "suffix": "970f", "trunc": "0x48e2…970f", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xa023b6aa30802139798bf4b45cb97382bb134eca", "0xfccbca6cb46464e450ed846f65f9a6b3d4ad31ab"], "union_pool_size": 112, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x4911|1b53", "prefix": "0x4911", "suffix": "1b53", "trunc": "0x4911…1b53", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x917f70fc054e6af6e22fb360c51280eb5b2ae34e"], "union_pool_size": 138, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x4920|55a9", "prefix": "0x4920", "suffix": "55a9", "trunc": "0x4920…55a9", "tier": "good", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x40ca6cdbf6a160917ba5eb0915ce588ad54f1e38", "0x757a2751e264f2b628af7f910afe9864792620f9", "0xcc41288a18c34f249e983d69d6673e9b33381eb3"], "union_pool_size": 337, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0x4925|d101", "prefix": "0x4925", "suffix": "d101", "trunc": "0x4925…d101", "tier": "elite", "reason": "no_match", "n_tokens": 4, "token_cas": ["0x2ad8f440c29cd3f6841a47b13d836ee6266cf326", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0x7cec28c6b502a335dc1f18de2d7ca99f12c6012a", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 482, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x4925|d101", "prefix": "0x4925", "suffix": "d101", "trunc": "0x4925…d101", "tier": "elite", "reason": "no_match", "n_tokens": 4, "token_cas": ["0x2ad8f440c29cd3f6841a47b13d836ee6266cf326", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0x7cec28c6b502a335dc1f18de2d7ca99f12c6012a", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 1897, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x495a|b2c1", "prefix": "0x495a", "suffix": "b2c1", "trunc": "0x495a…b2c1", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xc9d3a9c149dbc2e5700f123803b6a2ce62a270df"], "union_pool_size": 75, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x4993|0261", "prefix": "0x4993", "suffix": "0261", "trunc": "0x4993…0261", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa6452fd7134218f62056a304eaf501f8714a26b9"], "union_pool_size": 132, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x49e9|3de4", "prefix": "0x49e9", "suffix": "3de4", "trunc": "0x49e9…3de4", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xbbe6e0b3d65362e3fee2617706fa610c2da9a864"], "union_pool_size": 109, "global_hits": 0, "token_hits": 0}
@@ -328,7 +353,11 @@
 {"pair_key": "0x5345|2710", "prefix": "0x5345", "suffix": "2710", "trunc": "0x5345…2710", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xc79c9f6c0dc0876942dab2bd34057b767241a852"], "union_pool_size": 130, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x547b|975b", "prefix": "0x547b", "suffix": "975b", "trunc": "0x547b…975b", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xda18722ace4487070ea2654dc2b2415f8c9eea18"], "union_pool_size": 82, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x54a3|8cf5", "prefix": "0x54a3", "suffix": "8cf5", "trunc": "0x54a3…8cf5", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x568bae81d990c687a7068bb579788515e60549bb", "0x80f961956721e5670248fdd65da083a421e630d2"], "union_pool_size": 265, "global_hits": 0, "token_hits": 0}
+<<<<<<< HEAD
 {"pair_key": "0x54af|10c5", "prefix": "0x54af", "suffix": "10c5", "trunc": "0x54af…10c5", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x958eb2a02a2db8b8988a85f9bb1c2a026b11acfe", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 520, "global_hits": 0, "token_hits": 0}
+=======
+{"pair_key": "0x54af|10c5", "prefix": "0x54af", "suffix": "10c5", "trunc": "0x54af…10c5", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x958eb2a02a2db8b8988a85f9bb1c2a026b11acfe", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 522, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x550c|b338", "prefix": "0x550c", "suffix": "b338", "trunc": "0x550c…b338", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x66b8148d8781e6090f4e0a4c2888889ecf5ca56f", "0xe10195999a422314155b1e158281dbd4f27adc46"], "union_pool_size": 282, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x5556|8d11", "prefix": "0x5556", "suffix": "8d11", "trunc": "0x5556…8d11", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xf0fd79b056e5ee52fd178eb086fe232545bfb0e5"], "union_pool_size": 135, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x5600|d5d8", "prefix": "0x5600", "suffix": "d5d8", "trunc": "0x5600…d5d8", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x7aaf96267808d06975bcb5785568a76a668c1e18"], "union_pool_size": 56, "global_hits": 0, "token_hits": 0}
@@ -449,6 +478,7 @@
 {"pair_key": "0x790c|e557", "prefix": "0x790c", "suffix": "e557", "trunc": "0x790c…e557", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x71c486befb4e234dfd5d92bf614b939c5943b520"], "union_pool_size": 154, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x796c|b456", "prefix": "0x796c", "suffix": "b456", "trunc": "0x796c…b456", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1358, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x796c|b456", "prefix": "0x796c", "suffix": "b456", "trunc": "0x796c…b456", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1365, "global_hits": 0, "token_hits": 0}
@@ -456,6 +486,9 @@
 =======
 {"pair_key": "0x796c|b456", "prefix": "0x796c", "suffix": "b456", "trunc": "0x796c…b456", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1415, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x796c|b456", "prefix": "0x796c", "suffix": "b456", "trunc": "0x796c…b456", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1422, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x79ea|2618", "prefix": "0x79ea", "suffix": "2618", "trunc": "0x79ea…2618", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xfc08fcdf0472d5cf97382fbd527cf50399e2626a"], "union_pool_size": 146, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x7a27|3198", "prefix": "0x7a27", "suffix": "3198", "trunc": "0x7a27…3198", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x90581c1fff94c2d7cddb78957816a1a7b874caf9"], "union_pool_size": 164, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x7ab3|2c0f", "prefix": "0x7ab3", "suffix": "2c0f", "trunc": "0x7ab3…2c0f", "tier": "elite", "reason": "no_match", "n_tokens": 6, "token_cas": ["0x10a662d9eb10fdc9241fc9f8f9ed28ba1eb9dce0", "0x3362e75d709f743688d7936d48b3b77037b72073", "0x6aa5b565155420b7d192a9a5577dfa5a77a22352", "0x92ddbff7dd14c14e8e71132e4ff5c98910bca025", "0xb248f3070d761918c2b44688a951c677b111cc2b", "0xdfdcc86e5ae314e64bf9b8abd2ec8ec6814f99cd"], "union_pool_size": 1116, "global_hits": 0, "token_hits": 0}
@@ -470,10 +503,6 @@
 {"pair_key": "0x7c61|98cf", "prefix": "0x7c61", "suffix": "98cf", "trunc": "0x7c61…98cf", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x3c68382e757193f6ddd12a72dcf0adf93c961769"], "union_pool_size": 139, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x7c81|9b6b", "prefix": "0x7c81", "suffix": "9b6b", "trunc": "0x7c81…9b6b", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xad7a18a633e3b94489122f076ce719386949d0ac"], "union_pool_size": 154, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x7cbb|d75f", "prefix": "0x7cbb", "suffix": "d75f", "trunc": "0x7cbb…d75f", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xfe51aaf6af1ec2eb9286e0bdc3c9dc39240cb8f5"], "union_pool_size": 1495, "global_hits": 0, "token_hits": 0}
-<<<<<<< HEAD
-=======
-{"pair_key": "0x7cbf|6a04", "prefix": "0x7cbf", "suffix": "6a04", "trunc": "0x7cbf…6a04", "tier": "elite", "reason": "no_match", "n_tokens": 7, "token_cas": ["0x577c91153e6dd463cc29b43e2969b0b698c9302c", "0x6d2d4bfabeee71f367eb3234008b3a7f7c90e0e4", "0xa0d6f1a658be913d9eb74510ee7c7b62d62bf829", "0xad057c6e708ce0ac19b59c568b16548ac870c93d", "0xad0759e2651d5e4cc09e4c9577cc80d8382a6ae9", "0xb4dc11fe4d5d1f9488a795132c7515c23f9c7fbd", "0xd13d117620aec7aa0c1568dff4a09dd43a5bd929"], "union_pool_size": 695, "global_hits": 0, "token_hits": 0}
->>>>>>> 80337bc (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x7d33|5468", "prefix": "0x7d33", "suffix": "5468", "trunc": "0x7d33…5468", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x757a2751e264f2b628af7f910afe9864792620f9", "0xd30beca0c7989b8b0c9deeec8bd21e5fd35efe7d"], "union_pool_size": 177, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x7d3b|213a", "prefix": "0x7d3b", "suffix": "213a", "trunc": "0x7d3b…213a", "tier": "good", "reason": "no_match", "n_tokens": 6, "token_cas": ["0x779ab96beede6a08953e81f11cc681fe42c58d4c", "0x800999ca2f3f2acb8d94b95b96151840ac46f326", "0x9179b7b6943fd727fb5c72e079bc150d74eb356c", "0xc4bbd82f101d5bc07a4b967b1becacf4c45f9ebb", "0xf04c4b18cd3f6ca926dc14816e17bace56b2ca62", "0xf40bcd868c1c3d91023ced508d16d0611e2ef371"], "union_pool_size": 775, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x7d84|5783", "prefix": "0x7d84", "suffix": "5783", "trunc": "0x7d84…5783", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x82e6b6c2f07bccf969985e6cc075b084feb004f3"], "union_pool_size": 111, "global_hits": 0, "token_hits": 0}
@@ -529,20 +558,18 @@
 {"pair_key": "0x8cd5|b149", "prefix": "0x8cd5", "suffix": "b149", "trunc": "0x8cd5…b149", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x2bbb48835df7f56f06665579058c1e7308014e3f"], "union_pool_size": 100, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x8d1e|e000", "prefix": "0x8d1e", "suffix": "e000", "trunc": "0x8d1e…e000", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1358, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x8d1e|e000", "prefix": "0x8d1e", "suffix": "e000", "trunc": "0x8d1e…e000", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1415, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x8d43|23b3", "prefix": "0x8d43", "suffix": "23b3", "trunc": "0x8d43…23b3", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x2ad8f440c29cd3f6841a47b13d836ee6266cf326", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 378, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0x8d4f|27b5", "prefix": "0x8d4f", "suffix": "27b5", "trunc": "0x8d4f…27b5", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x2b59fa22e77c28aee1751e8d2baad8b23f860d79"], "union_pool_size": 128, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0x8e1d|72a6", "prefix": "0x8e1d", "suffix": "72a6", "trunc": "0x8e1d…72a6", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x7bf2020a07b2b78986e17da55b2d29204d00a9b3"], "union_pool_size": 375, "global_hits": 0, "token_hits": 0}
 =======
-{"pair_key": "0x8d1e|e000", "prefix": "0x8d1e", "suffix": "e000", "trunc": "0x8d1e…e000", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1365, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0x8d43|23b3", "prefix": "0x8d43", "suffix": "23b3", "trunc": "0x8d43…23b3", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x2ad8f440c29cd3f6841a47b13d836ee6266cf326", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 378, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x8d1e|e000", "prefix": "0x8d1e", "suffix": "e000", "trunc": "0x8d1e…e000", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1422, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0x8d43|23b3", "prefix": "0x8d43", "suffix": "23b3", "trunc": "0x8d43…23b3", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x2ad8f440c29cd3f6841a47b13d836ee6266cf326", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 1804, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x8d4f|27b5", "prefix": "0x8d4f", "suffix": "27b5", "trunc": "0x8d4f…27b5", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x2b59fa22e77c28aee1751e8d2baad8b23f860d79"], "union_pool_size": 128, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x8e1d|72a6", "prefix": "0x8e1d", "suffix": "72a6", "trunc": "0x8e1d…72a6", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x7bf2020a07b2b78986e17da55b2d29204d00a9b3"], "union_pool_size": 375, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0x8e97|539d", "prefix": "0x8e97", "suffix": "539d", "trunc": "0x8e97…539d", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x885ec6ac9a09c971df9e5431d0a9a892f128624b"], "union_pool_size": 89, "global_hits": 0, "token_hits": 0}
->>>>>>> 80337bc (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x8ed6|2355", "prefix": "0x8ed6", "suffix": "2355", "trunc": "0x8ed6…2355", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x9315ed669d16465b0f267d7b53f225aa600ef48a"], "union_pool_size": 139, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x8ede|1e0f", "prefix": "0x8ede", "suffix": "1e0f", "trunc": "0x8ede…1e0f", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x4d0f3a45b18066cd069d3cc89727b569bdb9ec81"], "union_pool_size": 145, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x8eec|6bad", "prefix": "0x8eec", "suffix": "6bad", "trunc": "0x8eec…6bad", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xb3f24f010dd1877ef98e8b3f769a93fe4dc2a267"], "union_pool_size": 85, "global_hits": 0, "token_hits": 0}
@@ -584,6 +611,7 @@
 {"pair_key": "0x9cce|ef22", "prefix": "0x9cce", "suffix": "ef22", "trunc": "0x9cce…ef22", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xde4d320eb872072fa773733d420b19f8ea0a1e18"], "union_pool_size": 81, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0x9d16|8378", "prefix": "0x9d16", "suffix": "8378", "trunc": "0x9d16…8378", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2697, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0x9d16|8378", "prefix": "0x9d16", "suffix": "8378", "trunc": "0x9d16…8378", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2798, "global_hits": 0, "token_hits": 0}
@@ -591,6 +619,9 @@
 =======
 {"pair_key": "0x9d16|8378", "prefix": "0x9d16", "suffix": "8378", "trunc": "0x9d16…8378", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2935, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0x9d16|8378", "prefix": "0x9d16", "suffix": "8378", "trunc": "0x9d16…8378", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 3129, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0x9d34|689b", "prefix": "0x9d34", "suffix": "689b", "trunc": "0x9d34…689b", "tier": "elite", "reason": "no_match", "n_tokens": 4, "token_cas": ["0x0c975fb035f942e0ba88238c50670daea414805c", "0x18570ea663ec4cc4b1611b11eb10fabf8691e1f7", "0x7c651ee2f3c1c456ac3afc483b834c823649a0e2", "0x939078000ac93f8317c05c959b6c75741f99e5f5"], "union_pool_size": 1018, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x9dcc|6bad", "prefix": "0x9dcc", "suffix": "6bad", "trunc": "0x9dcc…6bad", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x6ffba57874c2fb9231f08c8bdd74e1ca6740d7b0"], "union_pool_size": 135, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0x9e7f|7054", "prefix": "0x9e7f", "suffix": "7054", "trunc": "0x9e7f…7054", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xee2ddd7128c291b027712eca157b3ff31a55a05a"], "union_pool_size": 119, "global_hits": 0, "token_hits": 0}
@@ -629,10 +660,6 @@
 {"pair_key": "0xaa72|a76b", "prefix": "0xaa72", "suffix": "a76b", "trunc": "0xaa72…a76b", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x0eecc3bb5b1164ab433cb66d5d54cf1b7021939b"], "union_pool_size": 132, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xaa9b|dad8", "prefix": "0xaa9b", "suffix": "dad8", "trunc": "0xaa9b…dad8", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x074b33bfb800b005cb7d1466a14faa6e90df7947"], "union_pool_size": 113, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xaaa7|5ac5", "prefix": "0xaaa7", "suffix": "5ac5", "trunc": "0xaaa7…5ac5", "tier": "good", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x88befe55497257f9f18339def70b1b4ad7907693", "0xa0d6f1a658be913d9eb74510ee7c7b62d62bf829", "0xafc8ac63aa62519dd71fe3b6754bfedd279f9b0d", "0xbd4ada859611ebf0e37caadf5bd368bbe79b6a72", "0xddcbdcb74aeb724276162c824b8474c056e64c9d"], "union_pool_size": 432, "global_hits": 0, "token_hits": 0}
-<<<<<<< HEAD
-=======
-{"pair_key": "0xaaac|8415", "prefix": "0xaaac", "suffix": "8415", "trunc": "0xaaac…8415", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x09952a5a5783e9752a2c2098d3a63476ffdc1e18"], "union_pool_size": 248, "global_hits": 0, "token_hits": 0}
->>>>>>> 80337bc (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xaad3|abae", "prefix": "0xaad3", "suffix": "abae", "trunc": "0xaad3…abae", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xec01732037c52afa1629f120a7ff7a2ff9c16bf0"], "union_pool_size": 131, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xab17|3c6c", "prefix": "0xab17", "suffix": "3c6c", "trunc": "0xab17…3c6c", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xbc32bd9c106004a8334db8645e5f7d3107bbc9c7"], "union_pool_size": 73, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xac17|4c3f", "prefix": "0xac17", "suffix": "4c3f", "trunc": "0xac17…4c3f", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x5d7493b2d151d35cbe172c10713bf50b83e58392"], "union_pool_size": 126, "global_hits": 0, "token_hits": 0}
@@ -651,6 +678,7 @@
 {"pair_key": "0xb002|5adb", "prefix": "0xb002", "suffix": "5adb", "trunc": "0xb002…5adb", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x09952a5a5783e9752a2c2098d3a63476ffdc1e18"], "union_pool_size": 248, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xb036|cd5b", "prefix": "0xb036", "suffix": "cd5b", "trunc": "0xb036…cd5b", "tier": "elite", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x2155126f4faf5245394b17fa92f6300ad217a8f9", "0x285b6ef756bb3e05646d4defdaa1ffb89bc87988", "0x2dc31a1371c4499564675312b49852ce42c7c459", "0x30a0f716f97de3bd0c93ffc8fe05e72f488b0f0f", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 672, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xb036|cd5b", "prefix": "0xb036", "suffix": "cd5b", "trunc": "0xb036…cd5b", "tier": "elite", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x2155126f4faf5245394b17fa92f6300ad217a8f9", "0x285b6ef756bb3e05646d4defdaa1ffb89bc87988", "0x2dc31a1371c4499564675312b49852ce42c7c459", "0x30a0f716f97de3bd0c93ffc8fe05e72f488b0f0f", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 673, "global_hits": 0, "token_hits": 0}
@@ -658,6 +686,9 @@
 =======
 {"pair_key": "0xb036|cd5b", "prefix": "0xb036", "suffix": "cd5b", "trunc": "0xb036…cd5b", "tier": "elite", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x2155126f4faf5245394b17fa92f6300ad217a8f9", "0x285b6ef756bb3e05646d4defdaa1ffb89bc87988", "0x2dc31a1371c4499564675312b49852ce42c7c459", "0x30a0f716f97de3bd0c93ffc8fe05e72f488b0f0f", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 674, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xb036|cd5b", "prefix": "0xb036", "suffix": "cd5b", "trunc": "0xb036…cd5b", "tier": "elite", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x2155126f4faf5245394b17fa92f6300ad217a8f9", "0x285b6ef756bb3e05646d4defdaa1ffb89bc87988", "0x2dc31a1371c4499564675312b49852ce42c7c459", "0x30a0f716f97de3bd0c93ffc8fe05e72f488b0f0f", "0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 674, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xb051|d0ca", "prefix": "0xb051", "suffix": "d0ca", "trunc": "0xb051…d0ca", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x0a8b4763c71ac39101b3b8a97e62da0b81549a4f", "0x2a28a3167a989b8758580ba444d31a3419c4b086", "0xb5df107c41d82fc4a2a646f9347daf45c7ffa79f"], "union_pool_size": 336, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xb08f|2827", "prefix": "0xb08f", "suffix": "2827", "trunc": "0xb08f…2827", "tier": "good", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x110b1eff6ad94bbbf5448f167b46d58d5f4dab52", "0xdced579a985ec88ec2bd0af2ed9ac030f1aec398", "0xe2e4a2404c3923990ccc1e6435dc5b6476284992"], "union_pool_size": 348, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xb095|f672", "prefix": "0xb095", "suffix": "f672", "trunc": "0xb095…f672", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa628734120122de0ba9424688fea5e12d36093d8"], "union_pool_size": 82, "global_hits": 0, "token_hits": 0}
@@ -671,6 +702,7 @@
 {"pair_key": "0xb406|e9bf", "prefix": "0xb406", "suffix": "e9bf", "trunc": "0xb406…e9bf", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8b2ffddb25f611f654ef7e7f6f4a97b1fb488358"], "union_pool_size": 89, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xb466|c1b5", "prefix": "0xb466", "suffix": "c1b5", "trunc": "0xb466…c1b5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2697, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xb466|c1b5", "prefix": "0xb466", "suffix": "c1b5", "trunc": "0xb466…c1b5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2798, "global_hits": 0, "token_hits": 0}
@@ -678,6 +710,9 @@
 =======
 {"pair_key": "0xb466|c1b5", "prefix": "0xb466", "suffix": "c1b5", "trunc": "0xb466…c1b5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2935, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xb466|c1b5", "prefix": "0xb466", "suffix": "c1b5", "trunc": "0xb466…c1b5", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 3129, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xb4a2|6c6e", "prefix": "0xb4a2", "suffix": "6c6e", "trunc": "0xb4a2…6c6e", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xce4c9418b8e9bcad3e4ba2bd84123a49a6911e18"], "union_pool_size": 118, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xb4c2|19ae", "prefix": "0xb4c2", "suffix": "19ae", "trunc": "0xb4c2…19ae", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xefc067e5d19b847da7863f3f997c2a4639686ba3"], "union_pool_size": 123, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xb4f5|c1cb", "prefix": "0xb4f5", "suffix": "c1cb", "trunc": "0xb4f5…c1cb", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x6aa6b603fe854e90bc87a9ef7a45a4b3e3e6338c"], "union_pool_size": 124, "global_hits": 0, "token_hits": 0}
@@ -742,7 +777,7 @@
 {"pair_key": "0xc54f|f2d2", "prefix": "0xc54f", "suffix": "f2d2", "trunc": "0xc54f…f2d2", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xce18f64df1bf2908e1c293bbe9ffe55048d21337"], "union_pool_size": 49, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xc5c0|4285", "prefix": "0xc5c0", "suffix": "4285", "trunc": "0xc5c0…4285", "tier": "elite", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x62f896c65bff881d035c8fd6c039aee5075f4bdf", "0x85789905876d4c376257c5ea0634e1f48048601b", "0xc6e0a237844afca52d9c1b94b612134668a98c2f", "0xc79c9f6c0dc0876942dab2bd34057b767241a852", "0xc98c0963b5336d378348499322bc3002689454e3"], "union_pool_size": 473, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xc5c0|bac6", "prefix": "0xc5c0", "suffix": "bac6", "trunc": "0xc5c0…bac6", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xb0d850f4d1791f657572f8de703a7bf74ae3347c"], "union_pool_size": 104, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0xc627|8f55", "prefix": "0xc627", "suffix": "8f55", "trunc": "0xc627…8f55", "tier": "good", "reason": "no_match", "n_tokens": 13, "token_cas": ["0x0fffd5f819317f886cd46eebdffdebc2e872b80c", "0x1105e47d9edaab52cd3d45bb83baa7a97418a7d2", "0x19a5e3ac28fb55541b039b53d690d43d8b55217a", "0x1a3db13103f811d01ebfd19aed1dc64ffd1ba8f5", "0x22eb9f1c5385ed74257da42d8021916c2d837135", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0x75ea7021014b314f77906f361288d7714002baac", "0x8288c0767ee22fa952c6d2e4585d7a53d5f8400a", "0x84baff039dfb04bc18801a9a6cc1558f7d84c630", "0x85acab234fce5d5287a7c24807a317581160420b", "0x958eb2a02a2db8b8988a85f9bb1c2a026b11acfe", "0xbdc468d35edc4643297ea0a35d518c2ee867334c", "0xd19ce53ef144dfb381e5ff7d0f2afe9710c0b031"], "union_pool_size": 1731, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0xc627|8f55", "prefix": "0xc627", "suffix": "8f55", "trunc": "0xc627…8f55", "tier": "good", "reason": "no_match", "n_tokens": 13, "token_cas": ["0x0fffd5f819317f886cd46eebdffdebc2e872b80c", "0x1105e47d9edaab52cd3d45bb83baa7a97418a7d2", "0x19a5e3ac28fb55541b039b53d690d43d8b55217a", "0x1a3db13103f811d01ebfd19aed1dc64ffd1ba8f5", "0x22eb9f1c5385ed74257da42d8021916c2d837135", "0x62336fcfe2248a7377b534eba1b2232043a3746a", "0x75ea7021014b314f77906f361288d7714002baac", "0x8288c0767ee22fa952c6d2e4585d7a53d5f8400a", "0x84baff039dfb04bc18801a9a6cc1558f7d84c630", "0x85acab234fce5d5287a7c24807a317581160420b", "0x958eb2a02a2db8b8988a85f9bb1c2a026b11acfe", "0xbdc468d35edc4643297ea0a35d518c2ee867334c", "0xd19ce53ef144dfb381e5ff7d0f2afe9710c0b031"], "union_pool_size": 2585, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xc65f|1701", "prefix": "0xc65f", "suffix": "1701", "trunc": "0xc65f…1701", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xfe956e94e08d114363879274de1f01602b2b6c9d"], "union_pool_size": 137, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xc74d|f961", "prefix": "0xc74d", "suffix": "f961", "trunc": "0xc74d…f961", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x87bdd6e6876218d950e228889fc082e2500e26db"], "union_pool_size": 59, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xc771|039b", "prefix": "0xc771", "suffix": "039b", "trunc": "0xc771…039b", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x2f91714060f1d466d35580719587b61c7574e2d6", "0xec61cb85a41f9e4e8f3a71cca5976df26e0ba91e"], "union_pool_size": 348, "global_hits": 0, "token_hits": 0}
@@ -762,6 +797,7 @@
 {"pair_key": "0xcd16|64a0", "prefix": "0xcd16", "suffix": "64a0", "trunc": "0xcd16…64a0", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x3e8f72b74931738b892a718d42c9c40842a09059"], "union_pool_size": 88, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xcdcc|f026", "prefix": "0xcdcc", "suffix": "f026", "trunc": "0xcdcc…f026", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2697, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xcdcc|f026", "prefix": "0xcdcc", "suffix": "f026", "trunc": "0xcdcc…f026", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2798, "global_hits": 0, "token_hits": 0}
@@ -769,6 +805,9 @@
 =======
 {"pair_key": "0xcdcc|f026", "prefix": "0xcdcc", "suffix": "f026", "trunc": "0xcdcc…f026", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 2935, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xcdcc|f026", "prefix": "0xcdcc", "suffix": "f026", "trunc": "0xcdcc…f026", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x63ee32ac3077d1fbd8a77ebba2a6ed4b8e9c1e18"], "union_pool_size": 3129, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xcdf5|0f69", "prefix": "0xcdf5", "suffix": "0f69", "trunc": "0xcdf5…0f69", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xb5df107c41d82fc4a2a646f9347daf45c7ffa79f"], "union_pool_size": 130, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xcf29|ed52", "prefix": "0xcf29", "suffix": "ed52", "trunc": "0xcf29…ed52", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xb8ccfe3419371b1e093bfe66073b63207b4342bb"], "union_pool_size": 149, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xcfa6|56d4", "prefix": "0xcfa6", "suffix": "56d4", "trunc": "0xcfa6…56d4", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x8e303f67379f19942af782b5b6c7ff8370c71f5c"], "union_pool_size": 157, "global_hits": 0, "token_hits": 0}
@@ -791,8 +830,9 @@
 {"pair_key": "0xd65e|13c7", "prefix": "0xd65e", "suffix": "13c7", "trunc": "0xd65e…13c7", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x0c5617912dcce715a03ccf0da96200fff3a124f5"], "union_pool_size": 147, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xd6cf|6a28", "prefix": "0xd6cf", "suffix": "6a28", "trunc": "0xd6cf…6a28", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x1cdb289befdfac8af945a288bcdccc382cb34d32", "0xe17f790572593e71117501735a65b116b964011f"], "union_pool_size": 230, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xd713|39e9", "prefix": "0xd713", "suffix": "39e9", "trunc": "0xd713…39e9", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x6a9e258dd20db6c116390119d16486730897f50b"], "union_pool_size": 47, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0xd7ec|c6ab", "prefix": "0xd7ec", "suffix": "c6ab", "trunc": "0xd7ec…c6ab", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 134, "global_hits": 0, "token_hits": 0}
+{"pair_key": "0xd7ec|c6ab", "prefix": "0xd7ec", "suffix": "c6ab", "trunc": "0xd7ec…c6ab", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xa74a94c15b95f8d5f3abdd2db00f6c7384037b55"], "union_pool_size": 721, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xd827|2a37", "prefix": "0xd827", "suffix": "2a37", "trunc": "0xd827…2a37", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xd6bf881542bc64244391ed2e149d9ba561083e85", "0xfeed82759031ac026e74ea0dbc4bcecfafd18e23"], "union_pool_size": 246, "global_hits": 0, "token_hits": 0}
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 {"pair_key": "0xd851|71a8", "prefix": "0xd851", "suffix": "71a8", "trunc": "0xd851…71a8", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 369, "global_hits": 0, "token_hits": 0}
@@ -802,6 +842,9 @@
 =======
 {"pair_key": "0xd851|71a8", "prefix": "0xd851", "suffix": "71a8", "trunc": "0xd851…71a8", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 371, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xd851|71a8", "prefix": "0xd851", "suffix": "71a8", "trunc": "0xd851…71a8", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 371, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xd8ad|efe8", "prefix": "0xd8ad", "suffix": "efe8", "trunc": "0xd8ad…efe8", "tier": "good", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x0542d61e72055ff2b53c1e3874d8b7a1a4e38da1", "0x7ba111817db5ef5d01cae64e001380127a409487", "0xd647fae0dc1abd736a734d1aebdc493c5d76074e", "0xefc067e5d19b847da7863f3f997c2a4639686ba3", "0xfc920df31d8382137f77548c838486ce5d8981d0"], "union_pool_size": 535, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xd8f8|4981", "prefix": "0xd8f8", "suffix": "4981", "trunc": "0xd8f8…4981", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x81222b281b77ca86cb5008fd30e7791f884e0ba7"], "union_pool_size": 89, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xd9c1|982c", "prefix": "0xd9c1", "suffix": "982c", "trunc": "0xd9c1…982c", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x618b5a14bbddc45278b33397f1c8fc98a9901e18"], "union_pool_size": 103, "global_hits": 0, "token_hits": 0}
@@ -830,6 +873,7 @@
 {"pair_key": "0xdee0|7580", "prefix": "0xdee0", "suffix": "7580", "trunc": "0xdee0…7580", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x55216c2bbeeded5fa110f3af31cb073d6f0d6696", "0x5a4701e5c756ab4a6739e9eca71d4508d6c3d069"], "union_pool_size": 191, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xdf1b|bcbb", "prefix": "0xdf1b", "suffix": "bcbb", "trunc": "0xdf1b…bcbb", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca", "0xcc4bfee6f643cf58bbd78b66afd1e6cb42cb965e"], "union_pool_size": 416, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xdf1b|bcbb", "prefix": "0xdf1b", "suffix": "bcbb", "trunc": "0xdf1b…bcbb", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca", "0xcc4bfee6f643cf58bbd78b66afd1e6cb42cb965e"], "union_pool_size": 417, "global_hits": 0, "token_hits": 0}
@@ -837,6 +881,9 @@
 =======
 {"pair_key": "0xdf1b|bcbb", "prefix": "0xdf1b", "suffix": "bcbb", "trunc": "0xdf1b…bcbb", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca", "0xcc4bfee6f643cf58bbd78b66afd1e6cb42cb965e"], "union_pool_size": 418, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xdf1b|bcbb", "prefix": "0xdf1b", "suffix": "bcbb", "trunc": "0xdf1b…bcbb", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca", "0xcc4bfee6f643cf58bbd78b66afd1e6cb42cb965e"], "union_pool_size": 418, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xdf31|e7cc", "prefix": "0xdf31", "suffix": "e7cc", "trunc": "0xdf31…e7cc", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x1cdb289befdfac8af945a288bcdccc382cb34d32", "0x3d4d5a135c8a4db93493f63e5085e0f1e6d63344", "0xb2166baf97255e24d098a2b2a8eff487932b4f89"], "union_pool_size": 403, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xdf38|ad99", "prefix": "0xdf38", "suffix": "ad99", "trunc": "0xdf38…ad99", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x5da0a27048f10162b2c0d35d823b40bc10d41cbb"], "union_pool_size": 94, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xdf3d|293b", "prefix": "0xdf3d", "suffix": "293b", "trunc": "0xdf3d…293b", "tier": "elite", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x27e08456e2c4d5aa47a22c8a656d3830d42b7af6", "0x3aec82408fa91259a1e40f170b174b20a0761e18", "0x5ba2f023aaef7a18227eaccb4c31609dcf2f68b0", "0xbe94f96ed6f8d59abf89247887db5b4e5862ae9d", "0xd388a4fdab15ccb0779a181f52e25d015c876151"], "union_pool_size": 418, "global_hits": 0, "token_hits": 0}
@@ -844,7 +891,11 @@
 {"pair_key": "0xdf89|feff", "prefix": "0xdf89", "suffix": "feff", "trunc": "0xdf89…feff", "tier": "good", "reason": "no_match", "n_tokens": 5, "token_cas": ["0x9208c31544effdc0a7bba065353ef8ead1a69d94", "0xa628734120122de0ba9424688fea5e12d36093d8", "0xd2296cb1efbcb8b99551bc4f3d0d2776579bdd65", "0xd5e1f2b44114fb2afe75ea2f0382ee52007d6d5b", "0xf1e5463d2a3c527c93f7032dd43568e4468d818d"], "union_pool_size": 574, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xe086|727b", "prefix": "0xe086", "suffix": "727b", "trunc": "0xe086…727b", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x74feb270178e252bd02611cfd7a89c53a06f4721"], "union_pool_size": 144, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xe0bb|6a3b", "prefix": "0xe0bb", "suffix": "6a3b", "trunc": "0xe0bb…6a3b", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x3430030b5ea1defd0d0e0753062948b3143073a6"], "union_pool_size": 146, "global_hits": 0, "token_hits": 0}
+<<<<<<< HEAD
 {"pair_key": "0xe0be|0082", "prefix": "0xe0be", "suffix": "0082", "trunc": "0xe0be…0082", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 397, "global_hits": 0, "token_hits": 0}
+=======
+{"pair_key": "0xe0be|0082", "prefix": "0xe0be", "suffix": "0082", "trunc": "0xe0be…0082", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 399, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xe130|d75f", "prefix": "0xe130", "suffix": "d75f", "trunc": "0xe130…d75f", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x15e127bab70c2f75779fe5a18f36e6c2f6f51e18", "0xa605875d620753f4fb06024b788b2b6552a81e18"], "union_pool_size": 172, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xe22c|d848", "prefix": "0xe22c", "suffix": "d848", "trunc": "0xe22c…d848", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xbd78b72c6e4ba8a4a19c5ae7194c733871fe32c2"], "union_pool_size": 441, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xe24b|3c82", "prefix": "0xe24b", "suffix": "3c82", "trunc": "0xe24b…3c82", "tier": "good", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x83830d904c6debd59903e9b29957b93154904d82", "0xa07b414d06e951f452a52699dcbd99653e4a1e18", "0xbbe6e0b3d65362e3fee2617706fa610c2da9a864"], "union_pool_size": 313, "global_hits": 0, "token_hits": 0}
@@ -877,7 +928,6 @@
 {"pair_key": "0xebf6|852f", "prefix": "0xebf6", "suffix": "852f", "trunc": "0xebf6…852f", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x21884b3a1a16ac0dd698bd66d25287a05acb254a", "0x35aa14e263d4f01fd6f777ca07fd70a82c5e679c"], "union_pool_size": 277, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xec0b|373d", "prefix": "0xec0b", "suffix": "373d", "trunc": "0xec0b…373d", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0xb8ccfe3419371b1e093bfe66073b63207b4342bb", "0xbd237fd535dd5b909d3a090aab0f6533ff6e985e", "0xd6bf881542bc64244391ed2e149d9ba561083e85"], "union_pool_size": 362, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xec6b|390f", "prefix": "0xec6b", "suffix": "390f", "trunc": "0xec6b…390f", "tier": "good", "reason": "no_match", "n_tokens": 12, "token_cas": ["0x081355c18fd0878a972b1d69c6b4b46cb1e2a44d", "0x0c3959c0e934d6cf9d10377c6862f9493ea361ea", "0x0c9ef6d80e6279c3a214a5e3c7aad4417e3d1e18", "0x322b14a118ac14ab8e97a469b331bb874f6a0654", "0x75d27c7aa55685bc58ff010493dee95b93937777", "0x9530ee2a21c51e2e0f76fc710293578b73bc6340", "0xa07b414d06e951f452a52699dcbd99653e4a1e18", "0xa605875d620753f4fb06024b788b2b6552a81e18", "0xba3a841b1bc0e2308ba1871060b8c7e9cf7e1007", "0xda676183b8ab58faae24392442fc13cb515cf923", "0xeacc54586456f03e7f1f32068157586774535c0f", "0xec78bc0f815cdfdb4ad9fd11bcfba418a48d1e18"], "union_pool_size": 1300, "global_hits": 0, "token_hits": 0}
-{"pair_key": "0xec81|380f", "prefix": "0xec81", "suffix": "380f", "trunc": "0xec81…380f", "tier": "elite", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x38931debc7bbde1a248d9bd45b0f708d9133d125", "0x88befe55497257f9f18339def70b1b4ad7907693"], "union_pool_size": 212, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xecf4|d7e1", "prefix": "0xecf4", "suffix": "d7e1", "trunc": "0xecf4…d7e1", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x77be06f23fdbfad2dd7157242f5fab6bb36a5635"], "union_pool_size": 138, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xed42|8fb2", "prefix": "0xed42", "suffix": "8fb2", "trunc": "0xed42…8fb2", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x48a8a5dbf88d64fcab8112ee3f2bbf9c888a0126"], "union_pool_size": 67, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xede5|2ac1", "prefix": "0xede5", "suffix": "2ac1", "trunc": "0xede5…2ac1", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xb406c12ed0e44caa1e2ac9f3ed57692dae053979"], "union_pool_size": 93, "global_hits": 0, "token_hits": 0}
@@ -888,12 +938,16 @@
 {"pair_key": "0xefbb|9dad", "prefix": "0xefbb", "suffix": "9dad", "trunc": "0xefbb…9dad", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x14299962521ee1a396a2846e98640054db059eec"], "union_pool_size": 155, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xf0b4|93b5", "prefix": "0xf0b4", "suffix": "93b5", "trunc": "0xf0b4…93b5", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4756411befc5f9d8ff3f569eab7090cb75324a5f", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 507, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xf0b4|93b5", "prefix": "0xf0b4", "suffix": "93b5", "trunc": "0xf0b4…93b5", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4756411befc5f9d8ff3f569eab7090cb75324a5f", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 508, "global_hits": 0, "token_hits": 0}
 >>>>>>> 80337bc (chore: scout TG deep resolve (unique-match))
 =======
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xf0b4|93b5", "prefix": "0xf0b4", "suffix": "93b5", "trunc": "0xf0b4…93b5", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x4756411befc5f9d8ff3f569eab7090cb75324a5f", "0xc7a5edbd6abcbc40790a9036956b6c9d72baace8"], "union_pool_size": 514, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xf0ca|dfce", "prefix": "0xf0ca", "suffix": "dfce", "trunc": "0xf0ca…dfce", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x9e02541f3dace0e9e736141ee01526b46bb7a8d3"], "union_pool_size": 148, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xf10b|f3ac", "prefix": "0xf10b", "suffix": "f3ac", "trunc": "0xf10b…f3ac", "tier": "elite", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x974e57201b50f01c8456979280c4393af74c39ec"], "union_pool_size": 71, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xf10f|52c3", "prefix": "0xf10f", "suffix": "52c3", "trunc": "0xf10f…52c3", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x6a9e258dd20db6c116390119d16486730897f50b"], "union_pool_size": 47, "global_hits": 0, "token_hits": 0}
@@ -925,6 +979,7 @@
 {"pair_key": "0xfa78|8f8b", "prefix": "0xfa78", "suffix": "8f8b", "trunc": "0xfa78…8f8b", "tier": "elite", "reason": "no_match", "n_tokens": 3, "token_cas": ["0x5bb77e567b26567ca105859d2244d7107c9e72e2", "0x8e45bb9f243a5885187cc855fbbe94c5c33dcdf0", "0xc6e9779a67fecb2809804b5d3c2a9341befc381f"], "union_pool_size": 315, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xfa81|eb1d", "prefix": "0xfa81", "suffix": "eb1d", "trunc": "0xfa81…eb1d", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x6742883eef788e2424ce5a1b0d4303144aaec0a5", "0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1481, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xfa81|eb1d", "prefix": "0xfa81", "suffix": "eb1d", "trunc": "0xfa81…eb1d", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x6742883eef788e2424ce5a1b0d4303144aaec0a5", "0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1487, "global_hits": 0, "token_hits": 0}
@@ -932,6 +987,9 @@
 =======
 {"pair_key": "0xfa81|eb1d", "prefix": "0xfa81", "suffix": "eb1d", "trunc": "0xfa81…eb1d", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x6742883eef788e2424ce5a1b0d4303144aaec0a5", "0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1537, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xfa81|eb1d", "prefix": "0xfa81", "suffix": "eb1d", "trunc": "0xfa81…eb1d", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x6742883eef788e2424ce5a1b0d4303144aaec0a5", "0x8eaa17be69ae9616cede4671e6d837bb89491e18"], "union_pool_size": 1544, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xfa94|d7b6", "prefix": "0xfa94", "suffix": "d7b6", "trunc": "0xfa94…d7b6", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x3b7d4b2c4402f8a24ca18897f28ec557165b71b2", "0x9df364f469143defdd925f762ac3358c3cdf768a"], "union_pool_size": 233, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xfafb|3f16", "prefix": "0xfafb", "suffix": "3f16", "trunc": "0xfafb…3f16", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x293d382d04753967cdb09082d34d35400de4ed87", "0xa9bb7c650c62da3cfbcdd0ea843953817495d1a4"], "union_pool_size": 182, "global_hits": 0, "token_hits": 0}
 {"pair_key": "0xfb40|168f", "prefix": "0xfb40", "suffix": "168f", "trunc": "0xfb40…168f", "tier": "good", "reason": "no_match", "n_tokens": 2, "token_cas": ["0x7340685a52e6dc3a8a99f40e856a9c2909227b8c", "0xbba60ab93fc409b1a34371cbf6c3173795ed2c7e"], "union_pool_size": 208, "global_hits": 0, "token_hits": 0}
@@ -954,6 +1012,7 @@
 {"pair_key": "0xffca|43c3", "prefix": "0xffca", "suffix": "43c3", "trunc": "0xffca…43c3", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x35344de4c915dcfab9fda15946f6d32730143262"], "union_pool_size": 135, "global_hits": 0, "token_hits": 0}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"pair_key": "0xffde|f0ed", "prefix": "0xffde", "suffix": "f0ed", "trunc": "0xffde…f0ed", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 369, "global_hits": 0, "token_hits": 0}
 =======
 {"pair_key": "0xffde|f0ed", "prefix": "0xffde", "suffix": "f0ed", "trunc": "0xffde…f0ed", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 370, "global_hits": 0, "token_hits": 0}
@@ -961,4 +1020,7 @@
 =======
 {"pair_key": "0xffde|f0ed", "prefix": "0xffde", "suffix": "f0ed", "trunc": "0xffde…f0ed", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 371, "global_hits": 0, "token_hits": 0}
 >>>>>>> 8e3e909 (chore: scout TG deep resolve (unique-match))
+=======
+{"pair_key": "0xffde|f0ed", "prefix": "0xffde", "suffix": "f0ed", "trunc": "0xffde…f0ed", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0xac2ba65e2c2e7e7c0002942dbe9c89856ef21eca"], "union_pool_size": 371, "global_hits": 0, "token_hits": 0}
+>>>>>>> aa93978 (chore: scout TG deep resolve (unique-match))
 {"pair_key": "0xffff|ffff", "prefix": "0xffff", "suffix": "ffff", "trunc": "0xffff…ffff", "tier": "good", "reason": "no_match", "n_tokens": 1, "token_cas": ["0x1b858ad93bbac69a07649d858c37351913a25354"], "union_pool_size": 84, "global_hits": 0, "token_hits": 0}
