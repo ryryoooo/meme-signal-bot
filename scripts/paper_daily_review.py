@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import urllib.error
 import urllib.request
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -83,7 +84,9 @@ def reason_key(r: str) -> str:
 
 
 def discord_post(webhook: str, content: str = "", embeds: list | None = None) -> None:
-    body = {"content": (content or "")[:1900]}
+    body: dict = {}
+    if content:
+        body["content"] = content[:1900]
     if embeds:
         body["embeds"] = embeds
     data = json.dumps(body).encode("utf-8")
@@ -93,8 +96,13 @@ def discord_post(webhook: str, content: str = "", embeds: list | None = None) ->
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        resp.read()
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            resp.read()
+    except urllib.error.HTTPError as e:
+        # Discord webhooks often return 204 No Content
+        if e.code not in (200, 204):
+            raise
 
 
 def main() -> int:
