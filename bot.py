@@ -114,6 +114,95 @@ def notify_passthrough_enabled(chain: str | None = None) -> bool:
     return False
 
 
+def notify_market_source(default: str = "auto") -> str:
+    """Where notify card numbers come from: dex | gmgn | auto."""
+    v = (os.environ.get("NOTIFY_MARKET_SOURCE") or default or "auto").strip().lower()
+    if v in ("dex", "dexscreener", "dex-only", "dex_only"):
+        return "dex"
+    if v in ("gmgn", "gmgn-only", "gmgn_only"):
+        return "gmgn"
+    return "auto"
+
+
+def dex_only_safety(ca: str, chain: str, *, snap: dict | None = None) -> dict:
+    """Lightweight card fill from DexScreener only — never calls GMGN.
+
+    ok=True when Dex returns any of mcap / price / symbol (usable notify card).
+    """
+    meta = CHAIN_META.get(chain, {})
+    gmgn_chain = meta.get("gmgn_chain") or chain
+    if snap is None:
+        try:
+            snap = gmgn_tok.market_snapshot(gmgn_chain, ca)
+        except Exception:
+            snap = {}
+    if not isinstance(snap, dict):
+        snap = {}
+    price = snap.get("price_usd")
+    mcap = snap.get("mcap_usd") or snap.get("fdv")
+    liq = snap.get("liq_usd")
+    sym = snap.get("symbol")
+    ratio = None
+    if liq is not None and mcap:
+        try:
+            ratio = float(liq) / float(mcap)
+        except (TypeError, ValueError, ZeroDivisionError):
+            ratio = None
+    has_nums = any(x is not None for x in (mcap, price, sym))
+    fetch_failed = bool(snap.get("fetch_failed")) or not bool(snap.get("ok")) or not has_nums
+    ok = has_nums and not fetch_failed
+    dex_url = snap.get("url")
+    gmgn_url = gmgn_tok.token_app_url(gmgn_chain, ca, None)
+    if ok:
+        jp = "通過（DexScreener）"
+        reasons = ["ok"]
+    else:
+        jp = "見送り（Dex取得失敗）" if fetch_failed else "見送り（Dex数値なし）"
+        reasons = ["dex_fetch_failed"] if fetch_failed else ["dex_empty"]
+    print(
+        f"safety ca={ca[:10]}… ok={ok} src=dex ratio={ratio} "
+        f"mcap={mcap} liq={liq} sym={sym} fetch_failed={fetch_failed} reasons={reasons}",
+        flush=True,
+    )
+    return {
+        "ok": ok,
+        "reasons": reasons,
+        "ratio": ratio,
+        "liq_usd": liq,
+        "mcap_usd": mcap,
+        "fdv": snap.get("fdv") or mcap,
+        "price_usd": price,
+        "dex_url": dex_url,
+        "gmgn_url": gmgn_url,
+        "goplus": "unused",
+        "jp": jp,
+        "audit_jp": "（Dexのみ・GMGN監査なし）",
+        "symbol_hint": sym,
+        "volume_h24": snap.get("volume_h24"),
+        "volume_h1": snap.get("volume_h1"),
+        "volume_m5": snap.get("volume_m5"),
+        "buys_h24": snap.get("buys_h24"),
+        "buys_m5": snap.get("buys_m5"),
+        "sells_m5": snap.get("sells_m5"),
+        "buys_h1": snap.get("buys_h1"),
+        "sells_h1": snap.get("sells_h1"),
+        "price_change_m5": snap.get("price_change_m5"),
+        "price_change_h1": snap.get("price_change_h1"),
+        "price_change_h6": snap.get("price_change_h6"),
+        "price_change_h24": snap.get("price_change_h24"),
+        "graduated": snap.get("graduated"),
+        "bondingish": snap.get("bondingish"),
+        "dex_id": snap.get("dex_id"),
+        "labels": snap.get("labels"),
+        "pair_created_at_ms": snap.get("pair_created_at_ms"),
+        "holder_count": snap.get("holder_count"),
+        "source": "dexscreener",
+        "fetch_failed": fetch_failed,
+        "checklist": [],
+        "dex_overlay": True,
+    }
+
+
 def merge_dex_fields_for_passthrough(safety: dict, ca: str, chain: str) -> dict:
     """Prefer Dex market_snapshot card fields when GMGN safety fetch failed."""
     out = dict(safety)
@@ -135,7 +224,8 @@ def merge_dex_fields_for_passthrough(safety: dict, ca: str, chain: str) -> dict:
             out[k] = dex.get(k)
     if out.get("symbol_hint") is None and dex.get("symbol") is not None:
         out["symbol_hint"] = dex.get("symbol")
-    if not out.get("dex_url") and dex.get("url"):
+    # Prefer DexScreener URL for card links when present
+    if dex.get("url"):
         out["dex_url"] = dex.get("url")
     if out.get("ratio") is None:
         liq, mcap = out.get("liq_usd"), out.get("mcap_usd") or out.get("fdv")
@@ -144,6 +234,9 @@ def merge_dex_fields_for_passthrough(safety: dict, ca: str, chain: str) -> dict:
                 out["ratio"] = float(liq) / float(mcap)
             except (TypeError, ValueError, ZeroDivisionError):
                 pass
+    if any(out.get(k) is not None for k in ("mcap_usd", "price_usd", "symbol_hint", "liq_usd")):
+        out["fetch_failed"] = False
+        out["source"] = out.get("source") or "dexscreener"
     out["dex_overlay"] = True
     return out
 
@@ -2574,9 +2667,12 @@ def heat_gate_reasons(safety: dict) -> list[str]:
 
 
 def safety_check(ca: str, chain: str) -> dict:
-    """GMGN info + security. DexScreener/GoPlus are not the source of truth."""
+    """Safety + card numbers. Dex-only when NOTIFY_MARKET_SOURCE=dex or GMGN disabled."""
     meta = CHAIN_META.get(chain, {})
     gmgn_chain = meta.get("gmgn_chain") or chain
+    src = notify_market_source("auto")
+    if src == "dex" or (src == "auto" and gmgn_tok.gmgn_disabled()):
+        return dex_only_safety(ca, chain)
     # Arc: ignore security-audit gates while collecting launch data (env overrideable)
     arc_skip = (chain or "").lower() == "arc" and env_bool("ARC_SKIP_SECURITY_AUDIT", True)
     if arc_skip:
@@ -2662,12 +2758,26 @@ def safety_check(ca: str, chain: str) -> dict:
             "volume_h24", "volume_h1", "volume_m5", "buys_h24", "buys_m5", "sells_m5",
             "buys_h1", "sells_h1", "price_change_m5", "price_change_h1",
             "price_change_h6", "price_change_h24", "graduated", "bondingish",
-            "dex_id", "labels",
+            "dex_id", "labels", "liq_usd", "mcap_usd", "fdv", "price_usd",
+            "pair_created_at_ms",
         ):
             if out.get(k) is None and dex.get(k) is not None:
                 out[k] = dex.get(k)
         if out.get("holder_count") is None and dex.get("holder_count") is not None:
             out["holder_count"] = dex.get("holder_count")
+        if out.get("symbol_hint") is None and dex.get("symbol") is not None:
+            out["symbol_hint"] = dex.get("symbol")
+        if dex.get("url"):
+            out["dex_url"] = dex.get("url")
+        if out.get("ratio") is None:
+            liq, mcap = out.get("liq_usd"), out.get("mcap_usd") or out.get("fdv")
+            if liq is not None and mcap:
+                try:
+                    out["ratio"] = float(liq) / float(mcap)
+                except (TypeError, ValueError, ZeroDivisionError):
+                    pass
+        if any(out.get(k) is not None for k in ("mcap_usd", "price_usd", "symbol_hint", "liq_usd")):
+            out["fetch_failed"] = False
     if out.get("ok") and not out.get("fetch_failed"):
         heat = heat_gate_reasons(out)
         # evaluate already checks liq_ratio; still enforce absolute liq/mcap floors
@@ -2788,11 +2898,26 @@ def build_embed(
 
     gmgn_chain = meta.get("gmgn_chain") or chain
     gmgn_url = gmgn_tok.token_app_url(gmgn_chain, s["ca"], safety.get("gmgn_url"))
-    fields.append({"name": "コントラクト", "value": f"[`{s['ca']}`]({gmgn_url})", "inline": False})
-    link_lines = [f"[GMGNアプリで開く]({gmgn_url})"]
+    dex_url = safety.get("dex_url") or ""
+    if dex_url and ("gmgn.ai" in str(dex_url) or "gmgn" in str(dex_url).lower()[:40]):
+        # evaluate historically stuffed GMGN into dex_url — prefer real Dex when source is dex
+        if (safety.get("source") or "") == "dexscreener" or notify_market_source() == "dex":
+            dex_url = ""
+    if not dex_url:
+        # Best-effort DexScreener token page
+        dex_slug = meta.get("dex_slug") or gmgn_chain or chain
+        dex_url = f"https://dexscreener.com/{dex_slug}/{s['ca']}"
+    primary_url = dex_url or gmgn_url
+    fields.append({"name": "コントラクト", "value": f"[`{s['ca']}`]({primary_url})", "inline": False})
+    link_lines = [f"[DexScreener]({dex_url})"]
     explorer_base = meta.get("explorer")
     if explorer_base:
         link_lines.append(f"[エクスプローラー]({explorer_base}{s['ca']})")
+    # GMGN optional (GHA / when available)
+    if gmgn_url and notify_market_source() != "dex":
+        link_lines.append(f"[GMGN]({gmgn_url})")
+    elif gmgn_url and env_bool("NOTIFY_SHOW_GMGN_LINK", False):
+        link_lines.append(f"[GMGN]({gmgn_url})")
     fields.append({"name": "リンク", "value": " · ".join(link_lines), "inline": False})
 
     def line(w: dict) -> str:
@@ -2816,6 +2941,8 @@ def build_embed(
 
     if safety.get("volume_h24") is not None:
         fields.append({"name": "出来高24h", "value": fmt_usd(safety.get("volume_h24")), "inline": True})
+    if safety.get("volume_m5") is not None:
+        fields.append({"name": "出来高5m", "value": fmt_usd(safety.get("volume_m5")), "inline": True})
     if safety.get("holder_count") is not None:
         fields.append({"name": "ホルダー", "value": str(int(float(safety["holder_count"]))), "inline": True})
     qscores = [
@@ -2834,10 +2961,11 @@ def build_embed(
     elif pb == "set2":
         fields.append({"name": "セット", "value": "②サバイバル整理", "inline": True})
 
-    ts, footer = _discord_notify_stamp("数値はGMGN取得時点 · お知らせのみ・自動では買いません")
+    src_note = "DexScreener" if (safety.get("source") == "dexscreener" or notify_market_source() == "dex") else "GMGN"
+    ts, footer = _discord_notify_stamp(f"数値は{src_note}取得時点 · お知らせのみ・自動では買いません")
     return {
         "title": title[:256],
-        "url": gmgn_url,
+        "url": primary_url,
         "description": description[:4000],
         "color": color,
         "fields": fields,

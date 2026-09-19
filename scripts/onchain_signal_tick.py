@@ -11,7 +11,9 @@ Env (key knobs):
   ONCHAIN_MAX_BLOCKS         tip window per tick (default 32)
   ONCHAIN_LOOKBACK_BOOT      first-run lookback blocks (default 12)
   ONCHAIN_TICK_ONCE=1        run one scan and exit
-  WATCHLIST_PATH / STATE_PATH / COOLDOWN_SECONDS / NOTIFY_PASSTHROUGH …
+  WATCHLIST_PATH / STATE_PATH / COOLDOWN_SECONDS (default 300) /
+  NOTIFY_MARKET_SOURCE=dex (card fields from DexScreener; never GMGN on box) /
+  NOTIFY_PASSTHROUGH …
   LIVE_TRADING stays off.
 
 Detection (simple, log false positives):
@@ -50,7 +52,9 @@ os.environ.setdefault("DROP_WEAK_WALLETS", "0")
 os.environ.setdefault("DROP_BOT_WALLETS", "0")
 os.environ.setdefault("WATCH_MIN_REALIZED_HARD", "100")
 os.environ.setdefault("MIN_WALLETS", "1")
-os.environ.setdefault("COOLDOWN_SECONDS", "900")
+os.environ.setdefault("COOLDOWN_SECONDS", "300")
+os.environ.setdefault("NOTIFY_MARKET_SOURCE", "dex")
+os.environ.setdefault("GMGN_MARKET", "0")
 
 import bot as bot_mod  # noqa: E402
 from load_secrets import load as load_secrets  # noqa: E402
@@ -351,7 +355,7 @@ def post_signals(
             webhook = ""
     if not webhook:
         log("WARN no DISCORD_WEBHOOK_URL — dry log only")
-    cooldown = env_int("COOLDOWN_SECONDS", 900)
+    cooldown = env_int("COOLDOWN_SECONDS", 300)
     min_wallets = env_int("MIN_WALLETS", 1)
     seen = set(state.get("seen_signal_keys") or [])
     ca_last: dict = dict(state.get("ca_last_posted") or {})
@@ -390,12 +394,23 @@ def post_signals(
             skipped += 1
             continue
 
-        safety = bot_mod.safety_check(ca, chain)
+        # Force Dex-only card fill on box onchain path — never require GMGN
+        try:
+            snap = bot_mod.gmgn_tok.market_snapshot(
+                bot_mod.CHAIN_META.get(chain, {}).get("gmgn_chain") or chain, ca
+            )
+        except Exception:
+            snap = {}
+        if bot_mod.notify_market_source("dex") == "dex" or bot_mod.gmgn_tok.gmgn_disabled():
+            safety = bot_mod.dex_only_safety(ca, chain, snap=snap if isinstance(snap, dict) else None)
+        else:
+            safety = bot_mod.safety_check(ca, chain)
         passthrough = bot_mod.notify_passthrough_enabled(chain)
         pt_reasons: list[str] = []
         if (not safety.get("ok")) or safety.get("fetch_failed"):
             if passthrough:
-                safety = bot_mod.merge_dex_fields_for_passthrough(dict(safety), ca, chain)
+                if not safety.get("dex_overlay"):
+                    safety = bot_mod.merge_dex_fields_for_passthrough(dict(safety), ca, chain)
                 fail_rs = [r for r in (safety.get("reasons") or []) if r and r != "ok"]
                 if safety.get("fetch_failed") and "fetch_failed" not in fail_rs:
                     fail_rs.append("fetch_failed")
@@ -403,7 +418,7 @@ def post_signals(
                 safety["ok"] = True
                 safety["passthrough"] = True
                 prev_jp = safety.get("jp") or ""
-                note = "passthrough・onchain"
+                note = "passthrough・onchain・dex"
                 if "passthrough" not in prev_jp:
                     safety["jp"] = (prev_jp + f"（{note}）") if prev_jp else f"（{note}）"
             else:
@@ -411,6 +426,13 @@ def post_signals(
                 seen.add(s["key"])
                 skipped += 1
                 continue
+        # Log card fill so dry-run / ops can verify Dex mcap
+        log(
+            f"dex_fill ca={ca[:12]}… ok={safety.get('ok')} src={safety.get('source')} "
+            f"sym={safety.get('symbol_hint')} mcap={safety.get('mcap_usd')} "
+            f"liq={safety.get('liq_usd')} px={safety.get('price_usd')} "
+            f"vol24={safety.get('volume_h24')} fetch_failed={safety.get('fetch_failed')}"
+        )
 
         # Fill USD from dex price when missing
         price = safety.get("price_usd")

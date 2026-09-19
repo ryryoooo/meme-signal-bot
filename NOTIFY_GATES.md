@@ -37,7 +37,7 @@
 - `NOTIFY_PASSTHROUGH=1`（or `RH_NOTIFY_ALWAYS=1` when `CHAIN=robinhood`）
 - Post **all** watchlist buy overlaps to Discord; GMGN fail / safety fail / notify_gate fail do **not** block
 - Still runs `safety_check` for card fields; prefers Dex `market_snapshot` when GMGN failed
-- Keeps `already_seen` duplicate skip; shorten via `COOLDOWN_SECONDS` (RH: 900)
+- Keeps `already_seen` duplicate skip; shorten via `COOLDOWN_SECONDS` (RH onchain default **300**; override to 900 if too noisy)
 - Live trading stays off (`LIVE_TRADING=0`)
 
 
@@ -117,8 +117,12 @@
 2. Poll `eth_blockNumber`; for new blocks `eth_getBlockByNumber(full)`; keep txs whose `from` ∈ watchlist.
 3. `eth_getTransactionReceipt` → ERC-20 `Transfer` logs; **buy** if wallet is `to` of a non-skip token and swap-shaped (`hint=swap_shaped` / calldata). Pure push (`recv_only`) logged as FP and skipped unless `ONCHAIN_ALLOW_RECV_ONLY=1`.
 4. Dedupe via shared `state.json` (`seen_signal_keys`, `ca_last_posted`, `onchain_last_block`) — same merge as FOMO tick.
-5. Discord: existing embed + `NOTIFY_PASSTHROUGH` / priority gates; market fields from **DexScreener** (`market_snapshot`) when GMGN off.
+5. Discord: existing embed + `NOTIFY_PASSTHROUGH` / priority gates; market fields **always DexScreener** on box (`NOTIFY_MARKET_SOURCE=dex`).
 6. Latency target: **a few seconds** after inclusion (poll 5s + receipt; not pre-sequencer). Sequencer feed (`wss://feed.mainnet.chain.robinhood.com` / rhfeed `--sender`) is a future lower-latency option; v1 uses RPC for multi-wallet batching.
+
+
+### Dex-only notify cards (box onchain) — 2026-09-20
+Box onchain posts set `NOTIFY_MARKET_SOURCE=dex` (and `GMGN_DISABLED=1` / `GMGN_MARKET=0`): Discord card fields (mcap / liq / price / symbol / volume) come from **DexScreener** `market_snapshot` only — never wait on GMGN. Embed links DexScreener + explorer (GMGN link optional via `NOTIFY_SHOW_GMGN_LINK`). Empty Dex → still passthrough-post with partial/empty numbers. `scripts/signal_state_sync.sh` GitHub 429s are **non-blocking** (retry/backoff; not a notify failure). Cooldown default **300s**.
 
 ### Env
 - `SIGNAL_SOURCE=onchain` (default) | `fomo` | `both`

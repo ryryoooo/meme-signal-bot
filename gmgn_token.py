@@ -1,4 +1,4 @@
-"""GMGN token info + security via gmgn-cli. Numbers come only from GMGN."""
+"""GMGN token info + security via gmgn-cli; DexScreener for market marks when GMGN off."""
 from __future__ import annotations
 
 import json
@@ -19,6 +19,9 @@ except ImportError:
 
 _CACHE: dict[str, tuple[float, dict | None, str | None]] = {}
 _CACHE_TTL = 90.0
+_DEX_CACHE: dict[str, tuple[float, dict | None]] = {}
+_DEX_CACHE_TTL = float(os.environ.get("DEX_CACHE_TTL_SEC", "45") or 45)
+
 _COOLDOWN_PATH = Path(os.environ.get("GMGN_COOLDOWN_PATH") or "/workspace/meme-foundation/live-arc/gmgn_cooldown.json")
 
 
@@ -496,32 +499,73 @@ def checklist_no_danger(items: list[dict]) -> tuple[bool, list[str]]:
 
 def _dex_market(chain: str, ca: str) -> dict | None:
     """Free DexScreener snapshot so marks/alerts keep moving when GMGN is banned."""
+    import urllib.error
     import urllib.request
     import subprocess as _sp
+
+    ca = (ca or "").strip()
+    if not ca:
+        return None
+    cache_key = f"{(chain or '').lower()}:{ca.lower()}"
+    hit = _DEX_CACHE.get(cache_key)
+    if hit and (time.time() - hit[0]) < _DEX_CACHE_TTL:
+        return hit[1]
+
     url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     data = None
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode())
-    except Exception:
-        data = None
-    if data is None:
+    last_err = None
+    for attempt in range(4):
         try:
-            raw = _sp.check_output(
-                ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", "8", url],
-                text=True,
-                timeout=12,
-            )
-            data = json.loads(raw or "{}")
-        except Exception:
-            return None
+            req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read().decode())
+            break
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code in (429, 403, 502, 503, 504):
+                wait = min(8.0, 0.4 * (2 ** attempt))
+                ra = e.headers.get("Retry-After") if e.headers else None
+                try:
+                    wait = max(wait, float(ra))
+                except (TypeError, ValueError):
+                    pass
+                time.sleep(wait)
+                continue
+            data = None
+            break
+        except Exception as e:
+            last_err = e
+            data = None
+            break
+    if data is None:
+        for attempt in range(3):
+            try:
+                raw = _sp.check_output(
+                    ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", "8", url],
+                    text=True,
+                    timeout=12,
+                )
+                data = json.loads(raw or "{}")
+                break
+            except Exception as e:
+                last_err = e
+                time.sleep(min(6.0, 0.5 * (2 ** attempt)))
+                data = None
+    if data is None:
+        _DEX_CACHE[cache_key] = (time.time(), None)
+        return None
     pairs = (data or {}).get("pairs") or []
     if not pairs:
+        _DEX_CACHE[cache_key] = (time.time(), None)
         return None
     slug = (chain or "").lower()
-    preferred = [x for x in pairs if (x.get("chainId") or "").lower() in (slug, "arc", "arcadium")]
+    # DexScreener RH slug is "robinhood"; also accept common aliases
+    rh_aliases = ("robinhood", "rh", "robinhood-chain", "robinhoodchain")
+    preferred = [
+        x for x in pairs
+        if (x.get("chainId") or "").lower() in (slug, "arc", "arcadium", *rh_aliases)
+    ]
     pool = preferred or pairs
 
     def liq_of(x):
@@ -546,6 +590,7 @@ def _dex_market(chain: str, ca: str) -> dict | None:
     except (TypeError, ValueError):
         liq = None
     if not price and not liq:
+        _DEX_CACHE[cache_key] = (time.time(), None)
         return None
     vol_obj = pair.get("volume") if isinstance(pair.get("volume"), dict) else {}
     tx_obj = pair.get("txns") if isinstance(pair.get("txns"), dict) else {}
@@ -597,7 +642,6 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         pair_created_ms = int(pair_created) if pair_created is not None else None
     except (TypeError, ValueError):
         pair_created_ms = None
-    # Graduation heuristic: real AMM pair with labels/dex, not bonding-only
     dex_id = str(pair.get("dexId") or pair.get("dex") or "").lower()
     bondingish = any(
         x in dex_id or x in " ".join(labels)
@@ -607,10 +651,9 @@ def _dex_market(chain: str, ca: str) -> dict | None:
     if any(x in labels for x in ("graduated", "migrated")):
         graduated = True
     elif liq is not None and liq >= float(__import__("os").environ.get("MIN_GRAD_LIQ_USD", "2500") or 2500):
-        # thick AMM pool ≈ post-migrate; bonding usually thinner until grad
         if not bondingish:
             graduated = True
-    return {
+    out = {
         "ok": True,
         "reason": None,
         "liq_usd": liq,
@@ -642,6 +685,9 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         "source": "dexscreener",
         "fetch_failed": False,
     }
+    _DEX_CACHE[cache_key] = (time.time(), out)
+    return out
+
 
 
 def market_snapshot(chain: str, ca: str) -> dict:
