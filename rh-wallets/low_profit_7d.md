@@ -1,12 +1,12 @@
 # Low profit wallets (7d)
 
-- Updated: **2026-09-19T20:04:38.180467+00:00**
+- Updated: **2026-09-19T20:08:16.050499+00:00**
 - Source: `rh-wallets/wallets.jsonl`
 - Period fields: `win_rate_7d`, `realized_pnl_7d`, `n_trades_7d`
 - Coverage (any 7d WR/PnL): **4** / 2567
 - Qualifying (n_trades>=5 + pnl present): **4**
 - Reported (top 100, worst-first): **4**
-- Tag: `low_profit_7d` (watch patched: 4)
+- Tag: `low_profit_7d` (watch patched: 0)
 
 ## Worst-first list
 
