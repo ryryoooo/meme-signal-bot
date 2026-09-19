@@ -1,6 +1,6 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-09-19T12:54:02.287728+00:00
+- Updated (UTC): 2026-09-19T13:03:05.773739+00:00
 - Ranked wallets: **2075**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=gmgn_disabled
