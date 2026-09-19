@@ -1,0 +1,91 @@
+# Daily 00:05 JST = 15:05 UTC previous calendar day
+name: paper-daily
+
+on:
+  schedule:
+    - cron: "5 15 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "JST day YYYY-MM-DD (optional)"
+        required: false
+        default: ""
+      post_discord:
+        description: "Post to Discord paper webhook"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: paper-daily
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore paper/state cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            state.json
+            paper_log.jsonl
+            paper_book.jsonl
+            paper_summary.md
+            paper_daily.md
+            paper_daily_*.md
+          key: meme-signal-state-v4
+          restore-keys: |
+            meme-signal-state-
+
+      - name: Write Japanese daily review
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_PAPER_WEBHOOK_URL: ${{ secrets.DISCORD_PAPER_WEBHOOK_URL }}
+          PAPER_BANKROLL_USD: "300"
+          LIVE_TRADING: "0"
+          STATE_PATH: state.json
+          PAPER_LOG_PATH: paper_log.jsonl
+          PAPER_BOOK_PATH: paper_book.jsonl
+          PAPER_DAILY_PATH: paper_daily.md
+          PAPER_DAILY_DATE: ${{ inputs.date || '' }}
+          PAPER_DAILY_POST_DISCORD: ${{ inputs.post_discord || '1' }}
+        run: python3 scripts/paper_daily_review.py
+
+      - name: Commit daily artifact
+        continue-on-error: true
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paper_daily.md paper_daily_*.md || true
+          if git diff --cached --quiet; then
+            echo "no daily changes"
+          else
+            git commit -m "chore: paper daily review (JST)"
+            git pull --rebase origin main || true
+            git push || true
+          fi
+
+      - name: Upload daily artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-daily
+          path: |
+            paper_daily.md
+            paper_daily_*.md
+            paper_log.jsonl
+            paper_book.jsonl
+            state.json
+          if-no-files-found: warn
+          retention-days: 30

@@ -45,6 +45,8 @@ Writes:
   merges resolved full addrs into WATCHLIST_PATH (no wipe)
 
 Deep harvest tip: chunked BS — SCOUT_TG_BS_ALL=1 SCOUT_TG_BS_TOKEN_CAP=80 SCOUT_TG_BS_TIME_BUDGET_SEC=1500 SCOUT_TG_PAGES=0 (resolve-only) on GHA.
+  SCOUT_TG_NEIGHBOR_CA=1  expand no_match via nearby-msg / same-ticker CAs (disk-only)
+  SCOUT_TG_NEIGHBOR_MSG_WINDOW=80
 """
 from __future__ import annotations
 
@@ -1218,6 +1220,7 @@ class ResolveStats:
         "mega_pool_hits",
         "collisions_skipped",
         "two_hit_token_accept",
+        "neighbor_ca_hits",
         "gmgn_calls",
         "bs_tokens",
         "bs_tokens_nonempty",
@@ -1240,6 +1243,7 @@ class ResolveStats:
         self.mega_pool_hits = 0
         self.collisions_skipped = 0
         self.two_hit_token_accept = 0
+        self.neighbor_ca_hits = 0
         self.gmgn_calls = 0
         self.bs_tokens = 0
         self.bs_tokens_nonempty = 0
@@ -1320,6 +1324,9 @@ def resolve_truncs(
         elif bucket == "two_hit":
             stats.two_hit_token_accept += 1
             stats.token_scoped_hits += 1
+        elif bucket == "neighbor":
+            stats.neighbor_ca_hits += 1
+            stats.multi_union_hits += 1
         else:
             stats.global_hits += 1
 
@@ -1802,6 +1809,74 @@ def resolve_truncs(
         if stats.mega_pool_hits:
             print(f"scout_tg mega_union hits={stats.mega_pool_hits}")
 
+    # --- Pass 2.85: neighbor-msg / ticker CA expansion for plateau no_match ---
+    # Free disk-only: associate truncs with CAs from nearby TG posts (±window)
+    # and same-ticker posts, then unique-match against those pools.
+    if env_bool("SCOUT_TG_NEIGHBOR_CA", True) and token_pools:
+        try:
+            window = int(os.environ.get("SCOUT_TG_NEIGHBOR_MSG_WINDOW", "80"))
+        except Exception:
+            window = 80
+        msg_cas: dict[int, set[str]] = {}
+        ticker_cas_map: dict[str, set[str]] = {}
+        for t in trunc_rows:
+            ca = (t.get("token_ca") or "").lower()
+            if not ca.startswith("0x"):
+                continue
+            try:
+                mid = int(t.get("msg_id") or 0)
+            except Exception:
+                mid = 0
+            if mid:
+                msg_cas.setdefault(mid, set()).add(ca)
+            tick = (t.get("ticker") or "").upper()
+            if tick:
+                ticker_cas_map.setdefault(tick, set()).add(ca)
+        neighbor_hits = 0
+        for t in pending_rows():
+            pref = (t.get("prefix") or "").lower()
+            suf = (t.get("suffix") or "").lower()
+            pk = pair_key(pref, suf)
+            if pk in pair_to_addr or pk == "|":
+                continue
+            extra: set[str] = set()
+            try:
+                mid = int(t.get("msg_id") or 0)
+            except Exception:
+                mid = 0
+            if mid and msg_cas:
+                for m2, cas in msg_cas.items():
+                    if abs(m2 - mid) <= window:
+                        extra |= cas
+            tick = (t.get("ticker") or "").upper()
+            if tick:
+                extra |= ticker_cas_map.get(tick) or set()
+            primary = (t.get("token_ca") or "").lower()
+            if primary.startswith("0x"):
+                extra.discard(primary)
+            if not extra:
+                continue
+            union: set[str] = set()
+            for ca in extra:
+                union |= token_pools.get(ca) or set()
+            if len(union) < 2:
+                continue
+            hits = match_hits(union, pref, suf)
+            if len(hits) == 1:
+                accept(t, hits[0], "scout_tg_neighbor_ca", bucket="neighbor")
+                neighbor_hits += 1
+            elif len(hits) > 1:
+                stats.collisions_skipped += 1
+        for t in pending_rows():
+            pk = pair_key(t.get("prefix"), t.get("suffix"))
+            addr = pair_to_addr.get(pk)
+            if addr:
+                accept(t, addr, "scout_tg_pair_cache", bucket="pair_cache")
+        print(
+            f"scout_tg neighbor_ca tried window={window} "
+            f"hits={stats.neighbor_ca_hits} new_accept_rows≈{neighbor_hits}"
+        )
+
     # --- Pass 3: global unique against local pool (+ optional 2-hit ∩ token) ---
     still = pending_rows()
     stats.attempted = len(
@@ -1982,8 +2057,21 @@ def resolve_truncs(
         for reason, n in rc.most_common():
             lines.append(f"- `{reason}`: {n}")
         lines.append("")
-        lines.append("### Sample unresolved (up to 40)")
-        lines.append("")
+        # Hard-ceiling note when remaining are pure no_match & methods stalled
+        huge_dead = sum(1 for r in unresolved_rows if r.get("reason") == "no_match" and int(r.get("union_pool_size") or 0) >= 1000)
+        mid_open = sum(1 for r in unresolved_rows if r.get("reason") == "no_match" and int(r.get("union_pool_size") or 0) < 500)
+        lines += [
+            "",
+            "## Hard ceiling / plateau",
+            "",
+            f"- no_match total: **{stats.reason_no_match}** (huge_pool≥1000 true-dead≈{huge_dead}, mid<500 still deepenable≈{mid_open})",
+            f"- neighbor_ca hits this run: **{getattr(stats, 'neighbor_ca_hits', 0)}**",
+            "- Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.",
+            "- Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.",
+            "",
+            "### Sample unresolved (up to 40)",
+            "",
+        ]
         for r in unresolved_rows[:40]:
             lines.append(
                 f"- `{r['pair_key']}` reason={r['reason']} tokens={r['n_tokens']} "

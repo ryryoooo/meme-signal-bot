@@ -7,7 +7,7 @@ Strategy:
   - Long sleep between calls (default 12s)
   - Stop immediately on rate_limited / 429
   - Skip recently failed / recently vetted addresses
-  - Prioritize scout_elite missing win_rate
+  - Prioritize scout_elite / scout_pending_WR missing win_rate
 
 Env:
   GMGN_DISABLED=0
@@ -16,7 +16,8 @@ Env:
   GMGN_VET_CAP=8
   GMGN_VET_SLEEP_SEC=12
   GMGN_VET_COOLDOWN_HOURS=6
-  GMGN_VET_PRIORITY=elite   # elite|all
+  GMGN_VET_PRIORITY=elite   # elite|pending_wr|all
+                             # elite = scout_elite + scout_pending_WR (+ themaran/985)
 """
 from __future__ import annotations
 
@@ -135,15 +136,43 @@ def main() -> int:
 
     cool_before = now() - timedelta(hours=cool_h)
     cand = []
+    tagged_pending = 0
     for a, o in by.items():
-        if o.get("win_rate") is not None and int(float(o.get("n_trades") or 0)) >= 10:
+        has_wr = o.get("win_rate") is not None and int(float(o.get("n_trades") or 0)) >= 10
+        tags_list = [str(t) for t in (o.get("tags") or [])]
+        tags_l = [t.lower() for t in tags_list]
+        tags = " ".join(tags_l)
+        elite = "scout_elite" in tags_l or o.get("scout_tier") == "elite"
+        scoutish = (
+            elite
+            or "scout_tg" in tags_l
+            or "scout_tg_early" in tags_l
+            or "scout_good" in tags_l
+            or "scout_pending_wr" in tags_l
+        )
+        # maintain scout_pending_WR tag for scout wallets still missing WR
+        if scoutish and not has_wr:
+            if "scout_pending_wr" not in tags_l:
+                tags_list.append("scout_pending_WR")
+                o["tags"] = tags_list
+                by[a] = o
+                tagged_pending += 1
+                tags_l.append("scout_pending_wr")
+                tags = " ".join(tags_l)
+        elif has_wr and "scout_pending_wr" in tags_l:
+            o["tags"] = [t for t in tags_list if t.lower() != "scout_pending_wr"]
+            by[a] = o
+        if has_wr:
             continue
-        tags = " ".join(str(t).lower() for t in (o.get("tags") or []))
-        elite = "scout_elite" in tags or o.get("scout_tier") == "elite"
-        if priority == "elite" and not elite:
-            # still allow themaran/985 with high pnl missing wr
-            if "themaran" not in tags and "985monitor" not in tags:
-                continue
+        pending_wr = "scout_pending_wr" in tags_l
+        if priority in ("elite", "pending_wr"):
+            if not (elite or pending_wr or scoutish):
+                # still allow themaran/985 with high pnl missing wr
+                if "themaran" not in tags and "985monitor" not in tags:
+                    continue
+            if priority == "pending_wr" and not (pending_wr or elite or scoutish):
+                if "themaran" not in tags and "985monitor" not in tags:
+                    continue
         ok_at = parse_ts((st.get("ok") or {}).get(a))
         fail_at = parse_ts((st.get("fail") or {}).get(a))
         if ok_at and ok_at > cool_before:
@@ -160,8 +189,18 @@ def main() -> int:
             pnl = float(o.get("fomo_pnl_usd") or o.get("realized_pnl_usd") or 0)
         except Exception:
             pnl = 0.0
-        score = elite_n * 10 + hits + (50 if elite else 0) + min(20.0, buy / 200.0) + min(30.0, pnl / 1e5)
+        # Prefer elite + scout_pending_WR first (steady WR fill)
+        score = (
+            elite_n * 10
+            + hits
+            + (80 if elite else 0)
+            + (60 if pending_wr or scoutish else 0)
+            + min(20.0, buy / 200.0)
+            + min(30.0, pnl / 1e5)
+        )
         cand.append((score, a))
+    if tagged_pending:
+        print(f"vet_gmgn_throttled: tagged scout_pending_WR on {tagged_pending} wallets", flush=True)
 
     cand.sort(key=lambda x: -x[0])
     targets = [a for _, a in cand[:cap]]
@@ -195,11 +234,15 @@ def main() -> int:
             time.sleep(sleep_sec)
 
     merged = 0
+    wr_gained = 0
     for a, strow in vetted.items():
         row = by.get(a) or {"address": a}
+        prev_wr = row.get("win_rate")
         for k in ("realized_pnl_usd", "unrealized_pnl_usd", "total_pnl_usd", "win_rate", "n_trades", "gmgn_buy", "gmgn_sell"):
             if strow.get(k) is not None:
                 row[k] = strow[k]
+        if strow.get("win_rate") is not None and prev_wr is None:
+            wr_gained += 1
         eps = list(row.get("source_endpoints") or [])
         if "gmgn:portfolio" not in eps:
             eps.append("gmgn:portfolio")
@@ -208,6 +251,9 @@ def main() -> int:
         tags = list(row.get("tags") or [])
         if "gmgn_vetted" not in tags:
             tags.append("gmgn_vetted")
+        # clear pending WR once filled
+        if row.get("win_rate") is not None:
+            tags = [t for t in tags if str(t).lower() != "scout_pending_wr"]
         row["tags"] = tags
         by[a] = row
         merged += 1
@@ -230,6 +276,7 @@ def main() -> int:
     st["last_run_at"] = now_iso()
     st["last_calls"] = calls
     st["last_vetted"] = merged
+    st["last_wr_gained"] = wr_gained
     st["last_err"] = err
     save_state(st)
 
@@ -237,7 +284,7 @@ def main() -> int:
         "# GMGN throttled vet",
         "",
         f"- Updated: **{now_iso()}**",
-        f"- Calls: **{calls}** vetted_ok: **{merged}** err: `{err}`",
+        f"- Calls: **{calls}** vetted_ok: **{merged}** wr_gained: **{wr_gained}** err: `{err}`",
         f"- Cap/sleep: {cap}/{sleep_sec}s priority={priority}",
         f"- Remaining candidates (approx): {max(0, len(cand)-len(targets))}",
         "",
@@ -248,7 +295,7 @@ def main() -> int:
             f"- `{a[:10]}…` wr={strow.get('win_rate')} n={strow.get('n_trades')} rp={strow.get('realized_pnl_usd')}"
         )
     SUMMARY.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(json.dumps({"calls": calls, "vetted": merged, "err": err, "left": max(0, len(cand) - len(targets))}))
+    print(json.dumps({"calls": calls, "vetted": merged, "wr_gained": wr_gained, "err": err, "left": max(0, len(cand) - len(targets))}))
     return 0
 
 

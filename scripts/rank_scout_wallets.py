@@ -267,6 +267,11 @@ def merge_rank_into_watch(ranked: dict[str, dict], watch: dict[str, dict]) -> in
                 tags.append("scout_elite")
             elif "scout_good" not in tags and "scout_elite" not in tags:
                 tags.append("scout_good")
+            has_wr = row.get("win_rate") is not None and int(float(row.get("n_trades") or 0)) >= 10
+            if not has_wr and "scout_pending_wr" not in [t.lower() for t in tags]:
+                tags.append("scout_pending_WR")
+            if has_wr:
+                tags = [t for t in tags if t.lower() != "scout_pending_wr"]
             row["tags"] = tags
             eps = list(row.get("source_endpoints") or [])
             if "telegram:scoutrobinhood" not in eps:
@@ -470,6 +475,26 @@ def main() -> int:
             continue
         if a not in candidates:
             candidates[a] = dict(o)
+
+    # Tag scout wallets still missing WR for throttled GMGN fill priority
+    pending_n = 0
+    for a, row in candidates.items():
+        tags = [str(t) for t in (row.get("tags") or [])]
+        tags_l = [t.lower() for t in tags]
+        scoutish = any(
+            t in tags_l or row.get("scout_tier") == "elite"
+            for t in ("scout_tg", "scout_tg_early", "scout_elite", "scout_good", "scout_pending_wr")
+        )
+        has_wr = row.get("win_rate") is not None and int(float(row.get("n_trades") or 0)) >= 10
+        if scoutish and not has_wr:
+            if "scout_pending_wr" not in tags_l:
+                tags.append("scout_pending_WR")
+                row["tags"] = tags
+                pending_n += 1
+        elif has_wr and "scout_pending_wr" in tags_l:
+            row["tags"] = [t for t in tags if t.lower() != "scout_pending_wr"]
+    if pending_n:
+        print(f"scout_rank tagged scout_pending_WR={pending_n}", flush=True)
 
     fomo = fomo_index()
     fomo_hits = 0

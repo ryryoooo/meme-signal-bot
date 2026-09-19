@@ -3,7 +3,7 @@ name: gmgn-vet-throttle
 # Tiny GHA-only GMGN portfolio fills. Box stays GMGN_DISABLED=1.
 on:
   schedule:
-    # every 2 hours — keep under rate limits
+    # every 3 hours — tiny cap + sleep; shares gmgn-gha with scout resolve
     - cron: "35 */3 * * *"
   workflow_dispatch:
     inputs:
@@ -16,7 +16,7 @@ on:
         required: false
         default: "20"
       priority:
-        description: "elite or all"
+        description: "elite|pending_wr|all (elite prefers scout_elite + scout_pending_WR)"
         required: false
         default: "elite"
 
