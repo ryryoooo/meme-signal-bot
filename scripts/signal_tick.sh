@@ -25,7 +25,7 @@ DO_SYNC="${SIGNAL_STATE_SYNC:-1}"
 CREDIT_LOW="${FOMO_CREDIT_LOW:-5000}"
 SIGNAL_SOURCE="${SIGNAL_SOURCE:-onchain}"
 export SIGNAL_SOURCE
-ONCHAIN_POLL="${ONCHAIN_POLL_SECONDS:-5}"
+ONCHAIN_POLL="${ONCHAIN_POLL_SECONDS:-2}"
 ONCHAIN_PY="$ROOT/scripts/onchain_signal_tick.py"
 mkdir -p "$STATE_DIR"
 cd "$ROOT"
@@ -373,6 +373,45 @@ resolve_effective_source() {
   fi
 }
 
+# Shared env for onchain python (once or persistent loop)
+export_onchain_env() {
+  export ONCHAIN_POLL_SECONDS="${ONCHAIN_POLL:-2}"
+  export ONCHAIN_MAX_BLOCKS="${ONCHAIN_MAX_BLOCKS:-24}"
+  export ONCHAIN_LOOKBACK_BOOT="${ONCHAIN_LOOKBACK_BOOT:-12}"
+  export ONCHAIN_BATCH_SIZE="${ONCHAIN_BATCH_SIZE:-1}"
+  export ONCHAIN_RECEIPT_BATCH="${ONCHAIN_RECEIPT_BATCH:-1}"
+  export LIVE_TRADING=0
+  export GMGN_DISABLED=1
+  export GMGN_SMARTMONEY=0
+  export FOMO_ENABLED=0
+  export NOTIFY_PASSTHROUGH=1
+  export RH_NOTIFY_ALWAYS=1
+  export PAPER_TRADING=0
+  export CHAIN=robinhood
+  export WATCHLIST_PATH="${WATCHLIST_PATH}"
+  export STATE_PATH="${STATE_PATH}"
+  export SIGNAL_TICK_HEALTH="$HEALTH"
+  export COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-900}"
+  export MIN_WALLETS="${MIN_WALLETS:-1}"
+  export DROP_WEAK_WALLETS=0
+  export DROP_BOT_WALLETS=0
+  export PRIORITY_NOTIFY="${PRIORITY_NOTIFY:-1}"
+  export LIQ_REQUIRED=0
+  export ANTI_SPIKE_REQUIRED=0
+  export RH_SOFT_GATES=1
+  export REQUIRE_PRICE_MOVE=0
+  export BUY_VOLUME_REQUIRED=0
+  export VOLUME_REQUIRED=0
+  export VOLUME_M5_REQUIRED=0
+  export REQUIRE_BUY_INCREASE=0
+  export PLAYBOOK_REQUIRED=0
+  export POST_SKIP_NOTICES=0
+  export MIN_CLUSTER_USD="${MIN_CLUSTER_USD:-80}"
+  export MIN_MCAP_USD="${MIN_MCAP_USD:-1500}"
+  export MIN_TRADE_USD="${MIN_TRADE_USD:-40}"
+  export WINDOW_SECONDS="${WINDOW_SECONDS:-1200}"
+}
+
 run_onchain_once() {
   local t0 t1 elapsed rc
   if [[ ! -f "$ONCHAIN_PY" ]]; then
@@ -381,43 +420,9 @@ run_onchain_once() {
   fi
   t0=$(date +%s)
   log "onchain tick begin"
+  export_onchain_env
   set +e
-  ONCHAIN_TICK_ONCE=1 \
-  ONCHAIN_MAX_BLOCKS="${ONCHAIN_MAX_BLOCKS:-120}" \
-  ONCHAIN_LOOKBACK_BOOT="${ONCHAIN_LOOKBACK_BOOT:-16}" \
-  LIVE_TRADING=0 \
-  GMGN_DISABLED=1 \
-  GMGN_SMARTMONEY=0 \
-  FOMO_ENABLED=0 \
-  NOTIFY_PASSTHROUGH=1 \
-  RH_NOTIFY_ALWAYS=1 \
-  PAPER_TRADING=0 \
-  CHAIN=robinhood \
-  WATCHLIST_PATH="${WATCHLIST_PATH}" \
-  STATE_PATH="${STATE_PATH}" \
-  SIGNAL_TICK_HEALTH="$HEALTH" \
-  COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-900}" \
-  MIN_WALLETS="${MIN_WALLETS:-1}" \
-  DROP_WEAK_WALLETS=0 \
-  DROP_BOT_WALLETS=0 \
-  PRIORITY_NOTIFY="${PRIORITY_NOTIFY:-1}" \
-  LIQ_REQUIRED=0 \
-  ANTI_SPIKE_REQUIRED=0 \
-  RH_SOFT_GATES=1 \
-  REQUIRE_PRICE_MOVE=0 \
-  BUY_VOLUME_REQUIRED=0 \
-  VOLUME_REQUIRED=0 \
-  VOLUME_M5_REQUIRED=0 \
-  REQUIRE_BUY_INCREASE=0 \
-  PLAYBOOK_REQUIRED=0 \
-  POST_SKIP_NOTICES=0 \
-  MIN_CLUSTER_USD="${MIN_CLUSTER_USD:-80}" \
-  MIN_MCAP_USD="${MIN_MCAP_USD:-1500}" \
-  MIN_TRADE_USD="${MIN_TRADE_USD:-40}" \
-  WINDOW_SECONDS="${WINDOW_SECONDS:-1200}" \
-  DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-}" \
-  DISCORD_PRIORITY_WEBHOOK_URL="${DISCORD_PRIORITY_WEBHOOK_URL:-}" \
-    timeout "${ONCHAIN_TICK_TIMEOUT:-120}" python3 "$ONCHAIN_PY" --once >>"$LOG" 2>&1
+  ONCHAIN_TICK_ONCE=1 timeout "${ONCHAIN_TICK_TIMEOUT:-90}" python3 "$ONCHAIN_PY" --once >>"$LOG" 2>&1
   rc=$?
   set +e
   t1=$(date +%s)
@@ -506,13 +511,32 @@ LAST_FOMO_ELAPSED=0
 LAST_FOMO_TS=0
 resolve_effective_source
 log "loop start source=${SIGNAL_SOURCE} effective=${EFFECTIVE_SOURCE} onchain_poll=${ONCHAIN_POLL}s fomo_poll=${POLL}s"
+
+# Fast path: persistent Python loop (no per-tick interpreter restart)
+if [[ "$EFFECTIVE_SOURCE" == "onchain" || "$EFFECTIVE_SOURCE" == "on-chain" ]]; then
+  if [[ ! -f "$ONCHAIN_PY" ]]; then
+    log "onchain_signal_tick.py missing — cannot start"
+    exit 1
+  fi
+  export_onchain_env
+  patch_health 0 0 "$FOMO_OK" "$FOMO_REMAIN" "$ONCHAIN_POLL" "onchain_primary"
+  log "exec persistent onchain loop poll=${ONCHAIN_POLL}s max_blocks=${ONCHAIN_MAX_BLOCKS:-32}"
+  # flock FD 8 stays held across exec
+  exec python3 "$ONCHAIN_PY" >>"$LOG" 2>&1
+fi
+
 while true; do
   run_once
   resolve_effective_source
+  # If FOMO went dry mid-run, switch to persistent onchain
+  if [[ "$EFFECTIVE_SOURCE" == "onchain" || "$EFFECTIVE_SOURCE" == "on-chain" ]]; then
+    export_onchain_env
+    log "switching to persistent onchain loop"
+    exec python3 "$ONCHAIN_PY" >>"$LOG" 2>&1
+  fi
   if [[ "$EFFECTIVE_SOURCE" == "fomo" ]]; then
     sleep_for=$(next_sleep_sec "$LAST_ELAPSED")
   else
-    # onchain / both: tight loop; FOMO cadence handled inside run_once
     el=${LAST_ONCHAIN_ELAPSED:-0}
     sleep_for=$((ONCHAIN_POLL - el))
     if (( sleep_for < 1 )); then sleep_for=1; fi

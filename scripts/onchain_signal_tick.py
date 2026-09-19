@@ -7,9 +7,9 @@ passthrough / priority path as bot.py.
 
 Env (key knobs):
   RH_RPC_URL                 default https://rpc.mainnet.chain.robinhood.com
-  ONCHAIN_POLL_SECONDS       loop sleep (default 5)
-  ONCHAIN_MAX_BLOCKS         max blocks behind per tick (default 120)
-  ONCHAIN_LOOKBACK_BOOT      first-run lookback blocks (default 16)
+  ONCHAIN_POLL_SECONDS       loop sleep (default 2)
+  ONCHAIN_MAX_BLOCKS         tip window per tick (default 32)
+  ONCHAIN_LOOKBACK_BOOT      first-run lookback blocks (default 12)
   ONCHAIN_TICK_ONCE=1        run one scan and exit
   WATCHLIST_PATH / STATE_PATH / COOLDOWN_SECONDS / NOTIFY_PASSTHROUGH …
   LIVE_TRADING stays off.
@@ -101,12 +101,11 @@ def log(msg: str) -> None:
 class RpcClient:
     def __init__(self, url: str) -> None:
         self.url = url
-        self._backoff = 0.4
+        self._backoff = 0.25
         self.calls = 0
         self.errors_429 = 0
 
-    def call(self, method: str, params: list) -> object:
-        payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+    def _post(self, payload: bytes, label: str) -> object:
         last_err: Exception | None = None
         for attempt in range(6):
             req = urllib.request.Request(
@@ -120,24 +119,14 @@ class RpcClient:
                 method="POST",
             )
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                with urllib.request.urlopen(req, timeout=20) as resp:
                     body = json.loads(resp.read().decode() or "{}")
                 self.calls += 1
-                if "error" in body and body["error"]:
-                    err = body["error"]
-                    msg = str(err.get("message") or err)
-                    if "rate" in msg.lower() or "429" in msg:
-                        self.errors_429 += 1
-                        wait = min(30.0, self._backoff * (2 ** attempt))
-                        log(f"rpc rate-limit method={method} sleep={wait:.1f}s")
-                        time.sleep(wait)
-                        continue
-                    raise RuntimeError(msg)
-                self._backoff = max(0.35, self._backoff * 0.9)
-                return body.get("result")
+                self._backoff = max(0.15, self._backoff * 0.85)
+                return body
             except urllib.error.HTTPError as e:
                 last_err = e
-                wait = min(45.0, self._backoff * (2 ** attempt))
+                wait = min(20.0, self._backoff * (2 ** attempt))
                 if e.code in (429, 403, 502, 503, 504):
                     self.errors_429 += 1
                     ra = e.headers.get("Retry-After")
@@ -145,17 +134,63 @@ class RpcClient:
                         wait = max(wait, float(ra))
                     except (TypeError, ValueError):
                         pass
-                    log(f"rpc HTTP {e.code} method={method} sleep={wait:.1f}s")
+                    log(f"rpc HTTP {e.code} {label} sleep={wait:.1f}s")
                     time.sleep(wait)
-                    self._backoff = min(8.0, self._backoff * 1.5)
+                    self._backoff = min(6.0, self._backoff * 1.4)
                     continue
                 time.sleep(wait)
             except Exception as e:
                 last_err = e
-                wait = min(20.0, self._backoff * (2 ** attempt))
-                log(f"rpc err method={method} {type(e).__name__} sleep={wait:.1f}s")
+                wait = min(12.0, self._backoff * (2 ** attempt))
+                log(f"rpc err {label} {type(e).__name__} sleep={wait:.1f}s")
                 time.sleep(wait)
-        raise RuntimeError(f"rpc fail {method}: {last_err}")
+        raise RuntimeError(f"rpc fail {label}: {last_err}")
+
+    def call(self, method: str, params: list) -> object:
+        payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
+        body = self._post(payload, method)
+        if isinstance(body, dict) and body.get("error"):
+            err = body["error"]
+            msg = str(err.get("message") or err)
+            if "rate" in msg.lower() or "429" in msg:
+                self.errors_429 += 1
+                time.sleep(min(8.0, self._backoff * 2))
+                return self.call(method, params)
+            raise RuntimeError(msg)
+        return body.get("result") if isinstance(body, dict) else None
+
+    def batch(self, calls: list[tuple[str, list]]) -> list[object]:
+        """JSON-RPC batch; returns results aligned with calls (None on item error)."""
+        if not calls:
+            return []
+        if len(calls) == 1:
+            return [self.call(calls[0][0], calls[0][1])]
+        reqs = [
+            {"jsonrpc": "2.0", "id": i, "method": m, "params": p}
+            for i, (m, p) in enumerate(calls)
+        ]
+        payload = json.dumps(reqs).encode()
+        body = self._post(payload, f"batch[{len(calls)}]")
+        if isinstance(body, dict):
+            # some gateways wrap single — treat as fail → fallback sequential
+            return [self.call(m, p) for m, p in calls]
+        if not isinstance(body, list):
+            return [self.call(m, p) for m, p in calls]
+        by_id = {}
+        for item in body:
+            if isinstance(item, dict) and "id" in item:
+                by_id[item["id"]] = item
+        out: list[object] = []
+        for i, (m, p) in enumerate(calls):
+            item = by_id.get(i)
+            if not item:
+                out.append(None)
+                continue
+            if item.get("error"):
+                out.append(None)
+                continue
+            out.append(item.get("result"))
+        return out
 
 
 def topic_addr(topic: str) -> str:
@@ -308,7 +343,12 @@ def post_signals(
     state: dict,
     chain: str = "robinhood",
 ) -> tuple[int, int]:
-    webhook = bot_mod.resolve_signal_webhook(chain)
+    webhook = (os.environ.get("DISCORD_WEBHOOK_URL") or "").strip()
+    if not webhook:
+        try:
+            webhook = bot_mod.resolve_signal_webhook(chain)
+        except SystemExit:
+            webhook = ""
     if not webhook:
         log("WARN no DISCORD_WEBHOOK_URL — dry log only")
     cooldown = env_int("COOLDOWN_SECONDS", 900)
@@ -412,7 +452,12 @@ def post_signals(
             w.setdefault("source", "onchain")
 
         pri_ok, pri_reasons = bot_mod.priority_score_ok(s["n"], total_usd, safety)
-        pri_hook = bot_mod.resolve_priority_webhook(chain) if pri_ok else None
+        pri_hook = None
+        if pri_ok:
+            try:
+                pri_hook = bot_mod.resolve_priority_webhook(chain)
+            except SystemExit:
+                pri_hook = None
         style_main = bool(pri_ok and not pri_hook)
 
         jst = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
@@ -499,11 +544,14 @@ def post_signals(
 
 
 def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state: dict) -> dict:
+    """Tip-follow scan: batch getBlock, receipts only for watchlist senders, no Dex during scan."""
     head_hex = rpc.call("eth_blockNumber", [])
     head = int(head_hex, 16)
     last = state.get("onchain_last_block")
-    lookback_boot = env_int("ONCHAIN_LOOKBACK_BOOT", 16)
-    max_blocks = env_int("ONCHAIN_MAX_BLOCKS", 120)
+    lookback_boot = env_int("ONCHAIN_LOOKBACK_BOOT", 12)
+    # Tip window: finish in ~1–3s. Prefer missing old blocks over lagging the tip.
+    max_blocks = env_int("ONCHAIN_MAX_BLOCKS", 24)
+    batch_size = env_int("ONCHAIN_BATCH_SIZE", 1)
     if last is None:
         start = max(0, head - lookback_boot + 1)
     else:
@@ -513,41 +561,49 @@ def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state
             last_i = head - lookback_boot
         start = last_i + 1
     if start > head:
-        return {"head": head, "scanned": 0, "buys": 0, "posted": 0, "skipped": 0}
-    # Cap catch-up
+        return {"head": head, "scanned": 0, "buys": 0, "posted": 0, "skipped": 0, "watch_txs": 0}
     if head - start + 1 > max_blocks:
         start = head - max_blocks + 1
-        log(f"catch-up capped start={start} head={head} max={max_blocks}")
+        log(f"tip-follow skip-gap start={start} head={head} max={max_blocks}")
 
     all_buys: list[dict] = []
     fp_n = 0
     scanned = 0
     watch_tx_n = 0
-    behind = head - start + 1
-    # Stay gentle on public RPC but catch up when RH produces many blocks/sec
-    block_sleep = env_float("ONCHAIN_BLOCK_SLEEP", 0.12 if behind > 40 else 0.2)
-    receipt_sleep = env_float("ONCHAIN_RECEIPT_SLEEP", 0.15)
-    for bn in range(start, head + 1):
-        if block_sleep > 0:
-            time.sleep(block_sleep)
-        blk = rpc.call("eth_getBlockByNumber", [hex(bn), True])
-        scanned += 1
-        if not blk:
-            continue
-        txs = blk.get("transactions") or []
-        # Fast path: skip receipt work if no watchlist sender in this block
-        hits = [tx for tx in txs if isinstance(tx, dict) and (tx.get("from") or "").lower() in watch_set]
-        if not hits:
-            continue
-        for tx in hits:
-            watch_tx_n += 1
-            if receipt_sleep > 0:
-                time.sleep(receipt_sleep)
-            try:
-                rcpt = rpc.call("eth_getTransactionReceipt", [tx["hash"]])
-            except Exception as e:
-                log(f"receipt fail {tx.get('hash','')[:14]}… {type(e).__name__}")
+    hit_txs: list[dict] = []
+
+    bn = start
+    while bn <= head:
+        chunk = list(range(bn, min(head, bn + max(1, batch_size) - 1) + 1))
+        if batch_size <= 1:
+            results = [rpc.call("eth_getBlockByNumber", [hex(x), True]) for x in chunk]
+        else:
+            calls = [("eth_getBlockByNumber", [hex(x), True]) for x in chunk]
+            results = rpc.batch(calls)
+        for block_num, blk in zip(chunk, results):
+            scanned += 1
+            if not isinstance(blk, dict):
                 continue
+            for tx in blk.get("transactions") or []:
+                if not isinstance(tx, dict):
+                    continue
+                fr = (tx.get("from") or "").lower()
+                if fr in watch_set:
+                    hit_txs.append(tx)
+                    watch_tx_n += 1
+        bn = chunk[-1] + 1
+
+    # Receipts (sequential default — public RPC hates big batches)
+    receipt_batch = env_int("ONCHAIN_RECEIPT_BATCH", 1)
+    step = max(1, receipt_batch)
+    for i in range(0, len(hit_txs), step):
+        group = hit_txs[i : i + step]
+        if step <= 1:
+            rcpts = [rpc.call("eth_getTransactionReceipt", [tx["hash"]]) for tx in group]
+        else:
+            rcalls = [("eth_getTransactionReceipt", [tx["hash"]]) for tx in group]
+            rcpts = rpc.batch(rcalls)
+        for tx, rcpt in zip(group, rcpts):
             if not isinstance(rcpt, dict):
                 continue
             buys = classify_buys_from_receipt(tx, rcpt, watch_set)
@@ -555,39 +611,51 @@ def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state
                 meta = watch.get(b["wallet"]) or {}
                 labels = meta.get("labels") or []
                 b["label"] = str(labels[0]) if labels else ""
+                b["usd"] = 0.0
                 if b.get("hint") == "recv_only_no_calldata":
                     fp_n += 1
                     log(
                         f"fp_candidate wallet={b['wallet'][:10]}… ca={b['ca'][:12]}… "
                         f"tx={str(b.get('tx_hash'))[:14]}… hint={b['hint']}"
                     )
-                    # Still notify under passthrough? Keep but tag — user wants buys;
-                    # skip pure push unless ONCHAIN_ALLOW_RECV_ONLY=1
                     if not (os.environ.get("ONCHAIN_ALLOW_RECV_ONLY") or "").strip().lower() in (
-                        "1",
-                        "true",
-                        "yes",
+                        "1", "true", "yes",
                     ):
                         continue
-                # Optional USD via dex price
-                try:
-                    snap = bot_mod.gmgn_tok.market_snapshot("robinhood", b["ca"])
-                    if isinstance(snap, dict) and snap.get("price_usd"):
-                        # assume 18 decimals when unknown
-                        b["usd"] = estimate_usd(b["ca"], int(b["amount_raw"]), 18, float(snap["price_usd"]))
-                        b["symbol"] = snap.get("symbol")
-                except Exception:
-                    b["usd"] = 0.0
                 all_buys.append(b)
                 log(
                     f"buy wallet={b['wallet'][:10]}… ca={b['ca'][:12]}… "
-                    f"usd≈{float(b.get('usd') or 0):.0f} hint={b.get('hint')} "
-                    f"tx={str(b.get('tx_hash'))[:14]}… blk={bn}"
+                    f"hint={b.get('hint')} tx={str(b.get('tx_hash'))[:14]}… "
+                    f"blk={b.get('block')}"
                 )
 
     state["onchain_last_block"] = head
     window = env_int("WINDOW_SECONDS", 1200)
     signals = cluster_buys(all_buys, window) if all_buys else []
+    # Fill USD once per CA at post time (Dex), not during scan
+    if signals:
+        for s in signals:
+            ca = s["ca"]
+            try:
+                snap = bot_mod.gmgn_tok.market_snapshot("robinhood", ca)
+            except Exception:
+                snap = {}
+            if isinstance(snap, dict) and snap.get("price_usd"):
+                price = float(snap["price_usd"])
+                s["symbol"] = snap.get("symbol") or s.get("symbol")
+                for w in s["wallets"]:
+                    # amount_raw not on wallet row — leave usd from cluster; optional placeholder
+                    if float(w.get("usd") or 0) <= 0:
+                        # use price later via safety; keep 0 for now
+                        pass
+            # attach amount-based usd from matching buys
+            for w in s["wallets"]:
+                for b in all_buys:
+                    if b["ca"] == ca and b["wallet"] == (w.get("address") or "").lower():
+                        if isinstance(snap, dict) and snap.get("price_usd"):
+                            w["usd"] = estimate_usd(ca, int(b["amount_raw"]), 18, float(snap["price_usd"]))
+                        break
+
     posted = skipped = 0
     if signals:
         posted, skipped = post_signals(signals, watch, state, "robinhood")
@@ -657,17 +725,29 @@ def main() -> int:
         log("empty watchlist — exit")
         return 1
 
-    poll = env_float("ONCHAIN_POLL_SECONDS", 5.0)
-    if poll < 2:
-        poll = 2.0
+    poll = env_float("ONCHAIN_POLL_SECONDS", 2.0)
+    if poll < 1:
+        poll = 1.0
     rpc = RpcClient(RPC_URL)
+    watch_reload = env_float("ONCHAIN_WATCH_RELOAD_SEC", 60.0)
+    last_watch_load = time.time()
     log(
         f"start rpc={RPC_URL} watch={len(watch_set)} poll={poll}s once={once} "
+        f"max_blocks={env_int('ONCHAIN_MAX_BLOCKS', 24)} batch={env_int('ONCHAIN_BATCH_SIZE', 1)} "
         f"state={state_path} passthrough={bot_mod.notify_passthrough_enabled('robinhood')}"
     )
 
     while True:
         t0 = time.time()
+        if (not once) and (t0 - last_watch_load) >= watch_reload:
+            try:
+                watch, watch_set = load_watch_addrs(watch_path)
+                last_watch_load = t0
+            except Exception as e:
+                log(f"watch reload fail {type(e).__name__}")
+        # Reset per-tick call counters
+        rpc.calls = 0
+        rpc.errors_429 = 0
         state = bot_mod.load_state(state_path)
         try:
             stats = scan_once(rpc, watch, watch_set, state)
@@ -688,7 +768,7 @@ def main() -> int:
         patch_health(stats)
         if once:
             return 0
-        sleep_for = max(1.0, poll - elapsed)
+        sleep_for = max(0.3, poll - elapsed)
         time.sleep(sleep_for)
 
 
