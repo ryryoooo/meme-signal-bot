@@ -493,21 +493,34 @@ def _ingest_portfolio_payload(data, batch: list[str], out: dict[str, dict]) -> l
     return sample_keys
 
 
+def portfolio_period() -> str:
+    """GMGN portfolio --period. Default 30d (existing vet). Support 7d for short-window fills."""
+    p = (os.environ.get("GMGN_PORTFOLIO_PERIOD") or "30d").strip().lower()
+    if p in ("7", "7d", "7day", "7days"):
+        return "7d"
+    if p in ("30", "30d", "30day", "30days"):
+        return "30d"
+    # pass through other gmgn periods (1d, all, …) if caller sets them
+    return p or "30d"
+
+
 def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dict[str, dict], int, str | None]:
     """Vet wallets via portfolio stats (WR). Multi-wallet stats often returns 1 blob — use per-wallet.
 
     remaining_cap = max successful CLI calls. Prefer 1 wallet per call for correct WR binding.
+    Period from GMGN_PORTFOLIO_PERIOD (default 30d). Caller maps fields for 7d suffixes.
     """
     out: dict[str, dict] = {}
     if remaining_cap <= 0 or not addresses:
         return out, 0, None
     calls = 0
     err_kind = None
+    period = portfolio_period()
     # Per-wallet stats until cap or rate limit (multi-wallet binding is unreliable)
     for a in addresses:
         if calls >= remaining_cap:
             break
-        sargs = ["portfolio", "stats", "--chain", chain, "--period", "30d", "--wallet", a]
+        sargs = ["portfolio", "stats", "--chain", chain, "--period", period, "--wallet", a]
         sdata, serr = gmgn_raw(sargs, timeout=90)
         calls += 1
         if serr == "rate_limited":
@@ -556,8 +569,10 @@ def batch_vet(chain: str, addresses: list[str], remaining_cap: int) -> tuple[dic
                 # buy=0 sell=0 → no RH activity; do not invent n_trades
                 out[a]["n_trades"] = None
                 nt = None
+        if a in out:
+            out[a]["portfolio_period"] = period
         print(
-            f"[{chain}] stats {a[:10]}… wr={wr} rp={rp} n={nt} "
+            f"[{chain}] stats {a[:10]}… period={period} wr={wr} rp={rp} n={nt} "
             f"buy={buy_v!r}"[:120] + f" sell={sell_v!r}"[:80]
             + f" keys={keys[:6]}"
         )

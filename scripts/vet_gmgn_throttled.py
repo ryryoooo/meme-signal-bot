@@ -18,6 +18,7 @@ Env:
   GMGN_VET_COOLDOWN_HOURS=6
   GMGN_VET_PRIORITY=elite   # elite|pending_wr|all
                              # elite = scout_elite + scout_pending_WR (+ themaran/985)
+  GMGN_PORTFOLIO_PERIOD=30d  # 30d (default) or 7d — 7d writes *_7d fields only
 """
 from __future__ import annotations
 
@@ -42,6 +43,7 @@ def _load(name: str, path: Path):
 
 _kol = _load("harvest_kol_vetted", ROOT / "scripts" / "harvest_kol_vetted.py")
 batch_vet = _kol.batch_vet
+portfolio_period = getattr(_kol, "portfolio_period", lambda: (os.environ.get("GMGN_PORTFOLIO_PERIOD") or "30d").strip().lower() or "30d")
 
 STATE_DIR = ROOT / "rh-wallets" / "raw"
 STATE_PATH = STATE_DIR / "gmgn_vet_throttle_state.json"
@@ -120,6 +122,8 @@ def main() -> int:
     sleep_sec = max(1.0, float(os.environ.get("GMGN_VET_SLEEP_SEC", "12")))
     cool_h = float(os.environ.get("GMGN_VET_COOLDOWN_HOURS", "6"))
     priority = (os.environ.get("GMGN_VET_PRIORITY") or "elite").strip().lower()
+    period = portfolio_period()
+    period_7d = period == "7d"
 
     st = load_state()
     last_rl = parse_ts(st.get("last_rate_limit_at"))
@@ -139,6 +143,7 @@ def main() -> int:
     tagged_pending = 0
     for a, o in by.items():
         has_wr = o.get("win_rate") is not None and int(float(o.get("n_trades") or 0)) >= 10
+        has_7d = o.get("win_rate_7d") is not None or o.get("realized_pnl_7d") is not None
         tags_list = [str(t) for t in (o.get("tags") or [])]
         tags_l = [t.lower() for t in tags_list]
         tags = " ".join(tags_l)
@@ -150,20 +155,26 @@ def main() -> int:
             or "scout_good" in tags_l
             or "scout_pending_wr" in tags_l
         )
-        # maintain scout_pending_WR tag for scout wallets still missing WR
-        if scoutish and not has_wr:
-            if "scout_pending_wr" not in tags_l:
-                tags_list.append("scout_pending_WR")
-                o["tags"] = tags_list
+        # maintain scout_pending_WR tag for scout wallets still missing WR (30d path only)
+        if not period_7d:
+            if scoutish and not has_wr:
+                if "scout_pending_wr" not in tags_l:
+                    tags_list.append("scout_pending_WR")
+                    o["tags"] = tags_list
+                    by[a] = o
+                    tagged_pending += 1
+                    tags_l.append("scout_pending_wr")
+                    tags = " ".join(tags_l)
+            elif has_wr and "scout_pending_wr" in tags_l:
+                o["tags"] = [t for t in tags_list if t.lower() != "scout_pending_wr"]
                 by[a] = o
-                tagged_pending += 1
-                tags_l.append("scout_pending_wr")
-                tags = " ".join(tags_l)
-        elif has_wr and "scout_pending_wr" in tags_l:
-            o["tags"] = [t for t in tags_list if t.lower() != "scout_pending_wr"]
-            by[a] = o
-        if has_wr:
-            continue
+        # already filled for this period?
+        if period_7d:
+            if has_7d:
+                continue
+        else:
+            if has_wr:
+                continue
         pending_wr = "scout_pending_wr" in tags_l
         if priority in ("elite", "pending_wr"):
             if not (elite or pending_wr or scoutish):
@@ -204,7 +215,7 @@ def main() -> int:
 
     cand.sort(key=lambda x: -x[0])
     targets = [a for _, a in cand[:cap]]
-    print(f"vet_gmgn_throttled: need={len(cand)} take={len(targets)} cap={cap} sleep={sleep_sec}s", flush=True)
+    print(f"vet_gmgn_throttled: period={period} need={len(cand)} take={len(targets)} cap={cap} sleep={sleep_sec}s", flush=True)
     if not targets:
         Path(SUMMARY).write_text("# GMGN throttled vet\n\n- nothing to vet\n", encoding="utf-8")
         return 0
@@ -237,23 +248,46 @@ def main() -> int:
     wr_gained = 0
     for a, strow in vetted.items():
         row = by.get(a) or {"address": a}
-        prev_wr = row.get("win_rate")
-        for k in ("realized_pnl_usd", "unrealized_pnl_usd", "total_pnl_usd", "win_rate", "n_trades", "gmgn_buy", "gmgn_sell"):
-            if strow.get(k) is not None:
-                row[k] = strow[k]
-        if strow.get("win_rate") is not None and prev_wr is None:
-            wr_gained += 1
+        if period_7d:
+            # write 7d fields only — never wipe 30d / lifetime
+            prev_wr7 = row.get("win_rate_7d")
+            if strow.get("win_rate") is not None:
+                row["win_rate_7d"] = strow["win_rate"]
+            if strow.get("realized_pnl_usd") is not None:
+                row["realized_pnl_7d"] = strow["realized_pnl_usd"]
+            if strow.get("n_trades") is not None:
+                row["n_trades_7d"] = strow["n_trades"]
+            if strow.get("gmgn_buy") is not None:
+                row["gmgn_buy_7d"] = strow["gmgn_buy"]
+            if strow.get("gmgn_sell") is not None:
+                row["gmgn_sell_7d"] = strow["gmgn_sell"]
+            row["vetted_7d_at"] = now_iso()
+            if row.get("win_rate_7d") is not None and prev_wr7 is None:
+                wr_gained += 1
+            ep_tag = "gmgn:portfolio:7d"
+        else:
+            prev_wr = row.get("win_rate")
+            for k in ("realized_pnl_usd", "unrealized_pnl_usd", "total_pnl_usd", "win_rate", "n_trades", "gmgn_buy", "gmgn_sell"):
+                if strow.get(k) is not None:
+                    row[k] = strow[k]
+            if strow.get("win_rate") is not None and prev_wr is None:
+                wr_gained += 1
+            ep_tag = "gmgn:portfolio"
+            row["vetted_at"] = now_iso()
         eps = list(row.get("source_endpoints") or [])
-        if "gmgn:portfolio" not in eps:
-            eps.append("gmgn:portfolio")
+        if ep_tag not in eps:
+            eps.append(ep_tag)
         row["source_endpoints"] = eps
-        row["vetted_at"] = now_iso()
         tags = list(row.get("tags") or [])
         if "gmgn_vetted" not in tags:
             tags.append("gmgn_vetted")
-        # clear pending WR once filled
-        if row.get("win_rate") is not None:
-            tags = [t for t in tags if str(t).lower() != "scout_pending_wr"]
+        if period_7d:
+            if "gmgn_vetted_7d" not in [str(t).lower() for t in tags]:
+                tags.append("gmgn_vetted_7d")
+        else:
+            # clear pending WR once filled (30d)
+            if row.get("win_rate") is not None:
+                tags = [t for t in tags if str(t).lower() != "scout_pending_wr"]
         row["tags"] = tags
         by[a] = row
         merged += 1
@@ -265,15 +299,24 @@ def main() -> int:
         ranked = {(o.get("address") or "").lower(): dict(o) for o in load_jsonl(ranked_path) if (o.get("address") or "").lower().startswith("0x")}
         for a, strow in vetted.items():
             row = ranked.get(a) or {"address": a}
-            for k in ("realized_pnl_usd", "unrealized_pnl_usd", "total_pnl_usd", "win_rate", "n_trades"):
-                if strow.get(k) is not None:
-                    row[k] = strow[k]
+            if period_7d:
+                if strow.get("win_rate") is not None:
+                    row["win_rate_7d"] = strow["win_rate"]
+                if strow.get("realized_pnl_usd") is not None:
+                    row["realized_pnl_7d"] = strow["realized_pnl_usd"]
+                if strow.get("n_trades") is not None:
+                    row["n_trades_7d"] = strow["n_trades"]
+            else:
+                for k in ("realized_pnl_usd", "unrealized_pnl_usd", "total_pnl_usd", "win_rate", "n_trades"):
+                    if strow.get(k) is not None:
+                        row[k] = strow[k]
             ranked[a] = row
         write_jsonl(ranked_path, list(ranked.values()))
 
     st["ok"] = ok_map
     st["fail"] = fail_map
     st["last_run_at"] = now_iso()
+    st["last_period"] = period
     st["last_calls"] = calls
     st["last_vetted"] = merged
     st["last_wr_gained"] = wr_gained
@@ -284,6 +327,7 @@ def main() -> int:
         "# GMGN throttled vet",
         "",
         f"- Updated: **{now_iso()}**",
+        f"- Period: **{period}**",
         f"- Calls: **{calls}** vetted_ok: **{merged}** wr_gained: **{wr_gained}** err: `{err}`",
         f"- Cap/sleep: {cap}/{sleep_sec}s priority={priority}",
         f"- Remaining candidates (approx): {max(0, len(cand)-len(targets))}",
@@ -291,11 +335,16 @@ def main() -> int:
         "## This run",
     ]
     for a, strow in list(vetted.items())[:20]:
-        lines.append(
-            f"- `{a[:10]}…` wr={strow.get('win_rate')} n={strow.get('n_trades')} rp={strow.get('realized_pnl_usd')}"
-        )
+        if period_7d:
+            lines.append(
+                f"- `{a[:10]}…` wr7={strow.get('win_rate')} n7={strow.get('n_trades')} rp7={strow.get('realized_pnl_usd')}"
+            )
+        else:
+            lines.append(
+                f"- `{a[:10]}…` wr={strow.get('win_rate')} n={strow.get('n_trades')} rp={strow.get('realized_pnl_usd')}"
+            )
     SUMMARY.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(json.dumps({"calls": calls, "vetted": merged, "wr_gained": wr_gained, "err": err, "left": max(0, len(cand) - len(targets))}))
+    print(json.dumps({"period": period, "calls": calls, "vetted": merged, "wr_gained": wr_gained, "err": err, "left": max(0, len(cand) - len(targets))}))
     return 0
 
 

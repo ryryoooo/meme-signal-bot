@@ -19,6 +19,18 @@ on:
         description: "elite|pending_wr|all (elite prefers scout_elite + scout_pending_WR)"
         required: false
         default: "elite"
+      period:
+        description: "GMGN portfolio period (30d default; 7d writes *_7d fields only)"
+        required: false
+        default: "30d"
+      rate_limit_cooldown_hours:
+        description: "Skip run if last 429 within this many hours (0 = ignore)"
+        required: false
+        default: "6"
+      cooldown_hours:
+        description: "Per-wallet ok/fail cooldown hours (0 = retry same wallet next run)"
+        required: false
+        default: "6"
 
 permissions:
   contents: write
@@ -56,7 +68,7 @@ jobs:
           mkdir -p "$HOME/.config/gmgn"
           python3 -c 'import os,pathlib; k=os.environ.get("GMGN_API_KEY",""); p=pathlib.Path.home()/".config/gmgn/.env"; p.write_text("GMGN_API_KEY="+k+"\n"); p.chmod(0o600); print("gmgn_dotenv=ok" if k else "gmgn_dotenv=missing")'
 
-      - name: Throttled portfolio vet (elite missing WR)
+      - name: Throttled portfolio vet
         env:
           GMGN_API_KEY: ${{ secrets.GMGN_API_KEY_GHA || secrets.GMGN_API_KEY }}
           GMGN_DISABLED: "0"
@@ -64,10 +76,21 @@ jobs:
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
           GMGN_VET_CAP: ${{ inputs.cap || '5' }}
           GMGN_VET_SLEEP_SEC: ${{ inputs.sleep_sec || '20' }}
-          GMGN_VET_COOLDOWN_HOURS: "6"
-          GMGN_VET_RATE_LIMIT_COOLDOWN_HOURS: "6"
+          GMGN_VET_COOLDOWN_HOURS: ${{ inputs.cooldown_hours || '6' }}
+          GMGN_VET_RATE_LIMIT_COOLDOWN_HOURS: ${{ inputs.rate_limit_cooldown_hours || '6' }}
           GMGN_VET_PRIORITY: ${{ inputs.priority || 'elite' }}
+          GMGN_PORTFOLIO_PERIOD: ${{ inputs.period || '30d' }}
         run: python3 scripts/vet_gmgn_throttled.py
+
+      - name: Rank low profit (7d) when period=7d
+        if: ${{ (inputs.period || '30d') == '7d' }}
+        env:
+          GMGN_PORTFOLIO_PERIOD: "7d"
+          LOW_PNL_MIN_TRADES: "5"
+          LOW_PNL_TOP_N: "100"
+          RANK_TAG_WATCH: "1"
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+        run: python3 scripts/rank_low_pnl_period.py
 
       - name: Commit vet fills
         continue-on-error: true
@@ -78,14 +101,17 @@ jobs:
             rh-wallets/wallets.jsonl \
             rh-wallets/wallets_scout_ranked.jsonl \
             rh-wallets/summary_gmgn_vet.md \
-            rh-wallets/raw/gmgn_vet_throttle_state.json || true
+            rh-wallets/raw/gmgn_vet_throttle_state.json \
+            rh-wallets/low_profit_7d.md \
+            rh-wallets/low_profit_7d.jsonl || true
           if git diff --cached --quiet; then
             echo "no vet changes"
           else
-            git commit -m "chore: throttled GMGN portfolio vet (elite WR fill)"
+            PERIOD="${{ inputs.period || '30d' }}"
+            git commit -m "chore: throttled GMGN portfolio vet (period=${PERIOD})"
             if ! git pull --rebase origin main; then
               echo "rebase conflict — prefer GHA vet fields"
-              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/summary_gmgn_vet.md rh-wallets/raw/gmgn_vet_throttle_state.json; do
+              for f in rh-wallets/wallets.jsonl rh-wallets/wallets_scout_ranked.jsonl rh-wallets/summary_gmgn_vet.md rh-wallets/raw/gmgn_vet_throttle_state.json rh-wallets/low_profit_7d.md rh-wallets/low_profit_7d.jsonl; do
                 if [ -f "$f" ] && git status --porcelain "$f" | grep -q .; then
                   git checkout --theirs -- "$f" || true
                   git add "$f" || true
@@ -103,4 +129,6 @@ jobs:
           path: |
             rh-wallets/summary_gmgn_vet.md
             rh-wallets/raw/gmgn_vet_throttle_state.json
+            rh-wallets/low_profit_7d.md
+            rh-wallets/low_profit_7d.jsonl
           if-no-files-found: warn
