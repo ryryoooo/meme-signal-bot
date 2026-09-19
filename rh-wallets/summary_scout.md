@@ -1,11 +1,11 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-09-19T11:47:31.435793+00:00
-- Ranked wallets: **2067**
+- Updated (UTC): 2026-09-19T12:00:09.594969+00:00
+- Ranked wallets: **2068**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=gmgn_disabled
 - FOMO overlaps: **0**
-- Merged to main watch: **2067**
+- Merged to main watch: **2068**
 
 ## Top by scout_rank_score
 
@@ -21,8 +21,8 @@
 | 8 | `0xffe5…1ecf` | elite | 32 | 32 | 10,685 | — | — | — | — | 31.34 |
 | 9 | `0x391a…fa0e` | elite | 29 | 29 | 4,742 | — | — | — | — | 28.94 |
 | 10 | `0x48cf…c1fd` | elite | 23 | 23 | 3,272 | 51% | 5264 | 148,478 | — | 28.6 |
-| 11 | `0xa053…4f0b` | elite | 24 | 24 | 4,278 | 31% | 15919 | 74,277 | — | 26.94 |
-| 12 | `0xc978…4fb7` | elite | 26 | 26 | 3,734 | — | — | — | — | 26.54 |
+| 11 | `0xc978…4fb7` | elite | 28 | 28 | 4,038 | — | — | — | — | 28.14 |
+| 12 | `0xa053…4f0b` | elite | 24 | 24 | 4,278 | 31% | 15919 | 74,277 | — | 26.94 |
 | 13 | `0x2bda…3d58` | elite | 24 | 24 | 14,385 | — | — | — | — | 24.94 |
 | 14 | `0xfbcf…1f29` | elite | 24 | 24 | 4,174 | — | — | — | — | 24.94 |
 | 15 | `0x0fc7…2608` | elite | 18 | 18 | 4,893 | 66% | 12287 | 67,284 | — | 24.52 |
@@ -63,7 +63,7 @@
 - `0xffe50d0914f9bdebb2e431886ca196086ac41ecf` elite=32 hits=32 buy=$10,685 rp=None wr=None
 - `0x3a1345bc81e8479438234826f52e885f6817e4ef` elite=31 hits=31 buy=$14,250 rp=168643.79928354445 wr=0.851010101010101
 - `0x391a2cd2be579429d305694068f27f5025fffa0e` elite=29 hits=29 buy=$4,742 rp=None wr=None
-- `0xc9789d173373326c4da8034d57b96aeb25814fb7` elite=26 hits=26 buy=$3,734 rp=None wr=None
+- `0xc9789d173373326c4da8034d57b96aeb25814fb7` elite=28 hits=28 buy=$4,038 rp=None wr=None
 - `0xa053641c649d93b51ce88eafec998ffb9f534f0b` elite=24 hits=24 buy=$4,278 rp=74276.63032988658 wr=0.3077311773623042
 - `0x2bda4afb624e6d60ce0d1d32dac68bf3fda23d58` elite=24 hits=24 buy=$14,385 rp=None wr=None
 - `0xfbcf26e80231fea6c310263920bbf3f7cecf1f29` elite=24 hits=24 buy=$4,174 rp=None wr=None
