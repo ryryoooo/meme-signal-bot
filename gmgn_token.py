@@ -515,7 +515,7 @@ def _dex_market(chain: str, ca: str) -> dict | None:
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     data = None
     last_err = None
-    for attempt in range(4):
+    for attempt in range(3):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=8) as resp:
@@ -524,12 +524,14 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         except urllib.error.HTTPError as e:
             last_err = e
             if e.code in (429, 403, 502, 503, 504):
-                wait = min(8.0, 0.4 * (2 ** attempt))
+                wait = min(3.0, 0.35 * (2 ** attempt))
                 ra = e.headers.get("Retry-After") if e.headers else None
                 try:
-                    wait = max(wait, float(ra))
+                    # Cap hard — Dex Retry-After can be huge and would stall the tick
+                    wait = min(5.0, max(wait, float(ra)))
                 except (TypeError, ValueError):
                     pass
+                print(f"dex HTTP {e.code} sleep={wait:.1f}s attempt={attempt+1}", flush=True)
                 time.sleep(wait)
                 continue
             data = None
@@ -539,7 +541,7 @@ def _dex_market(chain: str, ca: str) -> dict | None:
             data = None
             break
     if data is None:
-        for attempt in range(3):
+        for attempt in range(2):
             try:
                 raw = _sp.check_output(
                     ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", "8", url],
@@ -550,7 +552,9 @@ def _dex_market(chain: str, ca: str) -> dict | None:
                 break
             except Exception as e:
                 last_err = e
-                time.sleep(min(6.0, 0.5 * (2 ** attempt)))
+                wait = min(3.0, 0.5 * (2 ** attempt))
+                print(f"dex curl fail sleep={wait:.1f}s attempt={attempt+1}", flush=True)
+                time.sleep(wait)
                 data = None
     if data is None:
         _DEX_CACHE[cache_key] = (time.time(), None)

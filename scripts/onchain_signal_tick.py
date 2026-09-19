@@ -654,8 +654,12 @@ def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state
     state["onchain_last_block"] = head
     window = env_int("WINDOW_SECONDS", 1200)
     signals = cluster_buys(all_buys, window) if all_buys else []
-    # Fill USD once per CA at post time (Dex), not during scan
-    if signals:
+    # Optional pre-fill USD from Dex once per CA (post_signals also fills card fields).
+    # Skip when NOTIFY_MARKET_SOURCE=dex to avoid double Dex round-trips on the hot path.
+    prefill = (os.environ.get("NOTIFY_MARKET_SOURCE") or "dex").strip().lower() not in (
+        "dex", "dexscreener", "dex-only", "dex_only",
+    )
+    if signals and prefill:
         for s in signals:
             ca = s["ca"]
             try:
@@ -663,14 +667,7 @@ def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state
             except Exception:
                 snap = {}
             if isinstance(snap, dict) and snap.get("price_usd"):
-                price = float(snap["price_usd"])
                 s["symbol"] = snap.get("symbol") or s.get("symbol")
-                for w in s["wallets"]:
-                    # amount_raw not on wallet row — leave usd from cluster; optional placeholder
-                    if float(w.get("usd") or 0) <= 0:
-                        # use price later via safety; keep 0 for now
-                        pass
-            # attach amount-based usd from matching buys
             for w in s["wallets"]:
                 for b in all_buys:
                     if b["ca"] == ca and b["wallet"] == (w.get("address") or "").lower():
