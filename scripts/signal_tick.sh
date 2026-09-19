@@ -284,7 +284,16 @@ export XBTSCOUT_NOTIFY_CHAINS="robinhood"
 export XBTSCOUT_EARLY_CALL_ONLY="1"
 export XBTSCOUT_NOTIFY_AFTER="2026-09-17T08:07:36.351932+00:00"
 export WATCHLIST_PATH="${WATCHLIST_PATH:-rh-wallets/wallets.jsonl}"
-export STATE_PATH="${STATE_PATH:-$ROOT/state.json}"
+# Always pin to repo state.json — ambient STATE_PATH=/state.json breaks the tick
+if [[ -z "${STATE_PATH:-}" || "$STATE_PATH" == "/state.json" || "$STATE_PATH" != /* ]]; then
+  export STATE_PATH="$ROOT/state.json"
+else
+  export STATE_PATH
+fi
+# Prefer repo-local file when ambient points outside workspace
+case "$STATE_PATH" in
+  /state.json|"") export STATE_PATH="$ROOT/state.json" ;;
+esac
 export PAPER_LOG_PATH="${PAPER_LOG_PATH:-$ROOT/paper_log.jsonl}"
 export PAPER_BOOK_PATH="${PAPER_BOOK_PATH:-$ROOT/paper_book.jsonl}"
 export PAPER_SUMMARY_PATH="${PAPER_SUMMARY_PATH:-$ROOT/paper_summary.md}"

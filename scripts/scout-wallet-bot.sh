@@ -74,6 +74,9 @@ ensure_signal_tick() {
   SIGNAL_TICK_LOG="$tick_log" \
   SIGNAL_TICK_HEALTH="$HEALTH" \
   SIGNAL_TICK_LOCK="$lock" \
+  STATE_PATH="$ROOT/state.json" \
+  LIVE_TRADING=0 \
+  GMGN_DISABLED=1 \
     nohup bash "$tick" >>"$tick_log" 2>&1 &
   echo $! > "$pidfile"
   log "signal_tick started pid=$! source=${SIGNAL_SOURCE:-onchain} onchain_poll=${ONCHAIN_POLL_SECONDS:-2}s fomo_poll=${SIGNAL_POLL_SECONDS:-300}s"
