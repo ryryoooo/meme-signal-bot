@@ -1,0 +1,92 @@
+# Daily light prune (UTC 15:00 ≈ 00:00 JST next day) — free GHA, no Super/GPU
+name: prune-watchlist
+
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply demotions (1) or dry-run (0)"
+        required: false
+        default: "1"
+      mode:
+        description: "demote or remove"
+        required: false
+        default: "demote"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prune-watchlist
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prune weak wallets
+        env:
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          PRUNE_MODE: ${{ github.event.inputs.mode || 'demote' }}
+          PRUNE_APPLY: ${{ github.event.inputs.apply || '1' }}
+          PRUNE_DRY_RUN: "0"
+          PRUNE_DUST_MAX_BUY_USD: "25"
+          PRUNE_DUST_MAX_HITS: "1"
+          PRUNE_MIN_WR: "0.35"
+          PRUNE_MIN_TRADES_FOR_WR: "10"
+          PRUNE_MAX_NEG_PNL_USD: "0"
+          PRUNE_INACTIVE_DAYS: "45"
+          PRUNE_CONSEC_LOSSES: "5"
+          PRUNE_KEEP_SCOUT_RANK: "4.0"
+          PRUNE_KEEP_ELITE: "1"
+          PRUNE_KEEP_THEMARAN: "1"
+          PRUNE_KEEP_RANK_SA: "1"
+          PRUNE_EXCLUDE_BANNED: "1"
+          LIVE_TRADING: "0"
+        run: |
+          if [ "${PRUNE_APPLY}" = "1" ]; then
+            python3 scripts/prune_watch_wallets.py --apply --mode "${PRUNE_MODE}"
+          else
+            python3 scripts/prune_watch_wallets.py --dry-run --mode "${PRUNE_MODE}"
+          fi
+          cat rh-wallets/summary_prune.md || true
+
+      - name: Commit prune summary
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rh-wallets/wallets.jsonl rh-wallets/summary_prune.md rh-wallets/raw/pruned_wallets.jsonl || true
+          if git diff --cached --quiet; then
+            echo "no prune changes"
+          else
+            git commit -m "$(cat <<'EOF'
+          chore(watch): prune/demote weak wallets
+
+          Auto prune from prune-watchlist.yml. LIVE_TRADING stays 0.
+          EOF
+          )"
+            git pull --rebase origin main || true
+            git push origin HEAD:main || git push --rebase origin main || true
+          fi
+
+      - name: Upload prune artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prune-watchlist
+          path: |
+            rh-wallets/summary_prune.md
+            rh-wallets/raw/pruned_wallets.jsonl
+            rh-wallets/wallets.jsonl
+          if-no-files-found: ignore
+          retention-days: 30

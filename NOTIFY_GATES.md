@@ -39,3 +39,21 @@
 - Still runs `safety_check` for card fields; prefers Dex `market_snapshot` when GMGN failed
 - Keeps `already_seen` duplicate skip; shorten via `COOLDOWN_SECONDS` (RH: 900)
 - Live trading stays off (`LIVE_TRADING=0`)
+
+
+## Priority tier (2026-09-20)
+- `NOTIFY_PASSTHROUGH` unchanged: **all** watchlist-overlap buys still post to the main webhook.
+- Rule-based priority (no Jev): `n_wallets >= PRIORITY_MIN_WALLETS` (default 2)
+  AND `cluster_usd >= MIN_CLUSTER_PRIORITY` (default 150)
+  AND token age within soft window `PRIORITY_MIN_AGE_SEC`–`PRIORITY_MAX_AGE_SEC` (default 30m–48h; missing age soft-ok unless `PRIORITY_REQUIRE_AGE=1`)
+  AND **not** flat/dead tape (`is_flat_dead_tape`: m5/h1/h6 ≈0 or soft move miss + thin m5 vol/buys).
+- If `DISCORD_PRIORITY_WEBHOOK_URL` is set: also post a `【優先】` embed (color `PRIORITY_COLOR`) to that channel; main feed stays normal.
+- If priority webhook empty: main embed itself gets `【優先】` title prefix + priority color (graceful no-op for second channel).
+- Knobs: `PRIORITY_NOTIFY`, `MIN_CLUSTER_PRIORITY`, `PRIORITY_MIN_WALLETS`, `PRIORITY_MIN_AGE_SEC`, `PRIORITY_MAX_AGE_SEC`, `PRIORITY_MIN_ABS_M5`, `PRIORITY_MIN_ABS_H1`, `PRIORITY_MIN_VOLUME_M5`, `PRIORITY_TITLE_PREFIX`, `PRIORITY_COLOR`.
+- Live trading stays off (`LIVE_TRADING=0`).
+
+## Watchlist auto-prune
+- Script: `scripts/prune_watch_wallets.py` (dry-run default).
+- Weak: banned copy/team/bot labels, dust-only buys, consecutive losses / long inactivity **when fields exist**, inconsistent PnL when WR filled.
+- Keep: scout elite / high `scout_rank_score` / themaran / rank_s|a unless clearly banned.
+- Env: `PRUNE_*` (see script docstring). Weekly GHA: `prune-watchlist.yml`.

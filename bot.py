@@ -150,6 +150,16 @@ def merge_dex_fields_for_passthrough(safety: dict, ca: str, chain: str) -> dict:
 
 MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
+# Priority notify tier (rule-based; optional second webhook)
+MIN_CLUSTER_PRIORITY = float(os.environ.get("MIN_CLUSTER_PRIORITY", "150"))
+PRIORITY_MIN_WALLETS = int(os.environ.get("PRIORITY_MIN_WALLETS", "2"))
+PRIORITY_MIN_AGE_SEC = int(os.environ.get("PRIORITY_MIN_AGE_SEC", "1800"))  # 30m soft
+PRIORITY_MAX_AGE_SEC = int(os.environ.get("PRIORITY_MAX_AGE_SEC", "172800"))  # 48h soft
+PRIORITY_MIN_ABS_M5 = float(os.environ.get("PRIORITY_MIN_ABS_M5", "1"))
+PRIORITY_MIN_ABS_H1 = float(os.environ.get("PRIORITY_MIN_ABS_H1", "2"))
+PRIORITY_MIN_VOLUME_M5 = float(os.environ.get("PRIORITY_MIN_VOLUME_M5", "100"))
+PRIORITY_COLOR = int(os.environ.get("PRIORITY_COLOR", str(0xE74C3C)), 0)
+PRIORITY_TITLE_PREFIX = (os.environ.get("PRIORITY_TITLE_PREFIX") or "【優先】").strip() or "【優先】"
 MIN_VOLUME_H24_USD = float(os.environ.get("MIN_VOLUME_H24_USD", "8000"))
 MIN_VOLUME_M5_USD = float(os.environ.get("MIN_VOLUME_M5_USD", "800"))
 MIN_BUY_VOLUME_M5_USD = float(os.environ.get("MIN_BUY_VOLUME_M5_USD", "500"))  # life
@@ -271,6 +281,20 @@ def resolve_signal_webhook(chain: str | None = None) -> str:
         if arc:
             return arc
     return env("DISCORD_WEBHOOK_URL")
+
+
+def resolve_priority_webhook(chain: str | None = None) -> str | None:
+    """Optional priority-channel webhook. Empty → graceful no-op (style main instead)."""
+    chain = (chain or os.environ.get("CHAIN") or "robinhood").strip().lower()
+    if chain == "arc":
+        arc_pri = (
+            os.environ.get("DISCORD_ARC_PRIORITY_WEBHOOK_URL")
+            or os.environ.get("DISCORD_PRIORITY_WEBHOOK_URL")
+            or ""
+        ).strip()
+        return arc_pri or None
+    pri = (os.environ.get("DISCORD_PRIORITY_WEBHOOK_URL") or "").strip()
+    return pri or None
 
 
 def resolve_live_webhook(chain: str | None = None) -> str | None:
@@ -740,6 +764,100 @@ def _pair_age_sec(safety: dict) -> float | None:
         except (TypeError, ValueError):
             return None
     return None
+
+
+def _safety_abs_moves(safety: dict) -> tuple[float | None, float | None, float | None]:
+    def _abs(v):
+        try:
+            return abs(float(v)) if v is not None else None
+        except (TypeError, ValueError):
+            return None
+    return (
+        _abs(safety.get("price_change_m5")),
+        _abs(safety.get("price_change_h1")),
+        _abs(safety.get("price_change_h6")),
+    )
+
+
+def is_flat_dead_tape(safety: dict) -> bool:
+    """True when tape looks dead/flat — exclude from priority (main feed still posts)."""
+    abs_m5, abs_h1, abs_h6 = _safety_abs_moves(safety)
+    known = [x for x in (abs_m5, abs_h1, abs_h6) if x is not None]
+    if known and all(x < 0.5 for x in known):
+        return True
+    try:
+        min_m5 = float(os.environ.get("PRIORITY_MIN_ABS_M5", str(PRIORITY_MIN_ABS_M5)))
+    except (TypeError, ValueError):
+        min_m5 = PRIORITY_MIN_ABS_M5
+    try:
+        min_h1 = float(os.environ.get("PRIORITY_MIN_ABS_H1", str(PRIORITY_MIN_ABS_H1)))
+    except (TypeError, ValueError):
+        min_h1 = PRIORITY_MIN_ABS_H1
+    if abs_m5 is not None or abs_h1 is not None:
+        m5_ok = abs_m5 is not None and abs_m5 >= min_m5
+        h1_ok = abs_h1 is not None and abs_h1 >= min_h1
+        if not (m5_ok or h1_ok):
+            return True
+    try:
+        min_vol = float(os.environ.get("PRIORITY_MIN_VOLUME_M5", str(PRIORITY_MIN_VOLUME_M5)))
+    except (TypeError, ValueError):
+        min_vol = PRIORITY_MIN_VOLUME_M5
+    vol_m5 = safety.get("volume_m5")
+    buys_m5 = safety.get("buys_m5")
+    try:
+        vol_f = float(vol_m5) if vol_m5 is not None else None
+    except (TypeError, ValueError):
+        vol_f = None
+    try:
+        buys_i = int(buys_m5) if buys_m5 is not None else None
+    except (TypeError, ValueError):
+        buys_i = None
+    if vol_f is not None and vol_f < min_vol and (buys_i is None or buys_i <= 0):
+        return True
+    return False
+
+
+def priority_score_ok(
+    n_wallets: int,
+    cluster_usd: float,
+    safety: dict,
+) -> tuple[bool, list[str]]:
+    """Rule-based priority tier (no Jev). Returns (ok, reason bits)."""
+    reasons: list[str] = []
+    if not env_bool("PRIORITY_NOTIFY", True):
+        return False, ["priority_disabled"]
+    try:
+        min_n = int(float(os.environ.get("PRIORITY_MIN_WALLETS", str(PRIORITY_MIN_WALLETS))))
+    except (TypeError, ValueError):
+        min_n = PRIORITY_MIN_WALLETS
+    try:
+        min_cluster = float(os.environ.get("MIN_CLUSTER_PRIORITY", str(MIN_CLUSTER_PRIORITY)))
+    except (TypeError, ValueError):
+        min_cluster = MIN_CLUSTER_PRIORITY
+    try:
+        age_lo = float(os.environ.get("PRIORITY_MIN_AGE_SEC", str(PRIORITY_MIN_AGE_SEC)))
+        age_hi = float(os.environ.get("PRIORITY_MAX_AGE_SEC", str(PRIORITY_MAX_AGE_SEC)))
+    except (TypeError, ValueError):
+        age_lo, age_hi = float(PRIORITY_MIN_AGE_SEC), float(PRIORITY_MAX_AGE_SEC)
+
+    if int(n_wallets) < min_n:
+        reasons.append(f"n<{min_n}")
+    if float(cluster_usd) < min_cluster:
+        reasons.append(f"cluster<{min_cluster:.0f}")
+    age = _pair_age_sec(safety)
+    if age is None:
+        if env_bool("PRIORITY_REQUIRE_AGE", False):
+            reasons.append("age_na")
+    else:
+        if age_lo > 0 and age < age_lo:
+            reasons.append(f"age_new={int(age)}<{int(age_lo)}")
+        if age_hi > 0 and age > age_hi:
+            reasons.append(f"age_old={int(age)}>{int(age_hi)}")
+    if is_flat_dead_tape(safety):
+        reasons.append("flat_dead_tape")
+    return (not reasons), reasons
+
+
 
 
 def classify_playbook(safety: dict) -> tuple[str | None, list[str]]:
@@ -2605,6 +2723,8 @@ def build_embed(
     safety: dict,
     source_mode: str,
     watch: dict[str, dict] | None = None,
+    *,
+    priority: bool = False,
 ) -> dict:
     meta = CHAIN_META.get(chain, {})
     chain_jp = meta.get("jp") or chain
@@ -2631,6 +2751,14 @@ def build_embed(
     title = f"${sym} · {mix}"
     if n >= 3:
         title = f"{strength} · {title}"
+    if priority:
+        prefix = PRIORITY_TITLE_PREFIX
+        if not title.startswith(prefix):
+            title = f"{prefix} {title}"
+        try:
+            color = int(os.environ.get("PRIORITY_COLOR", str(PRIORITY_COLOR)), 0)
+        except (TypeError, ValueError):
+            color = PRIORITY_COLOR
 
     elapsed = int(s.get("elapsed") or 0)
     if elapsed <= 0:
@@ -3433,8 +3561,30 @@ def run_once(args: argparse.Namespace) -> int:
         if passthrough and pt_reasons:
             print(f"passthrough post {ca} reasons={pt_reasons}", flush=True)
 
-        embed = build_embed(s, chain, safety, source_mode, watch=watch)
+        pri_ok, pri_reasons = priority_score_ok(s["n"], total_usd, safety)
+        pri_hook = resolve_priority_webhook(chain) if pri_ok else None
+        # Main feed always posts. Style main with 【優先】 only when no dedicated priority webhook.
+        style_main = bool(pri_ok and not pri_hook)
+        if pri_ok:
+            print(
+                f"priority_hit ca={ca[:10]}… n={s['n']} cluster={total_usd:.0f} "
+                f"hook={'yes' if pri_hook else 'style_main'} reasons_ok",
+                flush=True,
+            )
+        else:
+            print(f"priority_miss ca={ca[:10]}… reasons={pri_reasons}", flush=True)
+        embed = build_embed(
+            s, chain, safety, source_mode, watch=watch, priority=style_main
+        )
         resp = discord_webhook(webhook, content="", embeds=[embed])
+        if pri_ok and pri_hook:
+            try:
+                pri_embed = build_embed(
+                    s, chain, safety, source_mode, watch=watch, priority=True
+                )
+                discord_webhook(pri_hook, content="", embeds=[pri_embed])
+            except Exception as e:
+                print(f"priority webhook failed: {type(e).__name__}", file=sys.stderr)
         msg_id = None
         if isinstance(resp, dict):
             msg_id = resp.get("id")
@@ -3450,6 +3600,7 @@ def run_once(args: argparse.Namespace) -> int:
             "message_id": msg_id,
             "milestones_hit": [],
             "source_mode": source_mode,
+            "priority": bool(pri_ok),
         }
         open_alerts = [a for a in open_alerts if (a.get("ca") or "").lower() != ca]
         open_alerts.append(alert)
@@ -3472,6 +3623,8 @@ def run_once(args: argparse.Namespace) -> int:
                 "message_id": msg_id,
                 "alert_price_usd": safety.get("price_usd"),
                 "symbol": s.get("symbol") or safety.get("symbol_hint"),
+                "priority": bool(pri_ok),
+                "priority_reasons": pri_reasons if not pri_ok else [],
             },
         )
         # Virtual paper entry — optional on GHA; box paper_tick may own the book
