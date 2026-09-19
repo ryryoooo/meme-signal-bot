@@ -102,7 +102,6 @@ jobs:
           ENRICH_FETCH_BUDGET_SEC: "55"
           ENRICH_RETRY_DELAY_SEC: "45"
           ENRICH_REDISPATCH: "1"
-          SIGNAL_STATE_REPO: ${{ github.repository }}
           ENRICH_WORKFLOW: enrich-notify.yml
         run: |
           set -euo pipefail
