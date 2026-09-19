@@ -4,9 +4,9 @@
     "0xffe50d0914f9bdebb2e431886ca196086ac41ecf": "2026-09-19T10:27:54.353582+00:00"
   },
   "fail": {},
-  "last_rate_limit_at": "2026-09-19T10:28:14.767225+00:00",
-  "last_run_at": "2026-09-19T10:28:14.855768+00:00",
-  "last_calls": 2,
-  "last_vetted": 1,
+  "last_rate_limit_at": "2026-09-19T16:30:08.165821+00:00",
+  "last_run_at": "2026-09-19T16:30:08.191918+00:00",
+  "last_calls": 1,
+  "last_vetted": 0,
   "last_err": "rate_limited"
 }
