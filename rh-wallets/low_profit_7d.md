@@ -1,6 +1,6 @@
 # Low profit wallets (7d)
 
-- Updated: **2026-09-19T20:11:49.343827+00:00**
+- Updated: **2026-09-19T20:12:24.963003+00:00**
 - Source: `rh-wallets/wallets.jsonl`
 - Period fields: `win_rate_7d`, `realized_pnl_7d`, `n_trades_7d`
 - Coverage (any 7d WR/PnL): **4** / 2567
