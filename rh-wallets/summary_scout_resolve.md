@@ -1,28 +1,27 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-19T09:38:31.528242+00:00
-- Unique pairs: **2050/2421** (84.7%)
-- Trunc rows still unresolved: **473**
-- Methods: pair_cache=21 token_scoped=7 multi_union=0 mega=1 global=0 two_hit=0
-- Blockscout: tokens_fetched=8 nonempty=262 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=371
+- Updated (UTC): 2026-09-19T10:06:22.553432+00:00
+- Unique pairs: **2056/2421** (84.9%)
+- Trunc rows still unresolved: **462**
+- Methods: pair_cache=5 token_scoped=4 multi_union=0 mega=2 global=0 two_hit=0
+- Blockscout: tokens_fetched=13 nonempty=281 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=365
 
 ## Top unresolved blockers
 
-- `no_match`: 371
+- `no_match`: 365
 
 ### Sample unresolved (up to 40)
 
 - `0x0000|beef` reason=no_match tokens=1 union=147 tier=good
 - `0x0000|ffa1` reason=no_match tokens=1 union=154 tier=good
-- `0x002a|84eb` reason=no_match tokens=1 union=77 tier=good
+- `0x002a|84eb` reason=no_match tokens=1 union=194 tier=good
 - `0x004a|df4f` reason=no_match tokens=1 union=270 tier=good
 - `0x005b|4b10` reason=no_match tokens=1 union=151 tier=good
 - `0x005c|1099` reason=no_match tokens=1 union=148 tier=good
-- `0x00d1|acc8` reason=no_match tokens=1 union=104 tier=good
+- `0x00d1|acc8` reason=no_match tokens=1 union=249 tier=good
 - `0x0132|80c3` reason=no_match tokens=1 union=547 tier=good
 - `0x0139|481a` reason=no_match tokens=1 union=135 tier=good
-- `0x02d2|d969` reason=no_match tokens=1 union=134 tier=good
 - `0x0319|9f83` reason=no_match tokens=1 union=96 tier=good
 - `0x03ba|8b3a` reason=no_match tokens=2 union=277 tier=good
 - `0x05d8|7525` reason=no_match tokens=1 union=227 tier=good
@@ -53,3 +52,4 @@
 - `0x14f1|a520` reason=no_match tokens=1 union=140 tier=elite
 - `0x150c|82a5` reason=no_match tokens=1 union=154 tier=good
 - `0x1613|db45` reason=no_match tokens=1 union=230 tier=good
+- `0x1672|f07b` reason=no_match tokens=2 union=371 tier=good
