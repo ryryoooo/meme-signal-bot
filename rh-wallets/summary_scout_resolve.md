@@ -1,15 +1,15 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-19T15:47:12.955307+00:00
-- Unique pairs: **2084/2437** (85.5%)
-- Trunc rows still unresolved: **449**
-- Methods: pair_cache=0 token_scoped=0 multi_union=0 mega=0 global=0 two_hit=0
-- Blockscout: tokens_fetched=2 nonempty=279 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=353
+- Updated (UTC): 2026-09-19T15:53:49.659174+00:00
+- Unique pairs: **2090/2437** (85.8%)
+- Trunc rows still unresolved: **439**
+- Methods: pair_cache=18 token_scoped=1 multi_union=0 mega=5 global=0 two_hit=0
+- Blockscout: tokens_fetched=3 nonempty=280 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=347
 
 ## Top unresolved blockers
 
-- `no_match`: 353
+- `no_match`: 347
 
 ### Sample unresolved (up to 40)
 
@@ -51,5 +51,5 @@
 - `0x1841|fe32` reason=no_match tokens=2 union=251 tier=elite
 - `0x19e5|5af9` reason=no_match tokens=1 union=128 tier=good
 - `0x19ee|51ad` reason=no_match tokens=1 union=133 tier=good
-- `0x1a5d|4e60` reason=no_match tokens=4 union=681 tier=good
 - `0x1a63|5812` reason=no_match tokens=1 union=335 tier=good
+- `0x1aef|ce1a` reason=no_match tokens=1 union=929 tier=elite
