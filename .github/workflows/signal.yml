@@ -51,13 +51,15 @@ jobs:
             paper_log.jsonl
             paper_book.jsonl
             paper_summary.md
-            rh-wallets/wallets.jsonl
             xbtscout/
-          # Unique key each run so marks/opens persist (fixed keys never update)
-          key: meme-signal-state-v6-${{ github.run_id }}
+          # Unique key each run so marks/opens persist (fixed keys never update).
+          # Do NOT cache rh-wallets/wallets.jsonl — it overwrote checkout with a
+          # stale ~1k watchlist and blocked scout promote (v7 drops that path).
+          key: meme-signal-state-v7-${{ github.run_id }}
+          # No v6/v5 restore: those archives embed a stale wallets.jsonl that
+          # would overwrite checkout even if path no longer lists it.
           restore-keys: |
-            meme-signal-state-v6-
-            meme-signal-state-v5
+            meme-signal-state-v7-
 
       - name: Run once (signals + paper marks)
         env:
