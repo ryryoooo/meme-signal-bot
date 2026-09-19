@@ -17,6 +17,14 @@ GMGN_VET_EVERY_SEC="${GMGN_VET_EVERY_SEC:-10800}"
 PAPER_DAILY_EVERY_SEC="${PAPER_DAILY_EVERY_SEC:-86400}"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
+# If prior daemon bash was kill -9'd, orphan sleep may still hold the lock FD
+if [[ -f "$STATE/bot.pid" ]]; then
+  oldpid=$(cat "$STATE/bot.pid" 2>/dev/null || echo "")
+  if [[ "$oldpid" =~ ^[0-9]+$ ]] && ! kill -0 "$oldpid" 2>/dev/null; then
+    fuser -k "$STATE/daemon.lock" >/dev/null 2>&1 || true
+    sleep 0.2
+  fi
+fi
 exec 9>"$STATE/daemon.lock"
 flock -n 9 || exit 0
 log() {
@@ -31,11 +39,12 @@ now=$(date +%s)
 [[ -f "$STATE/last_themaran" ]] || echo 0 > "$STATE/last_themaran"
 [[ -f "$STATE/last_gmgn_vet" ]] || echo 0 > "$STATE/last_gmgn_vet"
 [[ -f "$STATE/last_paper_daily" ]] || echo 0 > "$STATE/last_paper_daily"
-# RH FOMO fast notify (~20s) — primary Discord path; GMGN stays on GHA
+# RH FOMO notify (default 300s; adaptive backoff on credit dry) — primary Discord path; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
   local pidfile="$STATE/signal_tick.pid"
   local tick_log="$STATE/signal_tick.log"
+  local lock="$STATE/signal_tick.lock"
   if [[ ! -x "$tick" ]]; then
     log "signal_tick missing: $tick"
     return 0
@@ -46,18 +55,21 @@ ensure_signal_tick() {
     if [[ "$old" =~ ^[0-9]+$ ]] && kill -0 "$old" 2>/dev/null; then
       return 0
     fi
+    rm -f "$pidfile"
   fi
-  if pgrep -f 'scripts/signal_tick.sh' >/dev/null 2>&1; then
+  # flock inside signal_tick.sh is authoritative; also skip if any tick bash is alive
+  if pgrep -f '/scripts/signal_tick\.sh' >/dev/null 2>&1; then
     return 0
   fi
-  SIGNAL_POLL_SECONDS="${SIGNAL_POLL_SECONDS:-20}" \
+  SIGNAL_POLL_SECONDS="${SIGNAL_POLL_SECONDS:-300}" \
   SIGNAL_STATE_SYNC="${SIGNAL_STATE_SYNC:-1}" \
   SIGNAL_TICK_STATE_DIR="$STATE" \
   SIGNAL_TICK_LOG="$tick_log" \
   SIGNAL_TICK_HEALTH="$HEALTH" \
+  SIGNAL_TICK_LOCK="$lock" \
     nohup bash "$tick" >>"$tick_log" 2>&1 &
   echo $! > "$pidfile"
-  log "signal_tick started pid=$! poll=${SIGNAL_POLL_SECONDS:-20}s"
+  log "signal_tick started pid=$! poll=${SIGNAL_POLL_SECONDS:-300}s"
 }
 
 ensure_signal_tick

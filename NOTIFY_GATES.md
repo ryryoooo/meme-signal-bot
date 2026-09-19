@@ -65,12 +65,13 @@
 
 | Path | Interval | Source | GMGN |
 |------|----------|--------|------|
-| **Box** `scripts/signal_tick.sh` | `SIGNAL_POLL_SECONDS` default **20s** (target notify ≤~30s) | FOMO buy tape | **OFF** (`GMGN_DISABLED=1` / `GMGN_SMARTMONEY=0`) |
+| **Box** `scripts/signal_tick.sh` | `SIGNAL_POLL_SECONDS` default **300s** (adaptive; was 20s — burned FOMO dry) | FOMO buy tape | **OFF** (`GMGN_DISABLED=1` / `GMGN_SMARTMONEY=0`) |
 | **GHA** `signal.yml` | ~12m cron (`2,14,26,38,50`) | GMGN smartmoney backup | **ON** (GHA IP) |
 
 ### Box tick
 - Same RH soft gates + `NOTIFY_PASSTHROUGH=1` / `RH_NOTIFY_ALWAYS=1` as `signal.yml`.
-- `FOMO_ENABLED=1`, `FOMO_POLL_SECONDS` matches poll (each tick can hit FOMO).
+- `FOMO_ENABLED=1`, `FOMO_POLL_SECONDS` matches poll (each due tick hits FOMO alerts).
+- Single PID via `flock` on `signal_tick.lock` (no duplicate ticks).
 - FOMO holders scrape disabled on the fast tick (`FOMO_HOLDERS=0`) to save credits.
 - xbtscout left to its own watcher (`XBTSCOUT_ENABLED=0` here).
 - Secrets: `load_secrets` → `load_secrets` → box secrets card (`FOMO_API_KEY`, Discord webhooks) (`FOMO_API_KEY`, `DISCORD_WEBHOOK_URL`, …). Also injected into the daemon env.
@@ -79,10 +80,23 @@
 ### Shared state (dedupe)
 - Both write `STATE_PATH=state.json` keys: `seen_signal_keys`, `ca_last_posted`, cooldown.
 - Box↔GHA sync via GitHub release tag `signal-state` (`scripts/signal_state_sync.sh` pull/push).
-- FOMO poll timers are **not** overwritten by GHA merges (so the ~20s box tick is not starved).
+- FOMO poll timers are **not** overwritten by GHA merges (so the box tick interval is not starved).
 
-### FOMO credits
-- Alerts cost ~125 credits/call. At 20s that is credit-heavy vs free 250k/mo.
-- Monitor `x-credits-remaining` in tick logs; raise `SIGNAL_POLL_SECONDS` / `FOMO_POLL_SECONDS` if burned.
+### FOMO credits (burn math)
+- **Alerts ≈ 125 credits/call** (`x-credits-cost`). Holders scrape ≈ 250 — keep `FOMO_HOLDERS=0` on the fast tick.
+- Free tier ≈ **250k credits/mo**. Burn examples (alerts only, 1 call per poll):
+
+  | Poll | Calls/day | Credits/day | Days to empty 250k |
+  |------|-----------|-------------|--------------------|
+  | 20s  | ~4320     | ~540k       | **<1 day** (dry)   |
+  | 120s | ~720      | ~90k        | ~2.8 days          |
+  | 300s | ~288      | ~36k        | ~7 days            |
+  | 1500s (25m) | ~58 | ~7.2k     | ~full month        |
+
+- **Recommend poll ≥120s when credits scarce; default box poll is 300s.**
+- Adaptive in `signal_tick.sh`:
+  - `remain == 0` or HTTP **402** / `fomo err=credits` → sleep **30–60 min**, log clearly, rely on **GHA `signal.yml` GMGN** backup.
+  - `remain < 5000` (`FOMO_CREDIT_LOW`) → back off poll to **120–300s**.
+- Monitor `cost=` / `remain=` in `signal_tick.log` and `health.json` → `signal_tick.fomo_remain`.
 - If `FOMO_API_KEY` missing on box: tick still runs with FOMO off + GMGN off (safe no-hammer); GHA remains backup.
 

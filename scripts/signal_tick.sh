@@ -1,37 +1,57 @@
 #!/usr/bin/env bash
-# Box-resident RH FOMO signal tick — primary Discord notify path (~20s).
+# Box-resident RH FOMO signal tick — primary Discord notify path.
 # GMGN stays OFF on box (GHA owns GMGN). Shared state via release tag signal-state.
 #
 # Env knobs:
-#   SIGNAL_POLL_SECONDS   loop interval (default 20)
+#   SIGNAL_POLL_SECONDS   loop interval (default 300; was 20 — burned FOMO dry)
 #   SIGNAL_TICK_ONCE=1    run one tick and exit
 #   SIGNAL_STATE_SYNC=0   disable release pull/push
 #   FOMO_POLL_SECONDS     defaults to SIGNAL_POLL_SECONDS
+#   FOMO_CREDIT_LOW=5000  remain below this → back off poll to 120–300s
+#   FOMO_DRY_SLEEP_SEC    sleep when remain==0 / HTTP 402 (default 1800–3600 adaptive)
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_DIR="${SIGNAL_TICK_STATE_DIR:-/home/box/.local/share/scout-wallet-bot}"
 LOG="${SIGNAL_TICK_LOG:-$STATE_DIR/signal_tick.log}"
 HEALTH="${SIGNAL_TICK_HEALTH:-$STATE_DIR/health.json}"
-POLL="${SIGNAL_POLL_SECONDS:-20}"
+LOCK="${SIGNAL_TICK_LOCK:-$STATE_DIR/signal_tick.lock}"
+BASE_POLL="${SIGNAL_POLL_SECONDS:-300}"
+POLL="$BASE_POLL"
 ONCE="${SIGNAL_TICK_ONCE:-0}"
 DO_SYNC="${SIGNAL_STATE_SYNC:-1}"
+CREDIT_LOW="${FOMO_CREDIT_LOW:-5000}"
 mkdir -p "$STATE_DIR"
 cd "$ROOT"
 
+# Single-instance lock (daemon + manual starts share this)
+if [[ -f "$STATE_DIR/signal_tick.pid" ]]; then
+  oldpid=$(cat "$STATE_DIR/signal_tick.pid" 2>/dev/null || echo "")
+  if [[ "$oldpid" =~ ^[0-9]+$ ]] && ! kill -0 "$oldpid" 2>/dev/null; then
+    fuser -k "$LOCK" >/dev/null 2>&1 || true
+    sleep 0.2
+  fi
+fi
+exec 8>"$LOCK"
+if ! flock -n 8; then
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) signal_tick already running (flock $LOCK) — exit" >>"$LOG"
+  exit 0
+fi
+
+# Append-only: do NOT tee — outer nohup already redirects to the same log
 log() {
   if [[ -f "$LOG" ]] && [[ $(stat -c%s "$LOG" 2>/dev/null || echo 0) -gt 2097152 ]]; then
     mv "$LOG" "$LOG.1" 2>/dev/null || true
   fi
-  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"
+  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >>"$LOG"
 }
 
 patch_health() {
-  local rc="$1" elapsed="$2" fomo_ok="$3"
-  python3 - "$HEALTH" "$rc" "$elapsed" "$fomo_ok" "$POLL" <<'PY' 2>/dev/null || true
+  local rc="$1" elapsed="$2" fomo_ok="$3" remain="$4" poll_now="$5" fomo_status="$6"
+  python3 - "$HEALTH" "$rc" "$elapsed" "$fomo_ok" "$poll_now" "$remain" "$fomo_status" <<'PY' 2>/dev/null || true
 import json, sys, time
 from pathlib import Path
 path = Path(sys.argv[1])
-rc, elapsed, fomo_ok, poll = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+rc, elapsed, fomo_ok, poll, remain, fomo_status = sys.argv[2:8]
 data = {}
 if path.exists():
     try:
@@ -46,16 +66,86 @@ try:
     el_v = float(elapsed)
 except Exception:
     el_v = elapsed
+try:
+    rem_v = int(remain) if remain not in ("", "None", "unknown") else None
+except Exception:
+    rem_v = remain
 data["signal_tick"] = {
     "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "rc": rc_v,
     "elapsed_sec": el_v,
     "poll_sec": int(float(poll)),
     "fomo_key": fomo_ok == "1",
+    "fomo_remain": rem_v,
+    "fomo_status": fomo_status,
     "gmgn": "disabled",
 }
-path.write_text(json.dumps(data, ensure_ascii=False) + "\n", encoding="utf-8")
+nl = chr(10)
+path.write_text(json.dumps(data, ensure_ascii=False) + nl, encoding="utf-8")
 PY
+}
+
+# Parse FOMO credit / error lines from a tick capture
+parse_fomo_status() {
+  local capture="$1"
+  FOMO_REMAIN="unknown"
+  FOMO_STATUS="ok"
+  FOMO_COST=""
+  if rg -q 'fomo alerts HTTP 402|fomo err=credits' "$capture" 2>/dev/null; then
+    FOMO_STATUS="credits"
+    FOMO_REMAIN="0"
+    return 0
+  fi
+  local line
+  line=$(rg -o 'cost=[0-9]+ remain=[0-9]+' "$capture" 2>/dev/null | tail -1 || true)
+  if [[ -n "$line" ]]; then
+    FOMO_COST=$(echo "$line" | rg -o 'cost=[0-9]+' | cut -d= -f2)
+    FOMO_REMAIN=$(echo "$line" | rg -o 'remain=[0-9]+' | cut -d= -f2)
+    if [[ "$FOMO_REMAIN" == "0" ]]; then
+      FOMO_STATUS="credits"
+    elif [[ "$FOMO_REMAIN" =~ ^[0-9]+$ ]] && (( FOMO_REMAIN < CREDIT_LOW )); then
+      FOMO_STATUS="low"
+    fi
+  elif rg -q 'fomo skip: interval' "$capture" 2>/dev/null; then
+    FOMO_STATUS="skip_interval"
+  elif rg -q 'fomo err=' "$capture" 2>/dev/null; then
+    FOMO_STATUS=$(rg -o 'fomo err=\S+' "$capture" 2>/dev/null | tail -1 | cut -d= -f2)
+  fi
+}
+
+# Adaptive sleep after a tick given FOMO status
+next_sleep_sec() {
+  local elapsed="$1"
+  local sleep_for
+  if [[ "$FOMO_STATUS" == "credits" || "$FOMO_REMAIN" == "0" ]]; then
+    # Dead credits: 30–60 min (prefer env FOMO_DRY_SLEEP_SEC, else 2700)
+    sleep_for="${FOMO_DRY_SLEEP_SEC:-2700}"
+    if (( sleep_for < 1800 )); then sleep_for=1800; fi
+    if (( sleep_for > 3600 )); then sleep_for=3600; fi
+    POLL="$sleep_for"
+    log "FOMO CREDITS DRY remain=${FOMO_REMAIN} status=${FOMO_STATUS} — sleeping ${sleep_for}s (30–60m). Rely on GHA signal.yml GMGN backup."
+    echo "$sleep_for"
+    return
+  fi
+  if [[ "$FOMO_STATUS" == "low" ]] || { [[ "$FOMO_REMAIN" =~ ^[0-9]+$ ]] && (( FOMO_REMAIN < CREDIT_LOW )); }; then
+    # Low credits: back off to 120–300s (at least BASE_POLL, at least 120)
+    local backed=$BASE_POLL
+    if (( backed < 120 )); then backed=120; fi
+    if (( backed < 180 )); then backed=180; fi
+    if (( backed > 300 )); then backed=300; fi
+    # If base was already >=120, use max(base, 180) capped 300
+    if (( BASE_POLL >= 120 && BASE_POLL <= 300 )); then
+      backed=$BASE_POLL
+      if (( FOMO_REMAIN < 2000 && backed < 300 )); then backed=300; fi
+    fi
+    POLL=$backed
+    log "FOMO credits low remain=${FOMO_REMAIN} (<${CREDIT_LOW}) — poll back-off to ${POLL}s"
+  else
+    POLL=$BASE_POLL
+  fi
+  sleep_for=$((POLL - elapsed))
+  if (( sleep_for < 3 )); then sleep_for=3; fi
+  echo "$sleep_for"
 }
 
 # Load box secrets into this shell (never print values)
@@ -200,26 +290,51 @@ if [[ "$DISCORD_OK" != "1" ]]; then
 fi
 
 echo "$$" > "$STATE_DIR/signal_tick.pid"
-log "signal_tick start poll=${POLL}s once=${ONCE} fomo=${FOMO_ENABLED} fomo_key=${FOMO_OK} gmgn=off state=$STATE_PATH sync=$DO_SYNC"
+FOMO_REMAIN="unknown"
+FOMO_STATUS="ok"
+# Seed from recent log so we do not hammer FOMO when already dry
+if [[ -f "$LOG" ]]; then
+  if rg -q 'fomo alerts HTTP 402|fomo err=credits|remain=0' "$LOG" 2>/dev/null; then
+    # only if the very latest credit line is dry / 402
+    last_credit=$(rg -n 'remain=[0-9]+|fomo alerts HTTP 402|fomo err=credits' "$LOG" 2>/dev/null | tail -1 || true)
+    if echo "$last_credit" | rg -q 'HTTP 402|err=credits|remain=0'; then
+      FOMO_REMAIN="0"
+      FOMO_STATUS="credits"
+      POLL="${FOMO_DRY_SLEEP_SEC:-2700}"
+      if (( POLL < 1800 )); then POLL=1800; fi
+      if (( POLL > 3600 )); then POLL=3600; fi
+      export FOMO_POLL_SECONDS="$POLL"
+      log "seeded FOMO dry from log — initial poll=${POLL}s (skip hammer)"
+    fi
+  fi
+fi
+log "signal_tick start poll=${POLL}s once=${ONCE} fomo=${FOMO_ENABLED} fomo_key=${FOMO_OK} gmgn=off state=$STATE_PATH sync=$DO_SYNC lock=$LOCK"
 
 run_once() {
-  local t0 t1 elapsed rc
+  local t0 t1 elapsed rc capture
   t0=$(date +%s)
+  capture=$(mktemp "$STATE_DIR/tick_capture.XXXXXX")
   log "tick begin"
   if [[ "$DO_SYNC" == "1" ]]; then
     ROOT="$ROOT" STATE_PATH="$STATE_PATH" bash "$ROOT/scripts/signal_state_sync.sh" pull >>"$LOG" 2>&1 || true
   fi
+  # Keep FOMO_POLL in sync with adaptive POLL so bot.py does not skip forever / over-call
+  export FOMO_POLL_SECONDS="$POLL"
   set +e
-  timeout "${SIGNAL_TICK_TIMEOUT:-180}" python3 "$ROOT/bot.py" --per-page 100 >>"$LOG" 2>&1
+  timeout "${SIGNAL_TICK_TIMEOUT:-180}" python3 "$ROOT/bot.py" --per-page 100 >"$capture" 2>&1
   rc=$?
   set +e
+  cat "$capture" >>"$LOG"
+  parse_fomo_status "$capture"
+  rm -f "$capture"
   if [[ "$DO_SYNC" == "1" ]]; then
     ROOT="$ROOT" STATE_PATH="$STATE_PATH" bash "$ROOT/scripts/signal_state_sync.sh" push >>"$LOG" 2>&1 || true
   fi
   t1=$(date +%s)
   elapsed=$((t1 - t0))
-  log "tick end rc=$rc elapsed=${elapsed}s"
-  patch_health "$rc" "$elapsed" "$FOMO_OK"
+  log "tick end rc=$rc elapsed=${elapsed}s fomo_remain=${FOMO_REMAIN} fomo_status=${FOMO_STATUS} next_poll=${POLL}s"
+  patch_health "$rc" "$elapsed" "$FOMO_OK" "$FOMO_REMAIN" "$POLL" "$FOMO_STATUS"
+  LAST_ELAPSED=$elapsed
   return 0
 }
 
@@ -228,12 +343,14 @@ if [[ "$ONCE" == "1" ]]; then
   exit 0
 fi
 
+LAST_ELAPSED=0
+# If we already know credits are dry, sleep first (do not burn another 402)
+if [[ "$FOMO_STATUS" == "credits" ]]; then
+  sleep_for=$(next_sleep_sec 0)
+  sleep "$sleep_for"
+fi
 while true; do
-  t0=$(date +%s)
   run_once
-  t1=$(date +%s)
-  elapsed=$((t1 - t0))
-  sleep_for=$((POLL - elapsed))
-  if (( sleep_for < 3 )); then sleep_for=3; fi
+  sleep_for=$(next_sleep_sec "$LAST_ELAPSED")
   sleep "$sleep_for"
 done

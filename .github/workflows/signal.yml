@@ -5,7 +5,7 @@ on:
     # Primary RH notify = box scripts/signal_tick.sh (~20s FOMO).
     # This workflow is GMGN-path backup only.
     # GitHub often skips */5 (thundering herd). Explicit offset minutes.
-    - cron: "2,14,26,38,50 * * * *"  # ~12m GMGN backup; box FOMO tick is primary (~20s)
+    - cron: "2,14,26,38,50 * * * *"  # ~12m GMGN backup; box FOMO tick is primary (default 300s, adaptive)
   workflow_dispatch: {}
 
 concurrency:
