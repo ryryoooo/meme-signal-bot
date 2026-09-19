@@ -16,6 +16,9 @@ Env:
   SCOUT_TG_MEGA_UNION=1  unique-match against union of ALL token pools
   SCOUT_TG_BS_DEEPEN_MISS=1 re-fetch BS when reused pool misses pending truncs (counts toward TOKEN_CAP)
   SCOUT_TG_BS_DEEPEN_PLATEAU_MIN=120  skip deepen-miss when prior pool already >= this (true-dead)
+  SCOUT_TG_BS_REDeepEN_BELOW=500  still deepen no_match tokens with prior < this (new ES/GT methods)
+  SCOUT_TG_BS_ES_OFFSET=500  etherscan-compat page size (tokentx / getTokenHolders)
+  SCOUT_TG_GECKO=1       supplement pools from GeckoTerminal token trades
   SCOUT_TG_ELITE_ONLY=0  if 1, only resolve 💎 elite truncs
   SCOUT_TG_SKIP_WELL_RESOLVED=0.8  skip GMGN for tokens with >= this fraction resolved
   SCOUT_TG_BS_SLEEP_MS=400  pause between Blockscout token fetches
@@ -125,8 +128,10 @@ def html_to_plain(chunk: str) -> str:
     return unescape(t)
 
 
-def extract_token_ca(chunk: str) -> str | None:
-    # Prefer gmgn / dexscreener / geckoterminal / basedbot start links
+def extract_all_token_cas(chunk: str) -> list[str]:
+    """All full token CAs in a TG HTML/plain chunk (deduped, prefer link patterns)."""
+    found: list[str] = []
+    seen: set[str] = set()
     for pat in (
         r"gmgn\.ai/robinhood/token/(?:scout_)?(0x[a-fA-F0-9]{40})",
         r"dexscreener\.com/robinhood/(0x[a-fA-F0-9]{40})",
@@ -134,15 +139,22 @@ def extract_token_ca(chunk: str) -> str | None:
         r"based_eth_bot\?start=r_scout_b_(0x[a-fA-F0-9]{40})",
         r"x\.com/search\?q=(0x[a-fA-F0-9]{40})",
     ):
-        m = re.search(pat, chunk, re.I)
-        if m:
-            return m.group(1).lower()
-    # fallback: any full CA in hrefs (not trunc)
+        for m in re.finditer(pat, chunk, re.I):
+            addr = m.group(1).lower()
+            if addr not in seen:
+                seen.add(addr)
+                found.append(addr)
     for m in CA_RE.finditer(chunk):
         addr = m.group(0).lower()
-        # skip if it looks like it's inside a trunc code span context — rare
-        return addr
-    return None
+        if addr not in seen:
+            seen.add(addr)
+            found.append(addr)
+    return found
+
+
+def extract_token_ca(chunk: str) -> str | None:
+    cas = extract_all_token_cas(chunk)
+    return cas[0] if cas else None
 
 
 def parse_trunc_parts(trunc: str) -> tuple[str, str] | None:
@@ -237,13 +249,15 @@ def parse_message(msg_id: str, chunk: str) -> dict | None:
         return None
     dt_m = re.search(r'datetime="([^"]+)"', chunk)
     ticker_m = TICKER_RE.search(plain)
-    ca = extract_token_ca(chunk)
+    cas = extract_all_token_cas(chunk)
+    ca = cas[0] if cas else None
     buys = parse_live_buys(plain, html_text)
     return {
         "msg_id": str(msg_id),
         "posted_at": dt_m.group(1) if dt_m else None,
         "ticker": (ticker_m.group(1).upper() if ticker_m else None),
         "token_ca": ca,
+        "token_cas": cas,
         "chain": "robinhood",
         "live_buys": buys,
         "n_elite": sum(1 for b in buys if b["tier"] == "elite"),
@@ -416,31 +430,69 @@ def persist_posts(posts: list[dict]) -> tuple[int, int]:
     # drop bulky snip on disk? keep short
     write_jsonl(POSTS_PATH, ordered)
 
+    # ticker → all known CAs (posts + hits) for multi-token association
+    ticker_cas: dict[str, set[str]] = {}
+    for p in ordered:
+        tick = (p.get("ticker") or "").upper()
+        if not tick:
+            continue
+        for ca0 in [p.get("token_ca"), *(p.get("token_cas") or [])]:
+            ca_l = (ca0 or "").lower()
+            if ca_l.startswith("0x"):
+                ticker_cas.setdefault(tick, set()).add(ca_l)
+    if HITS_PATH.exists():
+        for line in HITS_PATH.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                h = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            tick = (h.get("ticker") or "").upper()
+            ca_l = (h.get("token_ca") or "").lower()
+            if tick and ca_l.startswith("0x"):
+                ticker_cas.setdefault(tick, set()).add(ca_l)
+
     trunc_rows: list[dict] = []
     seen: set[str] = set()
     for p in ordered:
-        ca = (p.get("token_ca") or "").lower()
-        for b in p.get("live_buys") or []:
-            key = f"{ca}|{b.get('prefix')}|{b.get('suffix')}|{b.get('tier')}|{p.get('msg_id')}"
-            if key in seen:
-                continue
-            seen.add(key)
-            trunc_rows.append(
-                {
-                    "trunc_key": key,
-                    "trunc": b.get("trunc"),
-                    "prefix": b.get("prefix"),
-                    "suffix": b.get("suffix"),
-                    "usd": b.get("usd"),
-                    "tier": b.get("tier"),
-                    "token_ca": ca,
-                    "ticker": p.get("ticker"),
-                    "msg_id": p.get("msg_id"),
-                    "posted_at": p.get("posted_at"),
-                    "source_url": p.get("source_url"),
-                    "scraped_at": now_iso(),
-                }
-            )
+        primary = (p.get("token_ca") or "").lower()
+        cas: list[str] = []
+        seen_ca: set[str] = set()
+        for ca0 in [primary, *(p.get("token_cas") or [])]:
+            ca_l = (ca0 or "").lower()
+            if ca_l.startswith("0x") and ca_l not in seen_ca:
+                seen_ca.add(ca_l)
+                cas.append(ca_l)
+        tick = (p.get("ticker") or "").upper()
+        for ca_l in sorted(ticker_cas.get(tick) or []):
+            if ca_l not in seen_ca:
+                seen_ca.add(ca_l)
+                cas.append(ca_l)
+        if not cas and primary.startswith("0x"):
+            cas = [primary]
+        for ca in cas:
+            for b in p.get("live_buys") or []:
+                key = f"{ca}|{b.get('prefix')}|{b.get('suffix')}|{b.get('tier')}|{p.get('msg_id')}"
+                if key in seen:
+                    continue
+                seen.add(key)
+                trunc_rows.append(
+                    {
+                        "trunc_key": key,
+                        "trunc": b.get("trunc"),
+                        "prefix": b.get("prefix"),
+                        "suffix": b.get("suffix"),
+                        "usd": b.get("usd"),
+                        "tier": b.get("tier"),
+                        "token_ca": ca,
+                        "ticker": p.get("ticker"),
+                        "msg_id": p.get("msg_id"),
+                        "posted_at": p.get("posted_at"),
+                        "source_url": p.get("source_url"),
+                        "scraped_at": now_iso(),
+                    }
+                )
     write_jsonl(TRUNC_PATH, trunc_rows)
     return len(ordered), len(trunc_rows)
 
@@ -882,6 +934,54 @@ def save_token_pools(pools: dict[str, set[str]]) -> None:
     write_jsonl(TOKEN_POOLS_PATH, rows)
 
 
+
+def fetch_geckoterminal_addrs(token_ca: str, max_pages: int | None = None) -> tuple[list[str], str | None]:
+    """Pull recent trade makers from GeckoTerminal (robinhood network)."""
+    if max_pages is None:
+        max_pages = min(5, int(os.environ.get("SCOUT_TG_GECKO_PAGES", "3")))
+    net = os.environ.get("SCOUT_TG_GECKO_NETWORK", "robinhood")
+    addrs: list[str] = []
+    seen: set[str] = set()
+    last_err: str | None = None
+
+    def _absorb_trade(obj: dict) -> None:
+        attrs = obj.get("attributes") if isinstance(obj.get("attributes"), dict) else obj
+        if not isinstance(attrs, dict):
+            return
+        for key in ("tx_from_address", "from_address", "maker", "trader", "origin", "sender"):
+            v = attrs.get(key)
+            if isinstance(v, str) and v.startswith("0x") and len(v) >= 42:
+                al = v.lower()[:42]
+                if al not in seen:
+                    seen.add(al)
+                    addrs.append(al)
+
+    # token trades endpoint
+    url = f"https://api.geckoterminal.com/api/v2/networks/{net}/tokens/{token_ca}/trades?trade_volume_in_usd_greater_than=0"
+    for _page in range(max(1, max_pages)):
+        data, err = http_get_json(url, timeout=20.0, retries=2)
+        if err:
+            last_err = f"gecko_{err}"
+            break
+        if not isinstance(data, dict):
+            last_err = "gecko_bad_json"
+            break
+        items = data.get("data")
+        if not isinstance(items, list) or not items:
+            break
+        for it in items:
+            if isinstance(it, dict):
+                _absorb_trade(it)
+        # pagination via links.next if present
+        links = data.get("links") if isinstance(data.get("links"), dict) else {}
+        nxt = links.get("next") if isinstance(links, dict) else None
+        if not nxt or not isinstance(nxt, str):
+            break
+        url = nxt
+        time.sleep(0.35)
+    return addrs, last_err
+
+
 def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple[list[str], str | None]:
     """Deep holders/transfers + etherscan-compat tokentx. Returns (addrs, last_err)."""
     if max_pages is None:
@@ -988,61 +1088,120 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
         if got_any:
             break
 
-    # 2) etherscan-compat tokentx — deepen even when holders already nonempty
-    es_offset = int(os.environ.get("SCOUT_TG_BS_ES_OFFSET", "100"))
+    # 2) etherscan-compat tokentx — both sort directions + larger offset
+    es_offset = int(os.environ.get("SCOUT_TG_BS_ES_OFFSET", "500"))
     es_always = env_bool("SCOUT_TG_BS_ES_ALWAYS", True)
     if es_always or len(addrs) < max(50, max_pages * 5):
         for host in list(hosts_es):
             if host in _BS_DEAD_HOSTS:
                 continue
             es_got = False
+            for sort in ("desc", "asc"):
+                for page in range(1, max(1, max_pages) + 1):
+                    if not _bs_host_available(host):
+                        break
+                    qs = urllib.parse.urlencode(
+                        {
+                            "module": "account",
+                            "action": "tokentx",
+                            "contractaddress": token_ca,
+                            "page": str(page),
+                            "offset": str(es_offset),
+                            "sort": sort,
+                        }
+                    )
+                    data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=4)
+                    if err:
+                        last_err = err
+                        _bs_note_fail(host, err)
+                        if host in _BS_DEAD_HOSTS:
+                            break
+                        if err == "http_429":
+                            data2, err2 = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=3)
+                            if err2:
+                                last_err = err2
+                                _bs_note_fail(host, err2)
+                                break
+                            data, err = data2, None
+                        else:
+                            break
+                    _bs_note_ok(host)
+                    if not isinstance(data, dict):
+                        break
+                    if str(data.get("status")) != "1":
+                        msg = str(data.get("message") or data.get("result") or "")[:80]
+                        if msg:
+                            last_err = f"es_{msg}"
+                        break
+                    result = data.get("result") or []
+                    if not isinstance(result, list) or not result:
+                        break
+                    before = len(addrs)
+                    _absorb(result)
+                    if len(addrs) > before:
+                        es_got = True
+                    time.sleep(0.18)
+            # 2b) getTokenHolders — catches holders who never transferred recently
             for page in range(1, max(1, max_pages) + 1):
                 if not _bs_host_available(host):
                     break
                 qs = urllib.parse.urlencode(
                     {
-                        "module": "account",
-                        "action": "tokentx",
+                        "module": "token",
+                        "action": "getTokenHolders",
                         "contractaddress": token_ca,
                         "page": str(page),
                         "offset": str(es_offset),
-                        "sort": "desc",
                     }
                 )
-                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=4)
+                data, err = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=3)
                 if err:
                     last_err = err
                     _bs_note_fail(host, err)
-                    if host in _BS_DEAD_HOSTS:
-                        break
                     if err == "http_429":
-                        data2, err2 = http_get_json(f"{host.rstrip('/')}?{qs}", timeout=25.0, retries=3)
-                        if err2:
-                            last_err = err2
-                            _bs_note_fail(host, err2)
-                            break
-                        data, err = data2, None
-                    else:
-                        break
-                _bs_note_ok(host)
-                if not isinstance(data, dict):
+                        time.sleep(float(os.environ.get("SCOUT_TG_BS_429_PAUSE", "25")))
+                        continue
                     break
-                if str(data.get("status")) != "1":
-                    # message may explain; keep last_err soft
-                    msg = str(data.get("message") or data.get("result") or "")[:80]
-                    if msg:
-                        last_err = f"es_{msg}"
+                _bs_note_ok(host)
+                if not isinstance(data, dict) or str(data.get("status")) != "1":
                     break
                 result = data.get("result") or []
                 if not isinstance(result, list) or not result:
                     break
                 before = len(addrs)
-                _absorb(result)
+                # holders use addressHash / address fields
+                for it in result:
+                    if isinstance(it, dict):
+                        for key in ("address", "addressHash", "holderAddress", "owner"):
+                            v = it.get(key)
+                            if isinstance(v, str) and v.startswith("0x") and len(v) >= 42:
+                                al = v.lower()[:42]
+                                if al not in seen:
+                                    seen.add(al)
+                                    addrs.append(al)
+                            elif isinstance(v, dict):
+                                hh = v.get("hash") or v.get("address")
+                                if isinstance(hh, str) and hh.startswith("0x") and len(hh) >= 42:
+                                    al = hh.lower()[:42]
+                                    if al not in seen:
+                                        seen.add(al)
+                                        addrs.append(al)
                 if len(addrs) > before:
                     es_got = True
-                time.sleep(0.22)
+                time.sleep(0.18)
             if es_got:
                 break
+
+    # 3) GeckoTerminal trades (maker/buyer addresses not always in BS holders yet)
+    if env_bool("SCOUT_TG_GECKO", True):
+        g_addrs, g_err = fetch_geckoterminal_addrs(token_ca)
+        if g_err and not g_addrs:
+            last_err = last_err or g_err
+        for a in g_addrs:
+            al = a.lower()[:42]
+            if al not in seen:
+                seen.add(al)
+                addrs.append(al)
 
     if not addrs and last_err is None:
         last_err = "empty"
@@ -1279,9 +1438,25 @@ def resolve_truncs(
         # Prefer shallow / never-fetched pools first so TOKEN_CAP grows mega coverage
         # instead of re-deepening plateau tokens whose miss truncs are true-dead.
         min_reuse_sort = int(os.environ.get("SCOUT_TG_BS_REUSE_MIN", "80"))
+        try:
+            _redeepen_below_sort = int(os.environ.get("SCOUT_TG_BS_REDeepEN_BELOW", "500"))
+        except ValueError:
+            _redeepen_below_sort = 500
         pending_cas.sort(
             key=lambda c: (
-                0 if len(token_pools.get(c) or set()) < min_reuse_sort else 1,
+                # 0=shallow, 1=redeepen-mid no_match, 2=huge plateau
+                (
+                    0
+                    if len(token_pools.get(c) or set()) < min_reuse_sort
+                    else (
+                        1
+                        if (
+                            no_match_ca_score.get(c, 0) > 0
+                            and len(token_pools.get(c) or set()) < _redeepen_below_sort
+                        )
+                        else 2
+                    )
+                ),
                 -no_match_ca_score.get(c, 0),
                 -len([t for t in by_ca[c] if (t.get("trunc_key") or "") not in resolved_keys and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr]),
                 -ca_multi_score.get(c, 0),
@@ -1328,6 +1503,12 @@ def resolve_truncs(
             # Skip deepen when pool is already past plateau — remaining misses are almost
             # always true-dead (wallet never in any BS pool); spend cap on shallow tokens.
             plateau_min = int(os.environ.get("SCOUT_TG_BS_DEEPEN_PLATEAU_MIN", "120"))
+            # One more deepen pass for mid-size no_match pools when new ES/GT methods
+            # may still grow the pool (true-dead ceiling is typically >>500).
+            try:
+                redeepen_below = int(os.environ.get("SCOUT_TG_BS_REDeepEN_BELOW", "500"))
+            except ValueError:
+                redeepen_below = 500
             if reuse_ok and env_bool("SCOUT_TG_BS_DEEPEN_MISS", True):
                 miss = 0
                 for t in pending:
@@ -1336,7 +1517,12 @@ def resolve_truncs(
                     if not match_hits(prior, pref, suf):
                         miss += 1
                 if miss:
-                    if len(prior) >= plateau_min:
+                    allow_redeepen = (
+                        len(prior) < redeepen_below
+                        and no_match_ca_score.get(ca, 0) > 0
+                        and env_bool("SCOUT_TG_BS_REDeepEN", True)
+                    )
+                    if len(prior) >= plateau_min and not allow_redeepen:
                         print(
                             f"scout_tg blockscout deepen-skip-plateau {ca[:10]}… "
                             f"prior={len(prior)} miss={miss}/{len(pending)} "
@@ -1346,9 +1532,11 @@ def resolve_truncs(
                     else:
                         need_deepen = True
                         reuse_ok = False
+                        tag = "redeepen" if len(prior) >= plateau_min else "deepen-miss"
                         print(
-                            f"scout_tg blockscout deepen-miss {ca[:10]}… "
-                            f"prior={len(prior)} miss={miss}/{len(pending)}",
+                            f"scout_tg blockscout {tag} {ca[:10]}… "
+                            f"prior={len(prior)} miss={miss}/{len(pending)} "
+                            f"redeepen_below={redeepen_below}",
                             flush=True,
                         )
             will_fetch = (not reuse_ok) or force
