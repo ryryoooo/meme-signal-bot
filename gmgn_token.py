@@ -21,6 +21,7 @@ _CACHE: dict[str, tuple[float, dict | None, str | None]] = {}
 _CACHE_TTL = 90.0
 _DEX_CACHE: dict[str, tuple[float, dict | None]] = {}
 _DEX_CACHE_TTL = float(os.environ.get("DEX_CACHE_TTL_SEC", "45") or 45)
+_DEX_NEG_CACHE_TTL = float(os.environ.get("DEX_NEG_CACHE_TTL_SEC", "8") or 8)
 
 _COOLDOWN_PATH = Path(os.environ.get("GMGN_COOLDOWN_PATH") or "/workspace/meme-foundation/live-arc/gmgn_cooldown.json")
 
@@ -508,8 +509,10 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         return None
     cache_key = f"{(chain or '').lower()}:{ca.lower()}"
     hit = _DEX_CACHE.get(cache_key)
-    if hit and (time.time() - hit[0]) < _DEX_CACHE_TTL:
-        return hit[1]
+    if hit:
+        ttl = _DEX_CACHE_TTL if hit[1] is not None else _DEX_NEG_CACHE_TTL
+        if (time.time() - hit[0]) < ttl:
+            return hit[1]
 
     url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
