@@ -1,16 +1,15 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-19T01:20:18.980916+00:00
-- Unique pairs: **1728/2382** (72.5%)
-- Trunc rows still unresolved: **1062**
-- Methods: pair_cache=34 token_scoped=8 multi_union=0 mega=15 global=0 two_hit=0
+- Updated (UTC): 2026-09-19T01:47:15.543171+00:00
+- Unique pairs: **1751/2387** (73.4%)
+- Trunc rows still unresolved: **1035**
+- Methods: pair_cache=25 token_scoped=15 multi_union=0 mega=8 global=0 two_hit=0
 - Blockscout: tokens_fetched=14 nonempty=14 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=14 multi_match=0 no_match=640
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=636
 
 ## Top unresolved blockers
 
-- `no_match`: 640
-- `api_fail`: 14
+- `no_match`: 636
 
 ### Sample unresolved (up to 40)
 
@@ -33,7 +32,6 @@
 - `0x05d8|7525` reason=no_match tokens=1 union=115 tier=good
 - `0x066c|2b52` reason=no_match tokens=4 union=505 tier=good
 - `0x069a|1033` reason=no_match tokens=1 union=122 tier=good
-- `0x06b9|bfb8` reason=no_match tokens=2 union=200 tier=good
 - `0x073c|cc4d` reason=no_match tokens=1 union=122 tier=good
 - `0x0749|93c1` reason=no_match tokens=2 union=289 tier=good
 - `0x0768|1a43` reason=no_match tokens=1 union=145 tier=good
@@ -45,7 +43,6 @@
 - `0x09ef|9a2d` reason=no_match tokens=1 union=112 tier=elite
 - `0x0b1f|bfa6` reason=no_match tokens=1 union=99 tier=good
 - `0x0dec|80b9` reason=no_match tokens=3 union=324 tier=good
-- `0x0e49|a27c` reason=no_match tokens=5 union=1112 tier=elite
 - `0x0e5a|8b75` reason=no_match tokens=1 union=168 tier=good
 - `0x0ed9|260e` reason=no_match tokens=3 union=523 tier=elite
 - `0x0edf|12ce` reason=no_match tokens=1 union=85 tier=good
@@ -54,3 +51,5 @@
 - `0x0f72|4d3f` reason=no_match tokens=1 union=149 tier=good
 - `0x0f86|98de` reason=no_match tokens=2 union=309 tier=good
 - `0x0fb5|1b94` reason=no_match tokens=1 union=122 tier=elite
+- `0x1002|b2f5` reason=no_match tokens=1 union=3236 tier=elite
+- `0x1023|d2dc` reason=no_match tokens=3 union=348 tier=good
