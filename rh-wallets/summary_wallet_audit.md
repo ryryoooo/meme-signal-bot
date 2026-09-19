@@ -1,27 +1,27 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-09-19T20:04:47.251268+00:00** (UTC) / JST+9
-- Watch: `/workspace/meme-foundation/discord-bot/rh-wallets/wallets.jsonl` · total **2567**
-- Elapsed: **0.2s** · tagged_rows=2567 · RPC=False
+- Updated: **2026-09-19T20:50:42.085496+00:00** (UTC) / JST+9
+- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **2568**
+- Elapsed: **0.2s** · tagged_rows=2568 · RPC=False
 
 ## Counts
 
 | bucket | count | 意味 |
 |---|---:|---|
 | ACTIVE | **431** | 最近取引 or lifetime proxy |
-| INACTIVE | **2136** | 直近証拠なし / 未vet |
+| INACTIVE | **2137** | 直近証拠なし / 未vet |
 | QUALITY 優良 | **225** | WR≥0.5 + PnL≥1000 + n≥20 |
-| WEAK | **7** | 低WR / 弱いPnL / ワンショット |
+| WEAK | **5** | 低WR / 弱いPnL / ワンショット |
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **285/2567** (11.1%)
-- `realized_pnl*` filled: **431/2567** (16.8%)
-- `n_trades*` filled: **285/2567**
-- `*_7d` WR filled: **4/2567** (0.2%) ← GMGN 7d 未充足なら lifetime で判定
-- `n_trades_7d` filled: **4/2567**
-- `last_active*` filled: **0/2567**
-- activity_metric breakdown: `{"unvetted_proxy": 2136, "lifetime_proxy": 427, "n_trades_7d": 4}`
+- `win_rate` filled: **285/2568** (11.1%)
+- `realized_pnl*` filled: **431/2568** (16.8%)
+- `n_trades*` filled: **285/2568**
+- `*_7d` WR filled: **0/2568** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
+- `n_trades_7d` filled: **0/2568**
+- `last_active*` filled: **0/2568**
+- activity_metric breakdown: `{"unvetted_proxy": 2137, "lifetime_proxy": 431}`
 
 ## Thresholds
 
@@ -49,8 +49,6 @@
 3. `0xf565bee3b18f8a0cf253a7f872fe1e0e5dfc471d` wr=0.29849624060150376 pnl=18057 n=5035 reason=low_wr=0.298 n=5035
 4. `0xd632a243fb30cbf5f53a78fa0ed01e7ba13d1718` wr=0.300531914893617 pnl=28336 n=6162 reason=low_wr=0.301 n=6162
 5. `0xa053641c649d93b51ce88eafec998ffb9f534f0b` wr=0.3077311773623042 pnl=74277 n=15919 reason=low_wr=0.308 n=15919
-6. `0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b` wr=0.3107344632768362 pnl=7649 n=892 reason=low_wr=0.311 n=892
-7. `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` wr=0.3333333333333333 pnl=13442 n=731 reason=low_wr=0.333 n=731
 
 ## Action
 
