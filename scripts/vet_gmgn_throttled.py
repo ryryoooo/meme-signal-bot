@@ -200,15 +200,31 @@ def main() -> int:
             pnl = float(o.get("fomo_pnl_usd") or o.get("realized_pnl_usd") or 0)
         except Exception:
             pnl = 0.0
-        # Prefer elite + scout_pending_WR first (steady WR fill)
-        score = (
-            elite_n * 10
-            + hits
-            + (80 if elite else 0)
-            + (60 if pending_wr or scoutish else 0)
-            + min(20.0, buy / 200.0)
-            + min(30.0, pnl / 1e5)
-        )
+        if period_7d:
+            # Prefer wallets that already look weak on 30d / FOMO so 7d fills
+            # surface true low-profit names first (worst-first hunt).
+            try:
+                wr30 = float(o.get("win_rate")) if o.get("win_rate") is not None else None
+            except Exception:
+                wr30 = None
+            # lower pnl / wr → higher priority; still nudge scout a bit
+            score = (
+                -min(50.0, pnl / 1e4)           # negative or small pnl first
+                + (20 if wr30 is not None and wr30 < 0.4 else 0)
+                + (10 if elite or scoutish else 0)
+                + min(5.0, hits / 10.0)
+                + (5 if o.get("realized_pnl_usd") is not None else 0)  # known track > cold
+            )
+        else:
+            # Prefer elite + scout_pending_WR first (steady WR fill)
+            score = (
+                elite_n * 10
+                + hits
+                + (80 if elite else 0)
+                + (60 if pending_wr or scoutish else 0)
+                + min(20.0, buy / 200.0)
+                + min(30.0, pnl / 1e5)
+            )
         cand.append((score, a))
     if tagged_pending:
         print(f"vet_gmgn_throttled: tagged scout_pending_WR on {tagged_pending} wallets", flush=True)
