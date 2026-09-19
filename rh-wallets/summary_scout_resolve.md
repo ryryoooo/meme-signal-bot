@@ -1,15 +1,15 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-19T02:47:13.333272+00:00
-- Unique pairs: **1817/2392** (76.0%)
-- Trunc rows still unresolved: **916**
-- Methods: pair_cache=43 token_scoped=21 multi_union=0 mega=12 global=0 two_hit=0
-- Blockscout: tokens_fetched=14 nonempty=84 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=575
+- Updated (UTC): 2026-09-19T03:17:15.836538+00:00
+- Unique pairs: **1855/2393** (77.5%)
+- Trunc rows still unresolved: **807**
+- Methods: pair_cache=92 token_scoped=12 multi_union=0 mega=26 global=0 two_hit=0
+- Blockscout: tokens_fetched=9 nonempty=95 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=538
 
 ## Top unresolved blockers
 
-- `no_match`: 575
+- `no_match`: 538
 
 ### Sample unresolved (up to 40)
 
@@ -27,20 +27,16 @@
 - `0x0319|9f83` reason=no_match tokens=1 union=96 tier=good
 - `0x03ba|8b3a` reason=no_match tokens=2 union=277 tier=good
 - `0x0432|95b0` reason=no_match tokens=5 union=685 tier=elite
-- `0x04bc|7c84` reason=no_match tokens=2 union=288 tier=elite
 - `0x05d8|7525` reason=no_match tokens=1 union=115 tier=good
-- `0x066c|2b52` reason=no_match tokens=4 union=505 tier=good
 - `0x069a|1033` reason=no_match tokens=1 union=122 tier=good
 - `0x073c|cc4d` reason=no_match tokens=1 union=122 tier=good
 - `0x0749|93c1` reason=no_match tokens=2 union=289 tier=good
 - `0x0768|1a43` reason=no_match tokens=1 union=145 tier=good
 - `0x0808|621f` reason=no_match tokens=1 union=598 tier=elite
-- `0x0896|dc9e` reason=no_match tokens=1 union=158 tier=elite
 - `0x08bc|a958` reason=no_match tokens=1 union=66 tier=good
 - `0x091e|dbfa` reason=no_match tokens=1 union=135 tier=elite
 - `0x09e8|5769` reason=no_match tokens=1 union=148 tier=good
 - `0x0b1f|bfa6` reason=no_match tokens=1 union=99 tier=good
-- `0x0dec|80b9` reason=no_match tokens=3 union=324 tier=good
 - `0x0e5a|8b75` reason=no_match tokens=1 union=168 tier=good
 - `0x0edf|12ce` reason=no_match tokens=1 union=85 tier=good
 - `0x0f0f|5a48` reason=no_match tokens=1 union=128 tier=good
@@ -53,3 +49,7 @@
 - `0x10b1|5c78` reason=no_match tokens=1 union=130 tier=good
 - `0x110a|acfe` reason=no_match tokens=1 union=145 tier=good
 - `0x113f|ac20` reason=no_match tokens=1 union=89 tier=elite
+- `0x11fb|12e6` reason=no_match tokens=1 union=441 tier=elite
+- `0x1211|c383` reason=no_match tokens=1 union=140 tier=good
+- `0x1238|871b` reason=no_match tokens=1 union=150 tier=good
+- `0x12c5|3470` reason=no_match tokens=1 union=121 tier=elite
