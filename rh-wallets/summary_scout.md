@@ -1,6 +1,6 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-09-19T13:57:17.331877+00:00
+- Updated (UTC): 2026-09-19T14:02:54.382271+00:00
 - Ranked wallets: **2081**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=gmgn_disabled
@@ -19,9 +19,9 @@
 | 6 | `0x8ee9…3e7b` | elite | 33 | 33 | 6,154 | 37% | 2916 | 43,989 | — | 34.06 |
 | 7 | `0x24e9…7ba3` | elite | 32 | 32 | 12,161 | 26% | 14175 | 63,992 | — | 33.34 |
 | 8 | `0xffe5…1ecf` | elite | 32 | 32 | 10,685 | — | — | — | — | 31.34 |
-| 9 | `0x391a…fa0e` | elite | 29 | 29 | 4,742 | — | — | — | — | 28.94 |
-| 10 | `0x48cf…c1fd` | elite | 23 | 23 | 3,272 | 51% | 5264 | 148,478 | — | 28.6 |
-| 11 | `0xc978…4fb7` | elite | 28 | 28 | 4,038 | — | — | — | — | 28.14 |
+| 9 | `0xc978…4fb7` | elite | 30 | 30 | 4,344 | — | — | — | — | 29.74 |
+| 10 | `0x391a…fa0e` | elite | 29 | 29 | 4,742 | — | — | — | — | 28.94 |
+| 11 | `0x48cf…c1fd` | elite | 23 | 23 | 3,272 | 51% | 5264 | 148,478 | — | 28.6 |
 | 12 | `0xa053…4f0b` | elite | 24 | 24 | 4,278 | 31% | 15919 | 74,277 | — | 26.94 |
 | 13 | `0x2bda…3d58` | elite | 24 | 24 | 14,385 | — | — | — | — | 24.94 |
 | 14 | `0xfbcf…1f29` | elite | 24 | 24 | 4,174 | — | — | — | — | 24.94 |
@@ -62,8 +62,8 @@
 - `0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b` elite=33 hits=33 buy=$6,154 rp=43988.51354884907 wr=0.3743482794577685
 - `0x24e91130ba7fb21f853d709a1ffb8dee99ba7ba3` elite=32 hits=32 buy=$12,161 rp=63991.810839523016 wr=0.26048218029350106
 - `0xffe50d0914f9bdebb2e431886ca196086ac41ecf` elite=32 hits=32 buy=$10,685 rp=None wr=None
+- `0xc9789d173373326c4da8034d57b96aeb25814fb7` elite=30 hits=30 buy=$4,344 rp=None wr=None
 - `0x391a2cd2be579429d305694068f27f5025fffa0e` elite=29 hits=29 buy=$4,742 rp=None wr=None
-- `0xc9789d173373326c4da8034d57b96aeb25814fb7` elite=28 hits=28 buy=$4,038 rp=None wr=None
 - `0xa053641c649d93b51ce88eafec998ffb9f534f0b` elite=24 hits=24 buy=$4,278 rp=74276.63032988658 wr=0.3077311773623042
 - `0x2bda4afb624e6d60ce0d1d32dac68bf3fda23d58` elite=24 hits=24 buy=$14,385 rp=None wr=None
 - `0xfbcf26e80231fea6c310263920bbf3f7cecf1f29` elite=24 hits=24 buy=$4,174 rp=None wr=None
