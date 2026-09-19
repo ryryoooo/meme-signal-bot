@@ -59,23 +59,24 @@
 - Env: `PRUNE_*` (see script docstring). Weekly GHA: `prune-watchlist.yml`.
 
 
-## Fast path (box FOMO tick) — 2026-09-20
+## Fast path (box tick) — 2026-09-20
 
-**Primary RH buy notify** is the box-resident loop, not GHA:
+**Primary RH buy notify** is the box-resident **onchain** loop (free RPC). FOMO is optional when credits remain; GHA GMGN is backup:
 
 | Path | Interval | Source | GMGN |
 |------|----------|--------|------|
-| **Box** `scripts/signal_tick.sh` | `SIGNAL_POLL_SECONDS` default **300s** (adaptive; was 20s — burned FOMO dry) | FOMO buy tape | **OFF** (`GMGN_DISABLED=1` / `GMGN_SMARTMONEY=0`) |
+| **Box** `scripts/signal_tick.sh` → `onchain_signal_tick.py` | `ONCHAIN_POLL_SECONDS` default **5s** (`SIGNAL_SOURCE=onchain`) | Public RH RPC watchlist buys | **OFF** on box |
+| **Box** FOMO (optional) | `SIGNAL_POLL_SECONDS` 300s+ if `SIGNAL_SOURCE=fomo|both` + credits | FOMO buy tape | **OFF** on box |
 | **GHA** `signal.yml` | ~12m cron (`2,14,26,38,50`) | GMGN smartmoney backup | **ON** (GHA IP) |
 
 ### Box tick
+- Default `SIGNAL_SOURCE=onchain` → `scripts/onchain_signal_tick.py` every ~5s (no FOMO calls).
 - Same RH soft gates + `NOTIFY_PASSTHROUGH=1` / `RH_NOTIFY_ALWAYS=1` as `signal.yml`.
-- `FOMO_ENABLED=1`, `FOMO_POLL_SECONDS` matches poll (each due tick hits FOMO alerts).
+- FOMO only when `SIGNAL_SOURCE=fomo|both` **and** credits remain; holders scrape off (`FOMO_HOLDERS=0`).
 - Single PID via `flock` on `signal_tick.lock` (no duplicate ticks).
-- FOMO holders scrape disabled on the fast tick (`FOMO_HOLDERS=0`) to save credits.
 - xbtscout left to its own watcher (`XBTSCOUT_ENABLED=0` here).
-- Secrets: `load_secrets` → `load_secrets` → box secrets card (`FOMO_API_KEY`, Discord webhooks) (`FOMO_API_KEY`, `DISCORD_WEBHOOK_URL`, …). Also injected into the daemon env.
-- Wired by `scout-wallet-bot.sh` → `ensure_signal_tick`; `health.json` includes `signal_tick`.
+- Secrets: box secrets card (`DISCORD_WEBHOOK_URL`, optional `FOMO_API_KEY`, …).
+- Wired by `scout-wallet-bot.sh` → `ensure_signal_tick`; `health.json` includes `signal_tick` + `onchain_tick`.
 
 ### Shared state (dedupe)
 - Both write `STATE_PATH=state.json` keys: `seen_signal_keys`, `ca_last_posted`, cooldown.
@@ -99,4 +100,34 @@
   - `remain < 5000` (`FOMO_CREDIT_LOW`) → back off poll to **120–300s**.
 - Monitor `cost=` / `remain=` in `signal_tick.log` and `health.json` → `signal_tick.fomo_remain`.
 - If `FOMO_API_KEY` missing on box: tick still runs with FOMO off + GMGN off (safe no-hammer); GHA remains backup.
+
+
+## Free onchain path (box primary) — 2026-09-20
+
+**Zero FOMO / zero box GMGN.** Public RH RPC only.
+
+| Path | Interval | Source | Credits |
+|------|----------|--------|---------|
+| **Box** `scripts/onchain_signal_tick.py` via `signal_tick.sh` | `ONCHAIN_POLL_SECONDS` default **5s** | Watchlist `tx.from` → ERC-20 Transfer **to** wallet (buy heuristic) | **Free** (public RPC rate-limited) |
+| **Box** FOMO `bot.py` | only if `SIGNAL_SOURCE=fomo|both` **and** credits remain | FOMO alerts tape | ~125 / call |
+| **GHA** `signal.yml` | ~12m cron | GMGN smartmoney backup | GHA IP |
+
+### Detection (v1)
+1. Load `rh-wallets/wallets.jsonl` → address set (lower).
+2. Poll `eth_blockNumber`; for new blocks `eth_getBlockByNumber(full)`; keep txs whose `from` ∈ watchlist.
+3. `eth_getTransactionReceipt` → ERC-20 `Transfer` logs; **buy** if wallet is `to` of a non-skip token and swap-shaped (`hint=swap_shaped` / calldata). Pure push (`recv_only`) logged as FP and skipped unless `ONCHAIN_ALLOW_RECV_ONLY=1`.
+4. Dedupe via shared `state.json` (`seen_signal_keys`, `ca_last_posted`, `onchain_last_block`) — same merge as FOMO tick.
+5. Discord: existing embed + `NOTIFY_PASSTHROUGH` / priority gates; market fields from **DexScreener** (`market_snapshot`) when GMGN off.
+6. Latency target: **a few seconds** after inclusion (poll 5s + receipt; not pre-sequencer). Sequencer feed (`wss://feed.mainnet.chain.robinhood.com` / rhfeed `--sender`) is a future lower-latency option; v1 uses RPC for multi-wallet batching.
+
+### Env
+- `SIGNAL_SOURCE=onchain` (default) | `fomo` | `both`
+- When FOMO credits dry / 402: effective source → **onchain** (no 30–60m stall of the box loop).
+- RPC: `RH_RPC_URL` default `https://rpc.mainnet.chain.robinhood.com` — gentle sleep + 429 backoff.
+- Live trading stays off (`LIVE_TRADING=0`).
+
+### vs paid / backup
+- **Free onchain**: always-on box tick; no API key.
+- **FOMO paid**: optional tape when credits available (`both` / `fomo`).
+- **GHA GMGN**: backup when box quiet; never run GMGN smartmoney on box.
 

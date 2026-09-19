@@ -39,7 +39,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_themaran" ]] || echo 0 > "$STATE/last_themaran"
 [[ -f "$STATE/last_gmgn_vet" ]] || echo 0 > "$STATE/last_gmgn_vet"
 [[ -f "$STATE/last_paper_daily" ]] || echo 0 > "$STATE/last_paper_daily"
-# RH FOMO notify (default 300s; adaptive backoff on credit dry) — primary Discord path; GMGN stays on GHA
+# RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
   local pidfile="$STATE/signal_tick.pid"
@@ -61,6 +61,8 @@ ensure_signal_tick() {
   if pgrep -f '/scripts/signal_tick\.sh' >/dev/null 2>&1; then
     return 0
   fi
+  SIGNAL_SOURCE="${SIGNAL_SOURCE:-onchain}" \
+  ONCHAIN_POLL_SECONDS="${ONCHAIN_POLL_SECONDS:-5}" \
   SIGNAL_POLL_SECONDS="${SIGNAL_POLL_SECONDS:-300}" \
   SIGNAL_STATE_SYNC="${SIGNAL_STATE_SYNC:-1}" \
   SIGNAL_TICK_STATE_DIR="$STATE" \
@@ -69,7 +71,7 @@ ensure_signal_tick() {
   SIGNAL_TICK_LOCK="$lock" \
     nohup bash "$tick" >>"$tick_log" 2>&1 &
   echo $! > "$pidfile"
-  log "signal_tick started pid=$! poll=${SIGNAL_POLL_SECONDS:-300}s"
+  log "signal_tick started pid=$! source=${SIGNAL_SOURCE:-onchain} onchain_poll=${ONCHAIN_POLL_SECONDS:-5}s fomo_poll=${SIGNAL_POLL_SECONDS:-300}s"
 }
 
 ensure_signal_tick

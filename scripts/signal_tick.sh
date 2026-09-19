@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# Box-resident RH FOMO signal tick — primary Discord notify path.
+# Box-resident RH signal tick — primary Discord notify path.
+# Default SIGNAL_SOURCE=onchain (free public RPC). FOMO optional when credits left.
 # GMGN stays OFF on box (GHA owns GMGN). Shared state via release tag signal-state.
 #
 # Env knobs:
-#   SIGNAL_POLL_SECONDS   loop interval (default 300; was 20 — burned FOMO dry)
+#   SIGNAL_SOURCE         onchain|fomo|both  (default onchain)
+#   ONCHAIN_POLL_SECONDS  onchain loop sleep (default 5)
+#   SIGNAL_POLL_SECONDS   FOMO bot.py interval when source includes fomo (default 300)
 #   SIGNAL_TICK_ONCE=1    run one tick and exit
 #   SIGNAL_STATE_SYNC=0   disable release pull/push
 #   FOMO_POLL_SECONDS     defaults to SIGNAL_POLL_SECONDS
-#   FOMO_CREDIT_LOW=5000  remain below this → back off poll to 120–300s
-#   FOMO_DRY_SLEEP_SEC    sleep when remain==0 / HTTP 402 (default 1800–3600 adaptive)
+#   FOMO_CREDIT_LOW=5000  remain below this → back off FOMO poll to 120–300s
+#   FOMO_DRY_SLEEP_SEC    FOMO-only cadence when dry (onchain keeps ticking)
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_DIR="${SIGNAL_TICK_STATE_DIR:-/home/box/.local/share/scout-wallet-bot}"
@@ -20,6 +23,10 @@ POLL="$BASE_POLL"
 ONCE="${SIGNAL_TICK_ONCE:-0}"
 DO_SYNC="${SIGNAL_STATE_SYNC:-1}"
 CREDIT_LOW="${FOMO_CREDIT_LOW:-5000}"
+SIGNAL_SOURCE="${SIGNAL_SOURCE:-onchain}"
+export SIGNAL_SOURCE
+ONCHAIN_POLL="${ONCHAIN_POLL_SECONDS:-5}"
+ONCHAIN_PY="$ROOT/scripts/onchain_signal_tick.py"
 mkdir -p "$STATE_DIR"
 cd "$ROOT"
 
@@ -70,6 +77,7 @@ try:
     rem_v = int(remain) if remain not in ("", "None", "unknown") else None
 except Exception:
     rem_v = remain
+src = __import__("os").environ.get("SIGNAL_SOURCE", "onchain")
 data["signal_tick"] = {
     "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "rc": rc_v,
@@ -79,6 +87,7 @@ data["signal_tick"] = {
     "fomo_remain": rem_v,
     "fomo_status": fomo_status,
     "gmgn": "disabled",
+    "signal_source": src,
 }
 nl = chr(10)
 path.write_text(json.dumps(data, ensure_ascii=False) + nl, encoding="utf-8")
@@ -282,9 +291,30 @@ export PAPER_SUMMARY_PATH="${PAPER_SUMMARY_PATH:-$ROOT/paper_summary.md}"
 export GMGN_SMARTMONEY="0"
 
 if [[ "$FOMO_OK" != "1" ]]; then
-  log "WARN FOMO_API_KEY missing — tick without FOMO tape (no GMGN on box)"
+  log "WARN FOMO_API_KEY missing — FOMO off (onchain still runs)"
   export FOMO_ENABLED=0
 fi
+case "$SIGNAL_SOURCE" in
+  onchain|on-chain)
+    export FOMO_ENABLED=0
+    log "SIGNAL_SOURCE=onchain — FOMO disabled (free RPC path)"
+    ;;
+  fomo)
+    if [[ "$FOMO_OK" != "1" ]]; then
+      log "SIGNAL_SOURCE=fomo but no key — falling back to onchain"
+      SIGNAL_SOURCE=onchain
+      export FOMO_ENABLED=0
+    fi
+    ;;
+  both)
+    :
+    ;;
+  *)
+    log "unknown SIGNAL_SOURCE=$SIGNAL_SOURCE — defaulting to onchain"
+    SIGNAL_SOURCE=onchain
+    export FOMO_ENABLED=0
+    ;;
+esac
 if [[ "$DISCORD_OK" != "1" ]]; then
   log "WARN DISCORD_WEBHOOK_URL missing — notifies will no-op"
 fi
@@ -300,26 +330,111 @@ if [[ -f "$LOG" ]]; then
     if echo "$last_credit" | rg -q 'HTTP 402|err=credits|remain=0'; then
       FOMO_REMAIN="0"
       FOMO_STATUS="credits"
-      POLL="${FOMO_DRY_SLEEP_SEC:-2700}"
-      if (( POLL < 1800 )); then POLL=1800; fi
-      if (( POLL > 3600 )); then POLL=3600; fi
+      # Keep FOMO cadence long, but do not starve onchain loop
+      FOMO_POLL_DRY="${FOMO_DRY_SLEEP_SEC:-2700}"
+      if (( FOMO_POLL_DRY < 1800 )); then FOMO_POLL_DRY=1800; fi
+      if (( FOMO_POLL_DRY > 3600 )); then FOMO_POLL_DRY=3600; fi
+      POLL="$FOMO_POLL_DRY"
       export FOMO_POLL_SECONDS="$POLL"
-      log "seeded FOMO dry from log — initial poll=${POLL}s (skip hammer)"
+      log "seeded FOMO dry from log — FOMO poll=${POLL}s (onchain keeps ticking)"
     fi
   fi
 fi
-log "signal_tick start poll=${POLL}s once=${ONCE} fomo=${FOMO_ENABLED} fomo_key=${FOMO_OK} gmgn=off state=$STATE_PATH sync=$DO_SYNC lock=$LOCK"
+log "signal_tick start source=${SIGNAL_SOURCE} onchain_poll=${ONCHAIN_POLL}s fomo_poll=${POLL}s once=${ONCE} fomo=${FOMO_ENABLED} fomo_key=${FOMO_OK} gmgn=off state=$STATE_PATH sync=$DO_SYNC lock=$LOCK"
 
-run_once() {
+source_wants_onchain() {
+  case "$SIGNAL_SOURCE" in
+    onchain|both|on-chain) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+source_wants_fomo() {
+  case "$SIGNAL_SOURCE" in
+    fomo|both) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# If FOMO dry / missing key, force onchain-only even when SIGNAL_SOURCE=both
+resolve_effective_source() {
+  if source_wants_fomo; then
+    if [[ "$FOMO_OK" != "1" ]]; then
+      EFFECTIVE_SOURCE="onchain"
+      return
+    fi
+    if [[ "$FOMO_STATUS" == "credits" || "$FOMO_REMAIN" == "0" ]]; then
+      EFFECTIVE_SOURCE="onchain"
+      return
+    fi
+  fi
+  EFFECTIVE_SOURCE="$SIGNAL_SOURCE"
+  if ! source_wants_onchain && ! source_wants_fomo; then
+    EFFECTIVE_SOURCE="onchain"
+  fi
+}
+
+run_onchain_once() {
+  local t0 t1 elapsed rc
+  if [[ ! -f "$ONCHAIN_PY" ]]; then
+    log "onchain_signal_tick.py missing"
+    return 1
+  fi
+  t0=$(date +%s)
+  log "onchain tick begin"
+  set +e
+  ONCHAIN_TICK_ONCE=1 \
+  LIVE_TRADING=0 \
+  GMGN_DISABLED=1 \
+  GMGN_SMARTMONEY=0 \
+  FOMO_ENABLED=0 \
+  NOTIFY_PASSTHROUGH=1 \
+  RH_NOTIFY_ALWAYS=1 \
+  PAPER_TRADING=0 \
+  CHAIN=robinhood \
+  WATCHLIST_PATH="${WATCHLIST_PATH}" \
+  STATE_PATH="${STATE_PATH}" \
+  SIGNAL_TICK_HEALTH="$HEALTH" \
+  COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-900}" \
+  MIN_WALLETS="${MIN_WALLETS:-1}" \
+  DROP_WEAK_WALLETS=0 \
+  DROP_BOT_WALLETS=0 \
+  PRIORITY_NOTIFY="${PRIORITY_NOTIFY:-1}" \
+  LIQ_REQUIRED=0 \
+  ANTI_SPIKE_REQUIRED=0 \
+  RH_SOFT_GATES=1 \
+  REQUIRE_PRICE_MOVE=0 \
+  BUY_VOLUME_REQUIRED=0 \
+  VOLUME_REQUIRED=0 \
+  VOLUME_M5_REQUIRED=0 \
+  REQUIRE_BUY_INCREASE=0 \
+  PLAYBOOK_REQUIRED=0 \
+  POST_SKIP_NOTICES=0 \
+  MIN_CLUSTER_USD="${MIN_CLUSTER_USD:-80}" \
+  MIN_MCAP_USD="${MIN_MCAP_USD:-1500}" \
+  MIN_TRADE_USD="${MIN_TRADE_USD:-40}" \
+  WINDOW_SECONDS="${WINDOW_SECONDS:-1200}" \
+  DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL:-}" \
+  DISCORD_PRIORITY_WEBHOOK_URL="${DISCORD_PRIORITY_WEBHOOK_URL:-}" \
+    timeout "${ONCHAIN_TICK_TIMEOUT:-120}" python3 "$ONCHAIN_PY" --once >>"$LOG" 2>&1
+  rc=$?
+  set +e
+  t1=$(date +%s)
+  elapsed=$((t1 - t0))
+  log "onchain tick end rc=$rc elapsed=${elapsed}s"
+  LAST_ONCHAIN_ELAPSED=$elapsed
+  return $rc
+}
+
+run_fomo_once() {
   local t0 t1 elapsed rc capture
   t0=$(date +%s)
   capture=$(mktemp "$STATE_DIR/tick_capture.XXXXXX")
-  log "tick begin"
+  log "fomo tick begin"
   if [[ "$DO_SYNC" == "1" ]]; then
     ROOT="$ROOT" STATE_PATH="$STATE_PATH" bash "$ROOT/scripts/signal_state_sync.sh" pull >>"$LOG" 2>&1 || true
   fi
-  # Keep FOMO_POLL in sync with adaptive POLL so bot.py does not skip forever / over-call
   export FOMO_POLL_SECONDS="$POLL"
+  export FOMO_ENABLED=1
   set +e
   timeout "${SIGNAL_TICK_TIMEOUT:-180}" python3 "$ROOT/bot.py" --per-page 100 >"$capture" 2>&1
   rc=$?
@@ -332,9 +447,49 @@ run_once() {
   fi
   t1=$(date +%s)
   elapsed=$((t1 - t0))
-  log "tick end rc=$rc elapsed=${elapsed}s fomo_remain=${FOMO_REMAIN} fomo_status=${FOMO_STATUS} next_poll=${POLL}s"
+  log "fomo tick end rc=$rc elapsed=${elapsed}s fomo_remain=${FOMO_REMAIN} fomo_status=${FOMO_STATUS} next_fomo_poll=${POLL}s"
   patch_health "$rc" "$elapsed" "$FOMO_OK" "$FOMO_REMAIN" "$POLL" "$FOMO_STATUS"
-  LAST_ELAPSED=$elapsed
+  LAST_FOMO_ELAPSED=$elapsed
+  LAST_FOMO_TS=$(date +%s)
+  return 0
+}
+
+run_once() {
+  resolve_effective_source
+  log "tick begin source=${SIGNAL_SOURCE} effective=${EFFECTIVE_SOURCE} fomo_status=${FOMO_STATUS} remain=${FOMO_REMAIN}"
+  local rc=0
+  case "$EFFECTIVE_SOURCE" in
+    onchain|on-chain)
+      run_onchain_once || rc=$?
+      patch_health "$rc" "${LAST_ONCHAIN_ELAPSED:-0}" "$FOMO_OK" "$FOMO_REMAIN" "$ONCHAIN_POLL" "onchain_primary"
+      ;;
+    fomo)
+      run_fomo_once || rc=$?
+      ;;
+    both)
+      run_onchain_once || true
+      now=$(date +%s)
+      due=1
+      if [[ -n "${LAST_FOMO_TS:-}" && "${LAST_FOMO_TS:-0}" -gt 0 ]]; then
+        elapsed_since=$((now - LAST_FOMO_TS))
+        if (( elapsed_since < POLL )); then
+          due=0
+        fi
+      fi
+      if [[ "$FOMO_STATUS" == "credits" || "$FOMO_REMAIN" == "0" ]]; then
+        due=0
+        log "skip FOMO (credits dry) — onchain-only this cycle"
+      fi
+      if [[ "$due" == "1" && "$FOMO_OK" == "1" ]]; then
+        run_fomo_once || true
+      fi
+      patch_health "0" "${LAST_ONCHAIN_ELAPSED:-0}" "$FOMO_OK" "$FOMO_REMAIN" "$ONCHAIN_POLL" "${FOMO_STATUS}"
+      ;;
+    *)
+      run_onchain_once || rc=$?
+      ;;
+  esac
+  LAST_ELAPSED=${LAST_ONCHAIN_ELAPSED:-${LAST_FOMO_ELAPSED:-0}}
   return 0
 }
 
@@ -344,13 +499,21 @@ if [[ "$ONCE" == "1" ]]; then
 fi
 
 LAST_ELAPSED=0
-# If we already know credits are dry, sleep first (do not burn another 402)
-if [[ "$FOMO_STATUS" == "credits" ]]; then
-  sleep_for=$(next_sleep_sec 0)
-  sleep "$sleep_for"
-fi
+LAST_ONCHAIN_ELAPSED=0
+LAST_FOMO_ELAPSED=0
+LAST_FOMO_TS=0
+resolve_effective_source
+log "loop start source=${SIGNAL_SOURCE} effective=${EFFECTIVE_SOURCE} onchain_poll=${ONCHAIN_POLL}s fomo_poll=${POLL}s"
 while true; do
   run_once
-  sleep_for=$(next_sleep_sec "$LAST_ELAPSED")
+  resolve_effective_source
+  if [[ "$EFFECTIVE_SOURCE" == "fomo" ]]; then
+    sleep_for=$(next_sleep_sec "$LAST_ELAPSED")
+  else
+    # onchain / both: tight loop; FOMO cadence handled inside run_once
+    el=${LAST_ONCHAIN_ELAPSED:-0}
+    sleep_for=$((ONCHAIN_POLL - el))
+    if (( sleep_for < 1 )); then sleep_for=1; fi
+  fi
   sleep "$sleep_for"
 done
