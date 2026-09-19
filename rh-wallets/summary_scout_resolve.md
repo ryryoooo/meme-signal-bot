@@ -1,6 +1,6 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-19T14:34:28.469005+00:00
+- Updated (UTC): 2026-09-19T14:46:41.981632+00:00
 - Unique pairs: **2081/2434** (85.5%)
 - Trunc rows still unresolved: **449**
 - Methods: pair_cache=0 token_scoped=0 multi_union=0 mega=0 global=0 two_hit=0
