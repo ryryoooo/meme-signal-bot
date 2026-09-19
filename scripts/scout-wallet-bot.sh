@@ -15,6 +15,8 @@ LIGHT_EVERY_SEC="${LIGHT_EVERY_SEC:-600}"
 THEMARAN_EVERY_SEC="${THEMARAN_EVERY_SEC:-1800}"
 GMGN_VET_EVERY_SEC="${GMGN_VET_EVERY_SEC:-10800}"
 PAPER_DAILY_EVERY_SEC="${PAPER_DAILY_EVERY_SEC:-86400}"
+AUDIT_EVERY_SEC="${AUDIT_EVERY_SEC:-21600}"
+AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
 # If prior daemon bash was kill -9'd, orphan sleep may still hold the lock FD
@@ -39,6 +41,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_themaran" ]] || echo 0 > "$STATE/last_themaran"
 [[ -f "$STATE/last_gmgn_vet" ]] || echo 0 > "$STATE/last_gmgn_vet"
 [[ -f "$STATE/last_paper_daily" ]] || echo 0 > "$STATE/last_paper_daily"
+[[ -f "$STATE/last_wallet_audit" ]] || echo 0 > "$STATE/last_wallet_audit"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -62,7 +65,7 @@ ensure_signal_tick() {
     return 0
   fi
   SIGNAL_SOURCE="${SIGNAL_SOURCE:-onchain}" \
-  ONCHAIN_POLL_SECONDS="${ONCHAIN_POLL_SECONDS:-5}" \
+  ONCHAIN_POLL_SECONDS="${ONCHAIN_POLL_SECONDS:-2}" \
   SIGNAL_POLL_SECONDS="${SIGNAL_POLL_SECONDS:-300}" \
   SIGNAL_STATE_SYNC="${SIGNAL_STATE_SYNC:-1}" \
   SIGNAL_TICK_STATE_DIR="$STATE" \
@@ -71,11 +74,11 @@ ensure_signal_tick() {
   SIGNAL_TICK_LOCK="$lock" \
     nohup bash "$tick" >>"$tick_log" 2>&1 &
   echo $! > "$pidfile"
-  log "signal_tick started pid=$! source=${SIGNAL_SOURCE:-onchain} onchain_poll=${ONCHAIN_POLL_SECONDS:-5}s fomo_poll=${SIGNAL_POLL_SECONDS:-300}s"
+  log "signal_tick started pid=$! source=${SIGNAL_SOURCE:-onchain} onchain_poll=${ONCHAIN_POLL_SECONDS:-2}s fomo_poll=${SIGNAL_POLL_SECONDS:-300}s"
 }
 
 ensure_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -103,6 +106,31 @@ while true; do
       # still advance local stamp lightly so we retry next day window
       echo "$now" > "$STATE/last_paper_daily"
       result="paper_daily_dispatch_failed"; log "paper_daily gha dispatch failed"
+    fi
+  fi
+  # Fast wallet quality audit — local jsonl classify (no box GMGN); also dispatch GHA for commit
+  last_wa=$(cat "$STATE/last_wallet_audit" 2>/dev/null || echo 0)
+  if (( now - last_wa >= AUDIT_EVERY_SEC )); then
+    action="wallet_audit"
+    if ( cd "$ROOT" && LIVE_TRADING=0 AUDIT_TAG_WATCH=1 AUDIT_RPC=0 timeout 120 python3 scripts/audit_wallet_quality.py ) >> "$LOG" 2>&1; then
+      log "wallet_audit local ok"
+      # commit+push if dirty (daemon identity)
+      if ( cd "$ROOT" && git status --porcelain rh-wallets/audit_*.jsonl rh-wallets/summary_wallet_audit.md rh-wallets/wallets.jsonl 2>/dev/null | grep -q . ); then
+        ( cd "$ROOT" && \
+          git add rh-wallets/audit_active.jsonl rh-wallets/audit_inactive.jsonl \
+                  rh-wallets/audit_quality.jsonl rh-wallets/audit_weak.jsonl \
+                  rh-wallets/summary_wallet_audit.md rh-wallets/wallets.jsonl && \
+          git commit -m "chore(watch): wallet quality audit (scout-bot)" && \
+          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "wallet_audit commit/push fail"
+      fi
+    else
+      log "wallet_audit local fail"
+    fi
+    if timeout 120 gh workflow run "$AUDIT_WF" --repo "$REPO" -f rpc=0 -f tag_watch=1 >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_wallet_audit"; log "wallet_audit gha dispatched"
+    else
+      echo "$now" > "$STATE/last_wallet_audit"
+      result="wallet_audit_dispatch_failed"; log "wallet_audit gha dispatch failed"
     fi
   fi
   # GMGN only on GHA, tiny — never on box. Skip while resolve busy or post-429 cool.

@@ -1,0 +1,95 @@
+# Fast wallet quality audit — free GHA, no GMGN / no Super
+name: wallet-audit
+
+on:
+  schedule:
+    # every 12h (00:20 / 12:20 UTC ≈ 09:20 / 21:20 JST)
+    - cron: "20 */12 * * *"
+  workflow_dispatch:
+    inputs:
+      rpc:
+        description: "Scan recent RH RPC blocks for activity (0/1)"
+        required: false
+        default: "0"
+      rpc_blocks:
+        description: "RPC lookback blocks when rpc=1"
+        required: false
+        default: "3000"
+      tag_watch:
+        description: "Tag wallets.jsonl with audit_* (0/1)"
+        required: false
+        default: "1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wallet-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Audit wallet quality
+        env:
+          WATCHLIST_PATH: rh-wallets/wallets.jsonl
+          AUDIT_TAG_WATCH: ${{ github.event.inputs.tag_watch || '1' }}
+          AUDIT_RPC: ${{ github.event.inputs.rpc || '0' }}
+          AUDIT_RPC_BLOCKS: ${{ github.event.inputs.rpc_blocks || '3000' }}
+          AUDIT_RPC_CONCURRENCY: "24"
+          AUDIT_MIN_WR: "0.50"
+          AUDIT_MIN_PNL_USD: "1000"
+          AUDIT_MIN_TRADES: "20"
+          AUDIT_WEAK_WR: "0.35"
+          AUDIT_WEAK_MIN_TRADES: "10"
+          LIVE_TRADING: "0"
+        run: |
+          python3 scripts/audit_wallet_quality.py
+          echo "----- summary -----"
+          cat rh-wallets/summary_wallet_audit.md || true
+
+      - name: Commit audit outputs
+        continue-on-error: true
+        run: |
+          git config user.name "meme-signal-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            rh-wallets/wallets.jsonl \
+            rh-wallets/audit_active.jsonl \
+            rh-wallets/audit_inactive.jsonl \
+            rh-wallets/audit_quality.jsonl \
+            rh-wallets/audit_weak.jsonl \
+            rh-wallets/summary_wallet_audit.md || true
+          if git diff --cached --quiet; then
+            echo "no audit changes"
+          else
+            git commit -m "$(cat <<'EOF'
+          chore(watch): wallet quality audit (active/inactive/優良/weak)
+
+          Fast classify from existing jsonl (+ optional RPC). LIVE_TRADING=0.
+          EOF
+          )"
+            git pull --rebase origin main || true
+            git push origin HEAD:main || git push --rebase origin main || true
+          fi
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wallet-audit
+          path: |
+            rh-wallets/summary_wallet_audit.md
+            rh-wallets/audit_active.jsonl
+            rh-wallets/audit_inactive.jsonl
+            rh-wallets/audit_quality.jsonl
+            rh-wallets/audit_weak.jsonl
+          if-no-files-found: warn
