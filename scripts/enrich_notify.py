@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""GHA enrich-notify: DexScreener from Actions IP → Discord full card.
+"""GHA enrich-notify: DexScreener (+ GeckoTerminal) from Actions IP → Discord.
 
 Box onchain detection stays on the box. When DexScreener is CF/429-blocked there,
 the box dispatches this workflow instead of posting an empty (—) card.
+
+Brand-new pairs may not be indexed yet: retry Dex→Gecko up to ~55s, then exit 0
+as deferred (optional one re-dispatch). Never post dash-only cards. Exit 1 only
+for hard bugs (crash); missing webhook → 3; bad CA → 2.
 """
 from __future__ import annotations
 
@@ -23,6 +27,13 @@ os.environ.setdefault("GMGN_MARKET", "0")
 os.environ.setdefault("NOTIFY_MARKET_SOURCE", "dex")
 os.environ.setdefault("NOTIFY_PASSTHROUGH", "1")
 os.environ.setdefault("CHAIN", "robinhood")
+# GHA: long Dex/Gecko retries (box uses DEX_FAST_FAIL instead)
+os.environ["DEX_FAST_FAIL"] = "0"
+os.environ.setdefault("DEX_GECKO_FALLBACK", "1")
+os.environ.setdefault("DEX_HTTP_ATTEMPTS", "2")
+os.environ.setdefault("DEX_HTTP_TIMEOUT", "8")
+os.environ.setdefault("DEX_RETRY_AFTER_CAP", "3")
+os.environ.setdefault("DEX_CURL_ATTEMPTS", "1")
 
 import bot as bot_mod  # noqa: E402
 
@@ -140,13 +151,79 @@ def _update_state(state_path: Path, *, ca: str, seen_key: str | None, safety: di
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _has_usable_nums(safety: dict) -> bool:
+    if not isinstance(safety, dict):
+        return False
+    if safety.get("fetch_failed"):
+        return False
+    return any(safety.get(k) is not None for k in ("mcap_usd", "price_usd", "symbol_hint", "liq_usd"))
+
+
+def _fetch_safety(ca: str, chain: str) -> dict:
+    """One Dex (+ optional Gecko via market_snapshot) attempt → dex_only_safety."""
+    try:
+        snap = bot_mod.gmgn_tok.market_snapshot(
+            bot_mod.CHAIN_META.get(chain, {}).get("gmgn_chain") or chain, ca
+        )
+    except Exception as e:
+        _log(f"market_snapshot exception {type(e).__name__}: {e}")
+        snap = {}
+    return bot_mod.dex_only_safety(ca, chain, snap=snap if isinstance(snap, dict) else None)
+
+
+def _redispatch_deferred(
+    *,
+    ca: str,
+    chain: str,
+    wallets_json: str,
+    tx_hash: str | None,
+    seen_key: str,
+    retry_count: int,
+) -> None:
+    """One delayed self re-run via workflow_dispatch (avoid silent forever)."""
+    if retry_count >= 1:
+        _log("deferred give_up (already retried once)")
+        return
+    import subprocess
+
+    repo = (os.environ.get("SIGNAL_STATE_REPO") or os.environ.get("GITHUB_REPOSITORY") or "").strip()
+    wf = (os.environ.get("ENRICH_WORKFLOW") or "enrich-notify.yml").strip()
+    if not repo:
+        _log("deferred redispatch skip: no SIGNAL_STATE_REPO")
+        return
+    delay = int(float(os.environ.get("ENRICH_RETRY_DELAY_SEC") or "45"))
+    _log(f"deferred sleep {delay}s then redispatch retry_count=1 ca={ca[:12]}…")
+    time.sleep(max(5, delay))
+    cmd = [
+        "gh", "workflow", "run", wf, "--repo", repo,
+        "-f", f"ca={ca}",
+        "-f", f"chain={chain}",
+        "-f", f"wallets={wallets_json}",
+        "-f", f"seen_key={seen_key}",
+        "-f", "retry_count=1",
+    ]
+    if tx_hash:
+        cmd.extend(["-f", f"tx_hash={tx_hash}"])
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        out = ((r.stdout or "") + (r.stderr or "")).strip()
+        if r.returncode == 0:
+            _log(f"deferred redispatch ok wf={wf}")
+        else:
+            _log(f"deferred redispatch FAIL rc={r.returncode} {out[:240]}")
+    except Exception as e:
+        _log(f"deferred redispatch exception {type(e).__name__}: {e}")
+
+
+
 def main() -> int:
-    p = argparse.ArgumentParser(description="Enrich + Discord notify from GHA (DexScreener)")
+    p = argparse.ArgumentParser(description="Enrich + Discord notify from GHA (Dex+Gecko)")
     p.add_argument("--ca", required=True)
     p.add_argument("--chain", default="robinhood")
     p.add_argument("--wallets", default="[]", help="JSON array of wallet dicts")
     p.add_argument("--tx-hash", default="", dest="tx_hash")
     p.add_argument("--seen-key", default="", dest="seen_key")
+    p.add_argument("--retry-count", type=int, default=None, dest="retry_count")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
 
@@ -171,46 +248,81 @@ def main() -> int:
             w.setdefault("tx_hash", tx_hash)
 
     seen_key = (args.seen_key or "").strip() or f"{ca}:gha_enrich:{int(time.time())}"
+    try:
+        retry_count = int(args.retry_count if args.retry_count is not None else (os.environ.get("ENRICH_RETRY_COUNT") or "0"))
+    except (TypeError, ValueError):
+        retry_count = 0
 
-    _log(f"enrich start ca={ca} chain={chain} wallets={len(wallets)} seen_key={seen_key[:48]}…")
-
-    # Fresh Dex fetch from GHA IP (no box CF ban)
-    # Extra Dex attempts on GHA (different IP usually succeeds; retry transient 429)
-    tries = int(os.environ.get("DEX_ENRICH_RETRIES") or "4")
-    safety = {}
-    for i in range(max(1, tries)):
-        try:
-            snap = bot_mod.gmgn_tok.market_snapshot(
-                bot_mod.CHAIN_META.get(chain, {}).get("gmgn_chain") or chain, ca
-            )
-        except Exception as e:
-            _log(f"dex snapshot exception try={i+1} {type(e).__name__}: {e}")
-            snap = {}
-        safety = bot_mod.dex_only_safety(ca, chain, snap=snap if isinstance(snap, dict) else None)
-        if safety.get("ok") and not safety.get("fetch_failed"):
-            break
-        time.sleep(min(8, 1.5 * (i + 1)))
     _log(
-        f"dex_fill ca={ca[:12]}… ok={safety.get('ok')} fetch_failed={safety.get('fetch_failed')} "
-        f"sym={safety.get('symbol_hint')} mcap={safety.get('mcap_usd')} "
-        f"liq={safety.get('liq_usd')} px={safety.get('price_usd')}"
+        f"enrich start ca={ca} chain={chain} wallets={len(wallets)} "
+        f"retry={retry_count} seen_key={seen_key[:48]}…"
     )
 
-    has_nums = any(safety.get(k) is not None for k in ("mcap_usd", "price_usd", "symbol_hint", "liq_usd"))
-    if safety.get("fetch_failed") or not safety.get("ok") or not has_nums:
-        # Never post empty (—) cards from GHA either — fail loud so box can retry later
-        _log("ERROR Dex empty on GHA — suppressing Discord post (no dashes card)")
+    # Dex → Gecko (via DEX_GECKO_FALLBACK) with backoff; brand-new pairs need time to index
+    try:
+        budget = float(os.environ.get("ENRICH_FETCH_BUDGET_SEC") or "55")
+    except (TypeError, ValueError):
+        budget = 55.0
+    deadline = time.time() + max(15.0, budget)
+    safety: dict = {}
+    attempt = 0
+    while True:
+        attempt += 1
+        # Clear short neg-cache between attempts so brand-new pairs can appear
+        try:
+            bot_mod.gmgn_tok._DEX_CACHE.clear()  # type: ignore[attr-defined]
+        except Exception:
+            pass
+        safety = _fetch_safety(ca, chain)
+        if _has_usable_nums(safety):
+            break
+        remain = deadline - time.time()
+        if remain <= 0.5:
+            break
+        wait = min(remain, min(12.0, 1.2 * attempt))
+        src = safety.get("source") or "dex"
+        _log(
+            f"enrich retry attempt={attempt} wait={wait:.1f}s remain={remain:.0f}s "
+            f"src={src} fetch_failed={safety.get('fetch_failed')}"
+        )
+        time.sleep(max(0.4, wait))
+
+    _log(
+        f"dex_fill ca={ca[:12]}… ok={safety.get('ok')} src={safety.get('source')} "
+        f"fetch_failed={safety.get('fetch_failed')} "
+        f"sym={safety.get('symbol_hint')} mcap={safety.get('mcap_usd')} "
+        f"liq={safety.get('liq_usd')} px={safety.get('price_usd')} attempts={attempt}"
+    )
+
+    if not _has_usable_nums(safety):
+        # Never post empty (—) cards — soft-defer (exit 0) + one redispatch
+        _log("WARN market empty on GHA — suppressing Discord post (deferred, no dashes card)")
         if args.dry_run:
-            _log("dry-run would abort (no numbers)")
-            return 1
-        return 1
+            _log("dry-run would defer (no numbers)")
+            return 0
+        wallets_json = json.dumps(wallets, ensure_ascii=False, separators=(",", ":"))
+        if len(wallets_json) > 48000:
+            wallets_json = json.dumps(wallets[:12], ensure_ascii=False, separators=(",", ":"))
+        if (os.environ.get("ENRICH_REDISPATCH") or "1").strip().lower() not in ("0", "false", "no", "off"):
+            _redispatch_deferred(
+                ca=ca,
+                chain=chain,
+                wallets_json=wallets_json,
+                tx_hash=tx_hash,
+                seen_key=seen_key,
+                retry_count=retry_count,
+            )
+        _log("enrich deferred exit=0")
+        return 0
 
     # Mark as enrich path (numbers present)
     safety = dict(safety)
     safety["ok"] = True
-    prev = safety.get("jp") or "通過（DexScreener）"
+    src = str(safety.get("source") or "dexscreener")
+    src_label = "GeckoTerminal" if "gecko" in src else "DexScreener"
+    prev = safety.get("jp") or f"通過（{src_label}）"
     if "GHA enrich" not in prev:
-        safety["jp"] = f"{prev}（GHA enrich）" if "通過" in prev or "Dex" in prev else "通過（DexScreener・GHA enrich）"
+        safety["jp"] = f"{prev}（GHA enrich）" if ("通過" in prev or "Dex" in prev or "Gecko" in prev) else f"通過（{src_label}・GHA enrich）"
 
     signal = {
         "ca": ca,

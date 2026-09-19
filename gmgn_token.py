@@ -498,6 +498,12 @@ def checklist_no_danger(items: list[dict]) -> tuple[bool, list[str]]:
     return (len(fails) == 0, fails)
 
 
+def _dex_fast_fail() -> bool:
+    """Box onchain path: one short Dex probe then GHA handoff — never sleep 5s×3."""
+    v = (os.environ.get("DEX_FAST_FAIL") or "").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
 def _dex_market(chain: str, ca: str) -> dict | None:
     """Free DexScreener snapshot so marks/alerts keep moving when GMGN is banned."""
     import urllib.error
@@ -514,14 +520,32 @@ def _dex_market(chain: str, ca: str) -> dict | None:
         if (time.time() - hit[0]) < ttl:
             return hit[1]
 
+    fast = _dex_fast_fail()
+    try:
+        http_attempts = int(os.environ.get("DEX_HTTP_ATTEMPTS") or ("1" if fast else "3"))
+    except (TypeError, ValueError):
+        http_attempts = 1 if fast else 3
+    try:
+        http_timeout = float(os.environ.get("DEX_HTTP_TIMEOUT") or ("2" if fast else "8"))
+    except (TypeError, ValueError):
+        http_timeout = 2.0 if fast else 8.0
+    try:
+        retry_cap = float(os.environ.get("DEX_RETRY_AFTER_CAP") or ("0.05" if fast else "5"))
+    except (TypeError, ValueError):
+        retry_cap = 0.05 if fast else 5.0
+    try:
+        curl_attempts = int(os.environ.get("DEX_CURL_ATTEMPTS") or ("0" if fast else "2"))
+    except (TypeError, ValueError):
+        curl_attempts = 0 if fast else 2
+
     url = f"https://api.dexscreener.com/latest/dex/tokens/{ca}"
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     data = None
     last_err = None
-    for attempt in range(3):
+    for attempt in range(max(1, http_attempts)):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "application/json"})
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with urllib.request.urlopen(req, timeout=http_timeout) as resp:
                 data = json.loads(resp.read().decode())
             break
         except urllib.error.HTTPError as e:
@@ -531,11 +555,17 @@ def _dex_market(chain: str, ca: str) -> dict | None:
                 ra = e.headers.get("Retry-After") if e.headers else None
                 try:
                     # Cap hard — Dex Retry-After can be huge and would stall the tick
-                    wait = min(5.0, max(wait, float(ra)))
+                    wait = min(retry_cap, max(wait, float(ra)))
                 except (TypeError, ValueError):
-                    pass
-                print(f"dex HTTP {e.code} sleep={wait:.1f}s attempt={attempt+1}", flush=True)
-                time.sleep(wait)
+                    wait = min(retry_cap, wait)
+                if fast:
+                    wait = min(wait, retry_cap)
+                print(f"dex HTTP {e.code} sleep={wait:.1f}s attempt={attempt+1}{' fast' if fast else ''}", flush=True)
+                if wait > 0:
+                    time.sleep(wait)
+                if fast:
+                    data = None
+                    break
                 continue
             data = None
             break
@@ -543,21 +573,24 @@ def _dex_market(chain: str, ca: str) -> dict | None:
             last_err = e
             data = None
             break
-    if data is None:
-        for attempt in range(2):
+    if data is None and curl_attempts > 0:
+        for attempt in range(max(1, curl_attempts)):
             try:
                 raw = _sp.check_output(
-                    ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", "8", url],
+                    ["curl", "-fsS", "-A", ua, "-H", "Accept: application/json", "--max-time", str(int(max(2, http_timeout))), url],
                     text=True,
-                    timeout=12,
+                    timeout=max(3, int(http_timeout) + 4),
                 )
                 data = json.loads(raw or "{}")
                 break
             except Exception as e:
                 last_err = e
                 wait = min(3.0, 0.5 * (2 ** attempt))
+                if fast:
+                    wait = min(wait, retry_cap)
                 print(f"dex curl fail sleep={wait:.1f}s attempt={attempt+1}", flush=True)
-                time.sleep(wait)
+                if wait > 0:
+                    time.sleep(wait)
                 data = None
     if data is None:
         _DEX_CACHE[cache_key] = (time.time(), None)
@@ -697,9 +730,124 @@ def _dex_market(chain: str, ca: str) -> dict | None:
 
 
 
+
+def _gecko_network(chain: str) -> str:
+    slug = (chain or "").lower().strip()
+    return {
+        "robinhood": "robinhood",
+        "rh": "robinhood",
+        "robinhood-chain": "robinhood",
+        "arc": "arcadium",
+        "arcadium": "arcadium",
+        "eth": "eth",
+        "ethereum": "eth",
+        "base": "base",
+        "bsc": "bsc",
+        "sol": "solana",
+        "solana": "solana",
+    }.get(slug, slug or "robinhood")
+
+
+def _gecko_market(chain: str, ca: str) -> dict | None:
+    """Free GeckoTerminal token snapshot (GHA fallback when Dex empty / not indexed yet)."""
+    import urllib.error
+    import urllib.request
+
+    ca = (ca or "").strip()
+    if not ca:
+        return None
+    net = _gecko_network(chain)
+    cache_key = f"gecko:{net}:{ca.lower()}"
+    hit = _DEX_CACHE.get(cache_key)
+    if hit:
+        ttl = _DEX_CACHE_TTL if hit[1] is not None else _DEX_NEG_CACHE_TTL
+        if (time.time() - hit[0]) < ttl:
+            return hit[1]
+    try:
+        timeout = float(os.environ.get("GECKO_HTTP_TIMEOUT") or "8")
+    except (TypeError, ValueError):
+        timeout = 8.0
+    url = f"https://api.geckoterminal.com/api/v2/networks/{net}/tokens/{ca}"
+    ua = "Mozilla/5.0 (compatible; meme-signal-bot/1.0; +https://github.com/ryryoooo/meme-signal-bot)"
+    data = None
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": ua, "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"gecko HTTP fail {type(e).__name__}: {e}", flush=True)
+        _DEX_CACHE[cache_key] = (time.time(), None)
+        return None
+    attrs = ((data or {}).get("data") or {}).get("attributes") or {}
+    if not isinstance(attrs, dict) or not attrs:
+        _DEX_CACHE[cache_key] = (time.time(), None)
+        return None
+
+    def _f(key, default=None):
+        return _num(attrs.get(key)) if attrs.get(key) is not None else default
+
+    price = _f("price_usd")
+    mcap = _f("market_cap_usd")
+    if mcap is None:
+        mcap = _f("fdv_usd")
+    fdv = _f("fdv_usd") or mcap
+    liq = _f("total_reserve_in_usd")
+    vol = attrs.get("volume_usd") if isinstance(attrs.get("volume_usd"), dict) else {}
+    volume_h24 = _num(vol.get("h24")) if isinstance(vol, dict) else None
+    sym = attrs.get("symbol")
+    if isinstance(sym, str):
+        sym = sym.strip() or None
+    else:
+        sym = None
+    if price is None and liq is None and mcap is None and not sym:
+        _DEX_CACHE[cache_key] = (time.time(), None)
+        return None
+    out = {
+        "ok": True,
+        "reason": None,
+        "liq_usd": liq,
+        "mcap_usd": mcap,
+        "fdv": fdv,
+        "price_usd": price,
+        "volume_h24": volume_h24,
+        "volume_h1": None,
+        "volume_m5": None,
+        "buys_h24": None,
+        "buys_m5": None,
+        "sells_m5": None,
+        "buys_h1": None,
+        "sells_h1": None,
+        "price_change_m5": None,
+        "price_change_h1": None,
+        "price_change_h6": None,
+        "price_change_h24": None,
+        "pair_created_at_ms": None,
+        "dex_id": None,
+        "labels": [],
+        "graduated": None,
+        "bondingish": None,
+        "holder_count": None,
+        "url": f"https://www.geckoterminal.com/{net}/tokens/{ca}",
+        "pair": None,
+        "chainId": net,
+        "symbol": sym,
+        "source": "geckoterminal",
+        "fetch_failed": False,
+    }
+    _DEX_CACHE[cache_key] = (time.time(), out)
+    return out
+
+
+
 def market_snapshot(chain: str, ca: str) -> dict:
-    """DexScreener first. GMGN only if GMGN_MARKET=1 and not on cooldown."""
+    """DexScreener first (optional Gecko fallback). GMGN only if GMGN_MARKET=1."""
     dex = _dex_market(chain, ca)
+    use_gecko = (os.environ.get("DEX_GECKO_FALLBACK") or "0").strip().lower() in ("1", "true", "yes", "on")
+    if (not dex) and use_gecko and not _dex_fast_fail():
+        dex = _gecko_market(chain, ca)
     use_gmgn = (os.environ.get("GMGN_MARKET") or "0").strip() in ("1", "true", "yes")
     if dex and not use_gmgn:
         return dex

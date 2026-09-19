@@ -29,10 +29,15 @@ on:
         required: false
         default: ""
         type: string
+      retry_count:
+        description: "Deferred retry counter (0=first, 1=final)"
+        required: false
+        default: "0"
+        type: string
 
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 concurrency:
   group: enrich-notify-${{ inputs.ca }}
@@ -41,7 +46,7 @@ concurrency:
 jobs:
   enrich:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +63,7 @@ jobs:
           echo "chain=${{ inputs.chain }}"
           echo "tx_hash=${{ inputs.tx_hash }}"
           echo "seen_key=${{ inputs.seen_key }}"
+          echo "retry_count=${{ inputs.retry_count }}"
           echo "wallets_len=${#WALLETS}"
           date -u +'utc=%Y-%m-%dT%H:%M:%SZ'
 
@@ -90,6 +96,14 @@ jobs:
           ENRICH_WALLETS: ${{ inputs.wallets }}
           ENRICH_TX_HASH: ${{ inputs.tx_hash }}
           ENRICH_SEEN_KEY: ${{ inputs.seen_key }}
+          ENRICH_RETRY_COUNT: ${{ inputs.retry_count || '0' }}
+          DEX_GECKO_FALLBACK: "1"
+          DEX_FAST_FAIL: "0"
+          ENRICH_FETCH_BUDGET_SEC: "55"
+          ENRICH_RETRY_DELAY_SEC: "45"
+          ENRICH_REDISPATCH: "1"
+          SIGNAL_STATE_REPO: ${{ github.repository }}
+          ENRICH_WORKFLOW: enrich-notify.yml
         run: |
           set -euo pipefail
           python3 scripts/enrich_notify.py \
@@ -97,7 +111,8 @@ jobs:
             --chain "$ENRICH_CHAIN" \
             --wallets "$ENRICH_WALLETS" \
             --tx-hash "${ENRICH_TX_HASH:-}" \
-            --seen-key "${ENRICH_SEEN_KEY:-}"
+            --seen-key "${ENRICH_SEEN_KEY:-}" \
+            --retry-count "${ENRICH_RETRY_COUNT:-0}"
 
       - name: Upload enrich artifact
         if: always()

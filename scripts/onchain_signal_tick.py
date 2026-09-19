@@ -15,6 +15,7 @@ Env (key knobs):
   NOTIFY_MARKET_SOURCE=dex (card fields from DexScreener; never GMGN on box) /
   ENRICH_ON_DEX_FAIL=1 (default): on Dex CF/429/empty, dispatch GHA enrich-notify.yml
     instead of posting an empty (—) Discord card. Only GHA posts the full card.
+  DEX_FAST_FAIL=1 (auto when ENRICH_ON_DEX_FAIL): ≤2s single Dex probe; no 5s×3 sleeps.
   NOTIFY_PASSTHROUGH …
   LIVE_TRADING stays off.
 
@@ -58,6 +59,14 @@ os.environ.setdefault("COOLDOWN_SECONDS", "300")
 os.environ.setdefault("NOTIFY_MARKET_SOURCE", "dex")
 os.environ.setdefault("ENRICH_ON_DEX_FAIL", "1")
 os.environ.setdefault("GMGN_MARKET", "0")
+# Box: never stall the tip-follow loop on Dex CF/429 — 0–1 short probe then GHA handoff
+if (os.environ.get("ENRICH_ON_DEX_FAIL") or "1").strip().lower() not in ("0", "false", "no", "off"):
+    os.environ.setdefault("DEX_FAST_FAIL", "1")
+    os.environ.setdefault("DEX_HTTP_ATTEMPTS", "1")
+    os.environ.setdefault("DEX_HTTP_TIMEOUT", "2")
+    os.environ.setdefault("DEX_RETRY_AFTER_CAP", "0.05")
+    os.environ.setdefault("DEX_CURL_ATTEMPTS", "0")
+    os.environ.setdefault("DEX_GECKO_FALLBACK", "0")
 
 import bot as bot_mod  # noqa: E402
 from load_secrets import load as load_secrets  # noqa: E402
@@ -414,7 +423,7 @@ def dispatch_enrich_notify(
     if tx_hash:
         cmd.extend(["-f", f"tx_hash={tx_hash}"])
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         out = ((r.stdout or "") + (r.stderr or "")).strip()
         if r.returncode == 0:
             log(f"enrich dispatch ok ca={ca[:12]}… wf={wf} repo={repo}")

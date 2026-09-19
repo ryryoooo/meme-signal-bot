@@ -196,7 +196,7 @@ def dex_only_safety(ca: str, chain: str, *, snap: dict | None = None) -> dict:
         "labels": snap.get("labels"),
         "pair_created_at_ms": snap.get("pair_created_at_ms"),
         "holder_count": snap.get("holder_count"),
-        "source": "dexscreener",
+        "source": (snap.get("source") if isinstance(snap, dict) and snap.get("source") else "dexscreener"),
         "fetch_failed": fetch_failed,
         "checklist": [],
         "dex_overlay": True,
