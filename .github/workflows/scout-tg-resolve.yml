@@ -94,6 +94,7 @@ jobs:
           SCOUT_TG_BS_DEEPEN_PLATEAU_MIN: "120"
           SCOUT_TG_BS_REDeepEN: "1"
           SCOUT_TG_BS_REDeepEN_BELOW: "500"
+          SCOUT_TG_BS_REDeepEN_PAGES: "10"
           SCOUT_TG_BS_ES_ALWAYS: "1"
           SCOUT_TG_BS_ES_OFFSET: "500"
           SCOUT_TG_GECKO: "1"

@@ -918,21 +918,42 @@ def load_token_pools() -> dict[str, set[str]]:
     return out
 
 
-def save_token_pools(pools: dict[str, set[str]]) -> None:
+def load_token_pool_meta() -> dict[str, dict]:
+    """Per-token metadata (deep_v etc.) alongside address pools."""
+    out: dict[str, dict] = {}
+    if not TOKEN_POOLS_PATH.exists():
+        return out
+    for line in TOKEN_POOLS_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            o = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        ca = (o.get("token_ca") or "").lower()
+        if ca.startswith("0x"):
+            out[ca] = {"deep_v": int(o.get("deep_v") or 0)}
+    return out
+
+
+def save_token_pools(pools: dict[str, set[str]], meta: dict[str, dict] | None = None) -> None:
     TOKEN_POOLS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    meta = meta or {}
     rows = []
     for ca in sorted(pools):
         addrs = sorted(pools[ca])
         if not addrs:
             continue
-        rows.append(
-            {
-                "token_ca": ca,
-                "n": len(addrs),
-                "addresses": addrs,
-                "updated_at": now_iso(),
-            }
-        )
+        row = {
+            "token_ca": ca,
+            "n": len(addrs),
+            "addresses": addrs,
+            "updated_at": now_iso(),
+        }
+        dv = int((meta.get(ca) or {}).get("deep_v") or 0)
+        if dv:
+            row["deep_v"] = dv
+        rows.append(row)
     write_jsonl(TOKEN_POOLS_PATH, rows)
 
 
@@ -984,10 +1005,16 @@ def fetch_geckoterminal_addrs(token_ca: str, max_pages: int | None = None) -> tu
     return addrs, last_err
 
 
-def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple[list[str], str | None]:
-    """Deep holders/transfers + etherscan-compat tokentx. Returns (addrs, last_err)."""
+def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None, mode: str = "full") -> tuple[list[str], str | None]:
+    """Deep holders/transfers + etherscan-compat tokentx. Returns (addrs, last_err).
+
+    mode=redeepen → fewer pages, desc-only tokentx, short gecko (fit many tokens in budget).
+    """
     if max_pages is None:
-        max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "20"))
+        if mode == "redeepen":
+            max_pages = int(os.environ.get("SCOUT_TG_BS_REDeepEN_PAGES", "10"))
+        else:
+            max_pages = int(os.environ.get("SCOUT_TG_BS_PAGES", "20"))
     hosts_v2_all = [
         h
         for h in [
@@ -1098,7 +1125,8 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
             if host in _BS_DEAD_HOSTS:
                 continue
             es_got = False
-            for sort in ("desc", "asc"):
+            sorts = ("desc",) if mode == "redeepen" else ("desc", "asc")
+            for sort in sorts:
                 for page in range(1, max(1, max_pages) + 1):
                     if not _bs_host_available(host):
                         break
@@ -1196,7 +1224,8 @@ def fetch_blockscout_addrs(token_ca: str, max_pages: int | None = None) -> tuple
 
     # 3) GeckoTerminal trades (maker/buyer addresses not always in BS holders yet)
     if env_bool("SCOUT_TG_GECKO", True):
-        g_addrs, g_err = fetch_geckoterminal_addrs(token_ca)
+        g_pages = 1 if mode == "redeepen" else None
+        g_addrs, g_err = fetch_geckoterminal_addrs(token_ca, max_pages=g_pages)
         if g_err and not g_addrs:
             last_err = last_err or g_err
         for a in g_addrs:
@@ -1376,6 +1405,7 @@ def resolve_truncs(
 
     # load persisted token pools (cross-run)
     token_pools = load_token_pools()
+    token_pool_meta = load_token_pool_meta()
     if token_pools:
         print(f"scout_tg loaded_token_pools={len(token_pools)} addrs={sum(len(v) for v in token_pools.values())}")
 
@@ -1451,7 +1481,7 @@ def resolve_truncs(
             _redeepen_below_sort = 500
         pending_cas.sort(
             key=lambda c: (
-                # 0=shallow, 1=redeepen-mid no_match, 2=huge plateau
+                # 0=shallow, 1=redeepen-mid no_match (not yet deep_v>=2), 2=done/huge
                 (
                     0
                     if len(token_pools.get(c) or set()) < min_reuse_sort
@@ -1460,10 +1490,12 @@ def resolve_truncs(
                         if (
                             no_match_ca_score.get(c, 0) > 0
                             and len(token_pools.get(c) or set()) < _redeepen_below_sort
+                            and int((token_pool_meta.get(c) or {}).get("deep_v") or 0) < 2
                         )
                         else 2
                     )
                 ),
+                len(token_pools.get(c) or set()),  # smaller mid pools first (faster)
                 -no_match_ca_score.get(c, 0),
                 -len([t for t in by_ca[c] if (t.get("trunc_key") or "") not in resolved_keys and pair_key(t.get("prefix"), t.get("suffix")) not in pair_to_addr]),
                 -ca_multi_score.get(c, 0),
@@ -1524,10 +1556,12 @@ def resolve_truncs(
                     if not match_hits(prior, pref, suf):
                         miss += 1
                 if miss:
+                    already_deep = int((token_pool_meta.get(ca) or {}).get("deep_v") or 0) >= 2
                     allow_redeepen = (
                         len(prior) < redeepen_below
                         and no_match_ca_score.get(ca, 0) > 0
                         and env_bool("SCOUT_TG_BS_REDeepEN", True)
+                        and not already_deep
                     )
                     if len(prior) >= plateau_min and not allow_redeepen:
                         print(
@@ -1571,8 +1605,9 @@ def resolve_truncs(
                     break
                 addrs, err = [], None
                 attempts = int(os.environ.get("SCOUT_TG_BS_TOKEN_RETRIES", "3"))
+                fetch_mode = "redeepen" if (need_deepen and prior) else "full"
                 for attempt in range(max(1, attempts)):
-                    addrs, err = fetch_blockscout_addrs(ca)
+                    addrs, err = fetch_blockscout_addrs(ca, mode=fetch_mode)
                     if addrs or err in ("empty", "all_hosts_dead", None):
                         break
                     if err in ("http_429", "http_403"):
@@ -1583,9 +1618,14 @@ def resolve_truncs(
                 stats.bs_tokens += 1
                 if err and err not in ("empty",) and not addrs:
                     stats.bs_api_fail += 1
-                if need_deepen:
+                if need_deepen or fetch_mode == "redeepen":
+                    # mark so next chunk skips this CA (one deep pass is enough)
+                    cur = dict(token_pool_meta.get(ca) or {})
+                    cur["deep_v"] = max(2, int(cur.get("deep_v") or 0))
+                    token_pool_meta[ca] = cur
                     print(
                         f"scout_tg blockscout deepen-fetch {ca[:10]}… "
+                        f"mode={fetch_mode} "
                         f"[{bs_fetch_n}/{bs_cap if bs_cap >= 0 else '∞'}]",
                         flush=True,
                     )
@@ -1628,9 +1668,9 @@ def resolve_truncs(
                 time.sleep(bs_sleep)
             # periodic pool flush every 25 fetches (or every 50 seen)
             if will_fetch and bs_fetch_n > 0 and bs_fetch_n % 25 == 0:
-                save_token_pools(token_pools)
+                save_token_pools(token_pools, token_pool_meta)
             elif (i + 1) % 50 == 0:
-                save_token_pools(token_pools)
+                save_token_pools(token_pools, token_pool_meta)
 
         print(
             f"scout_tg blockscout done fetch={bs_fetch_n} reuse={bs_reuse_n} "
@@ -1946,7 +1986,7 @@ def resolve_truncs(
         )
 
     append_resolve_cache(new_cache + pair_index_rows)
-    save_token_pools(token_pools)
+    save_token_pools(token_pools, token_pool_meta)
     calls = stats.gmgn_calls
 
     # final unresolved stats + reason report (unique pairs)
