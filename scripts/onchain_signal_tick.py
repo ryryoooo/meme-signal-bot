@@ -8,8 +8,8 @@ passthrough / priority path as bot.py.
 Env (key knobs):
   RH_RPC_URL                 default https://rpc.mainnet.chain.robinhood.com
   ONCHAIN_POLL_SECONDS       loop sleep (default 5)
-  ONCHAIN_MAX_BLOCKS         max blocks behind per tick (default 24)
-  ONCHAIN_LOOKBACK_BOOT      first-run lookback blocks (default 12)
+  ONCHAIN_MAX_BLOCKS         max blocks behind per tick (default 120)
+  ONCHAIN_LOOKBACK_BOOT      first-run lookback blocks (default 16)
   ONCHAIN_TICK_ONCE=1        run one scan and exit
   WATCHLIST_PATH / STATE_PATH / COOLDOWN_SECONDS / NOTIFY_PASSTHROUGH …
   LIVE_TRADING stays off.
@@ -502,8 +502,8 @@ def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state
     head_hex = rpc.call("eth_blockNumber", [])
     head = int(head_hex, 16)
     last = state.get("onchain_last_block")
-    lookback_boot = env_int("ONCHAIN_LOOKBACK_BOOT", 12)
-    max_blocks = env_int("ONCHAIN_MAX_BLOCKS", 24)
+    lookback_boot = env_int("ONCHAIN_LOOKBACK_BOOT", 16)
+    max_blocks = env_int("ONCHAIN_MAX_BLOCKS", 120)
     if last is None:
         start = max(0, head - lookback_boot + 1)
     else:
@@ -523,21 +523,26 @@ def scan_once(rpc: RpcClient, watch: dict[str, dict], watch_set: set[str], state
     fp_n = 0
     scanned = 0
     watch_tx_n = 0
+    behind = head - start + 1
+    # Stay gentle on public RPC but catch up when RH produces many blocks/sec
+    block_sleep = env_float("ONCHAIN_BLOCK_SLEEP", 0.12 if behind > 40 else 0.2)
+    receipt_sleep = env_float("ONCHAIN_RECEIPT_SLEEP", 0.15)
     for bn in range(start, head + 1):
-        time.sleep(env_float("ONCHAIN_BLOCK_SLEEP", 0.25))
+        if block_sleep > 0:
+            time.sleep(block_sleep)
         blk = rpc.call("eth_getBlockByNumber", [hex(bn), True])
         scanned += 1
         if not blk:
             continue
         txs = blk.get("transactions") or []
-        for tx in txs:
-            if not isinstance(tx, dict):
-                continue
-            fr = (tx.get("from") or "").lower()
-            if fr not in watch_set:
-                continue
+        # Fast path: skip receipt work if no watchlist sender in this block
+        hits = [tx for tx in txs if isinstance(tx, dict) and (tx.get("from") or "").lower() in watch_set]
+        if not hits:
+            continue
+        for tx in hits:
             watch_tx_n += 1
-            time.sleep(env_float("ONCHAIN_RECEIPT_SLEEP", 0.2))
+            if receipt_sleep > 0:
+                time.sleep(receipt_sleep)
             try:
                 rcpt = rpc.call("eth_getTransactionReceipt", [tx["hash"]])
             except Exception as e:

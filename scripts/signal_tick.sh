@@ -383,6 +383,8 @@ run_onchain_once() {
   log "onchain tick begin"
   set +e
   ONCHAIN_TICK_ONCE=1 \
+  ONCHAIN_MAX_BLOCKS="${ONCHAIN_MAX_BLOCKS:-120}" \
+  ONCHAIN_LOOKBACK_BOOT="${ONCHAIN_LOOKBACK_BOOT:-16}" \
   LIVE_TRADING=0 \
   GMGN_DISABLED=1 \
   GMGN_SMARTMONEY=0 \
