@@ -3,7 +3,8 @@
 
 Env:
   SCOUT_TG_VET_CAP=40       max portfolio stats calls
-  SCOUT_RANK_MERGE=1        merge high-quality into main watchlist
+  SCOUT_RANK_MERGE=1        merge into main watchlist
+  SCOUT_MERGE_ALL_RESOLVED=1  merge EVERY uniquely-resolved scout addr (default on)
   GMGN_DISABLED=0
   CHAIN=robinhood
   WATCHLIST_PATH=rh-wallets/wallets.jsonl
@@ -204,7 +205,15 @@ def scout_rank_score(row: dict) -> float:
 
 
 def should_merge_to_watch(row: dict) -> bool:
-    """High-quality resolved scout wallets: filter pass OR elite multi-hit / stats."""
+    """Merge uniquely-resolved scout wallets into main watch (notify-ready).
+
+    Default SCOUT_MERGE_ALL_RESOLVED=1: every valid 0x from resolve/rank lands on
+    watch with scout_tg / scout_tg_early tags (ALLOW_FOMO_WITHOUT_WR / scout seed
+    path in bot.py). Set SCOUT_MERGE_ALL_RESOLVED=0 to restore elite/quality gate.
+    """
+    addr = (row.get("address") or "").lower()
+    if env_bool("SCOUT_MERGE_ALL_RESOLVED", True):
+        return addr.startswith("0x") and len(addr) == 42
     try:
         if wallet_passes_filter(row, min_realized=float(os.environ.get("WATCH_MIN_REALIZED_HARD", "500"))):
             return True
@@ -250,6 +259,19 @@ def merge_rank_into_watch(ranked: dict[str, dict], watch: dict[str, dict]) -> in
             continue
         if addr not in watch:
             row = dict(r)
+            tags = list(row.get("tags") or [])
+            for t in ("scout_tg", "scout_tg_early"):
+                if t not in tags:
+                    tags.append(t)
+            if row.get("scout_tier") == "elite" and "scout_elite" not in tags:
+                tags.append("scout_elite")
+            elif "scout_good" not in tags and "scout_elite" not in tags:
+                tags.append("scout_good")
+            row["tags"] = tags
+            eps = list(row.get("source_endpoints") or [])
+            if "telegram:scoutrobinhood" not in eps:
+                eps.append("telegram:scoutrobinhood")
+            row["source_endpoints"] = eps
             row["pass_pnl"] = True
             row["list_tier"] = "quality" if wallet_is_consistent(r) else "scout"
             row["quality_reason"] = "scout_tg_ranked_merge"
@@ -325,6 +347,18 @@ def merge_rank_into_watch(ranked: dict[str, dict], watch: dict[str, dict]) -> in
             changed = True
         if should_merge_to_watch({**o, **{k: r.get(k) for k in r}}):
             o["pass_pnl"] = True
+            tags = list(o.get("tags") or [])
+            for t in ("scout_tg", "scout_tg_early"):
+                if t not in tags:
+                    tags.append(t)
+                    changed = True
+            if (r.get("scout_tier") == "elite" or o.get("scout_tier") == "elite") and "scout_elite" not in tags:
+                tags.append("scout_elite")
+                changed = True
+            elif "scout_good" not in tags and "scout_elite" not in tags:
+                tags.append("scout_good")
+                changed = True
+            o["tags"] = tags
             if o.get("list_tier") in (None, "scout"):
                 o["list_tier"] = "quality" if wallet_is_consistent(o) else o.get("list_tier") or "scout"
             o["quality_reason"] = o.get("quality_reason") or "scout_tg_ranked_merge"

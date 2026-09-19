@@ -105,15 +105,19 @@ jobs:
       - name: Rank scout wallets + promote
         env:
           SCOUT_RANK_MERGE: "1"
+          SCOUT_MERGE_ALL_RESOLVED: "1"
           SCOUT_TG_VET_CAP: "0"
           GMGN_DISABLED: "1"
           CHAIN: robinhood
           WATCHLIST_PATH: rh-wallets/wallets.jsonl
-          REQUIRE_CONSISTENT_PNL: "1"
-          WATCH_MIN_WINRATE: "0.45"
-          WATCH_MIN_TRADES: "15"
-          WATCH_MIN_AVG_PNL_PER_TRADE: "50"
-          WATCH_MIN_REALIZED_HARD: "500"
+          # Signal notify already DROP_WEAK=0 / REQUIRE_CONSISTENT_PNL=0 / ALLOW_FOMO_WITHOUT_WR=1
+          # Promote every uniquely-resolved scout addr (not elite-only).
+          REQUIRE_CONSISTENT_PNL: "0"
+          ALLOW_FOMO_WITHOUT_WR: "1"
+          WATCH_MIN_WINRATE: "0.40"
+          WATCH_MIN_TRADES: "10"
+          WATCH_MIN_AVG_PNL_PER_TRADE: "30"
+          WATCH_MIN_REALIZED_HARD: "100"
         run: python3 scripts/rank_scout_wallets.py
         continue-on-error: true
 
