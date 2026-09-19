@@ -122,7 +122,7 @@
 
 
 ### Dex-only notify cards (box onchain) — 2026-09-20
-Box onchain posts set `NOTIFY_MARKET_SOURCE=dex` (and `GMGN_DISABLED=1` / `GMGN_MARKET=0`): Discord card fields (mcap / liq / price / symbol / volume) come from **DexScreener** `market_snapshot` only — never wait on GMGN. Embed link is **GMGNアプリで開く** only (numbers still Dex; no Dex/explorer link fields). Empty Dex → still passthrough-post with partial/empty numbers. `scripts/signal_state_sync.sh` GitHub 429s are **non-blocking** (retry/backoff; not a notify failure). Cooldown default **300s**.
+Box onchain posts set `NOTIFY_MARKET_SOURCE=dex` (and `GMGN_DISABLED=1` / `GMGN_MARKET=0`): Discord card fields (mcap / liq / price / symbol / volume) come from **DexScreener** `market_snapshot` only — never wait on GMGN. Embed link is **GMGNアプリで開く** only (numbers still Dex; no Dex/explorer link fields). Empty Dex → **no empty card**; dispatch GHA `enrich-notify.yml` (see below). `scripts/signal_state_sync.sh` GitHub 429s are **non-blocking** (retry/backoff; not a notify failure). Cooldown default **300s**.
 
 ### Env
 - `SIGNAL_SOURCE=onchain` (default) | `fomo` | `both`
@@ -135,3 +135,25 @@ Box onchain posts set `NOTIFY_MARKET_SOURCE=dex` (and `GMGN_DISABLED=1` / `GMGN_
 - **FOMO paid**: optional tape when credits available (`both` / `fomo`).
 - **GHA GMGN**: backup when box quiet; never run GMGN smartmoney on box.
 
+
+## Dex numbers + GHA enrich (2026-09-20)
+
+- **Numbers = DexScreener only** (box + GHA). No box GMGN. Links = **GMGN app only**.
+- Box onchain tick (`scripts/onchain_signal_tick.py`, poll ~2s (ONCHAIN_POLL_SECONDS)): try Dex once.
+  - Dex OK → post full card immediately (passthrough style).
+  - Dex fail (CF/429/empty) → **do not post empty (—) card**. Dispatch GHA `enrich-notify.yml`
+    with `ca`, `wallets` JSON, `chain=robinhood`, optional `tx_hash` / `seen_key`.
+  - Only GHA posts the full card when box Dex fails (`ENRICH_ON_DEX_FAIL=1` default).
+- GHA enrich: different IP fetches Dex → embed mcap/liq/price/symbol → Discord webhook.
+  Dedupe via `seen_key` + shared `state.json` (`signal_state_sync.sh`).
+- Fast bots (scout-wallet-bot health.json):
+  | Bot | Interval | Notes |
+  |-----|----------|-------|
+  | onchain signal tick | ~2s | primary notify; enrich on Dex fail |
+  | scout resolve (deep/light) | 3600s / 600s | chunked GHA |
+  | themaran harvest | 1800s | local free |
+  | onchain hunt | 900s | free RPC tip-follow |
+  | wallet-audit | 21600s | local classify + GHA |
+  | paper daily | 86400s | local + GHA |
+  | signal.yml (GMGN) | ~12m cron | **backup only**, slow OK |
+- `LIVE_TRADING=0`. Credits: keep FOMO off / rare; GMGN only on GHA.

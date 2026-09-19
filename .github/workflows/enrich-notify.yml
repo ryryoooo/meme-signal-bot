@@ -1,0 +1,111 @@
+# Box onchain detects buys (free RPC). When DexScreener is CF/429 on the box IP,
+# dispatch this workflow so a different IP fills mcap/liq/price/symbol and posts Discord.
+name: enrich-notify
+
+on:
+  workflow_dispatch:
+    inputs:
+      ca:
+        description: "Token contract address"
+        required: true
+        type: string
+      wallets:
+        description: "JSON array of wallet dicts [{address,usd,label,source}]"
+        required: false
+        default: "[]"
+        type: string
+      chain:
+        description: "Chain slug (robinhood)"
+        required: false
+        default: "robinhood"
+        type: string
+      tx_hash:
+        description: "Optional tx hash"
+        required: false
+        default: ""
+        type: string
+      seen_key:
+        description: "Dedupe key from box (optional)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: enrich-notify-${{ inputs.ca }}
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Log inputs
+        env:
+          WALLETS: ${{ inputs.wallets }}
+        run: |
+          echo "ca=${{ inputs.ca }}"
+          echo "chain=${{ inputs.chain }}"
+          echo "tx_hash=${{ inputs.tx_hash }}"
+          echo "seen_key=${{ inputs.seen_key }}"
+          echo "wallets_len=${#WALLETS}"
+          date -u +'utc=%Y-%m-%dT%H:%M:%SZ'
+
+      - name: Pull shared state (dedupe)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export STATE_PATH="$GITHUB_WORKSPACE/state.json"
+          export ROOT="$GITHUB_WORKSPACE"
+          bash scripts/signal_state_sync.sh pull || true
+
+      - name: Dex enrich + Discord notify
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_PRIORITY_WEBHOOK_URL: ${{ secrets.DISCORD_PRIORITY_WEBHOOK_URL }}
+          LIVE_TRADING: "0"
+          GMGN_DISABLED: "1"
+          GMGN_MARKET: "0"
+          NOTIFY_MARKET_SOURCE: "dex"
+          NOTIFY_PASSTHROUGH: "1"
+          CHAIN: ${{ inputs.chain || 'robinhood' }}
+          STATE_PATH: ${{ github.workspace }}/state.json
+          PAPER_LOG_PATH: ${{ github.workspace }}/paper_log.jsonl
+          WATCHLIST_PATH: ${{ github.workspace }}/rh-wallets/wallets.jsonl
+          ENRICH_STATE_SYNC: "1"
+          GH_TOKEN: ${{ github.token }}
+          SIGNAL_STATE_REPO: ${{ github.repository }}
+          ENRICH_CA: ${{ inputs.ca }}
+          ENRICH_CHAIN: ${{ inputs.chain || 'robinhood' }}
+          ENRICH_WALLETS: ${{ inputs.wallets }}
+          ENRICH_TX_HASH: ${{ inputs.tx_hash }}
+          ENRICH_SEEN_KEY: ${{ inputs.seen_key }}
+        run: |
+          set -euo pipefail
+          python3 scripts/enrich_notify.py \
+            --ca "$ENRICH_CA" \
+            --chain "$ENRICH_CHAIN" \
+            --wallets "$ENRICH_WALLETS" \
+            --tx-hash "${ENRICH_TX_HASH:-}" \
+            --seen-key "${ENRICH_SEEN_KEY:-}"
+
+      - name: Upload enrich artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enrich-notify-${{ github.run_id }}
+          path: |
+            state.json
+            paper_log.jsonl
+          if-no-files-found: warn
+          retention-days: 14

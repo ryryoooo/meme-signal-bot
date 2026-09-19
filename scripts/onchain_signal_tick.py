@@ -13,6 +13,8 @@ Env (key knobs):
   ONCHAIN_TICK_ONCE=1        run one scan and exit
   WATCHLIST_PATH / STATE_PATH / COOLDOWN_SECONDS (default 300) /
   NOTIFY_MARKET_SOURCE=dex (card fields from DexScreener; never GMGN on box) /
+  ENRICH_ON_DEX_FAIL=1 (default): on Dex CF/429/empty, dispatch GHA enrich-notify.yml
+    instead of posting an empty (—) Discord card. Only GHA posts the full card.
   NOTIFY_PASSTHROUGH …
   LIVE_TRADING stays off.
 
@@ -54,6 +56,7 @@ os.environ.setdefault("WATCH_MIN_REALIZED_HARD", "100")
 os.environ.setdefault("MIN_WALLETS", "1")
 os.environ.setdefault("COOLDOWN_SECONDS", "300")
 os.environ.setdefault("NOTIFY_MARKET_SOURCE", "dex")
+os.environ.setdefault("ENRICH_ON_DEX_FAIL", "1")
 os.environ.setdefault("GMGN_MARKET", "0")
 
 import bot as bot_mod  # noqa: E402
@@ -341,6 +344,88 @@ def cluster_buys(buys: list[dict], window_sec: int) -> list[dict]:
     return signals
 
 
+
+def _dex_has_usable_nums(safety: dict) -> bool:
+    """True when card has at least one real market number / symbol (not all dashes)."""
+    if not isinstance(safety, dict):
+        return False
+    if safety.get("fetch_failed"):
+        return False
+    return any(safety.get(k) is not None for k in ("mcap_usd", "price_usd", "symbol_hint", "liq_usd"))
+
+
+def dispatch_enrich_notify(
+    *,
+    ca: str,
+    chain: str,
+    wallets: list[dict],
+    seen_key: str,
+    tx_hash: str | None = None,
+) -> bool:
+    """Fire-and-forget GHA enrich-notify.yml (Dex from Actions IP → Discord)."""
+    import subprocess
+
+    if (os.environ.get("ENRICH_ON_DEX_FAIL") or "1").strip().lower() in ("0", "false", "no", "off"):
+        log("enrich dispatch disabled ENRICH_ON_DEX_FAIL=0")
+        return False
+    repo = (os.environ.get("SIGNAL_STATE_REPO") or os.environ.get("GITHUB_REPOSITORY") or "ryryoooo/meme-signal-bot").strip()
+    wf = (os.environ.get("ENRICH_WORKFLOW") or "enrich-notify.yml").strip()
+    compact = []
+    for w in wallets or []:
+        if not isinstance(w, dict):
+            continue
+        addr = (w.get("address") or "").strip().lower()
+        if not addr:
+            continue
+        try:
+            usd = float(w.get("usd") or 0)
+        except (TypeError, ValueError):
+            usd = 0.0
+        compact.append(
+            {
+                "address": addr,
+                "usd": usd,
+                "label": str(w.get("label") or "")[:80],
+                "source": str(w.get("source") or "onchain"),
+            }
+        )
+        if not tx_hash and w.get("tx_hash"):
+            tx_hash = str(w.get("tx_hash"))
+    wallets_json = json.dumps(compact, ensure_ascii=False, separators=(",", ":"))
+    # GitHub workflow_dispatch input soft cap — keep under ~50k
+    if len(wallets_json) > 48000:
+        wallets_json = json.dumps(compact[:12], ensure_ascii=False, separators=(",", ":"))
+    cmd = [
+        "gh",
+        "workflow",
+        "run",
+        wf,
+        "--repo",
+        repo,
+        "-f",
+        f"ca={ca}",
+        "-f",
+        f"chain={chain}",
+        "-f",
+        f"wallets={wallets_json}",
+        "-f",
+        f"seen_key={seen_key}",
+    ]
+    if tx_hash:
+        cmd.extend(["-f", f"tx_hash={tx_hash}"])
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+        out = ((r.stdout or "") + (r.stderr or "")).strip()
+        if r.returncode == 0:
+            log(f"enrich dispatch ok ca={ca[:12]}… wf={wf} repo={repo}")
+            return True
+        log(f"enrich dispatch FAIL rc={r.returncode} ca={ca[:12]}… {out[:240]}")
+        return False
+    except Exception as e:
+        log(f"enrich dispatch exception {type(e).__name__}: {e}")
+        return False
+
+
 def post_signals(
     signals: list[dict],
     watch: dict[str, dict],
@@ -433,6 +518,44 @@ def post_signals(
             f"liq={safety.get('liq_usd')} px={safety.get('price_usd')} "
             f"vol24={safety.get('volume_h24')} fetch_failed={safety.get('fetch_failed')}"
         )
+
+        # Dex empty / CF-429 on box → do NOT post empty (—) card; GHA enrich posts full card
+        if not _dex_has_usable_nums(safety):
+            ok_disp = dispatch_enrich_notify(
+                ca=ca,
+                chain=chain,
+                wallets=list(s.get("wallets") or []),
+                seen_key=str(s.get("key") or ""),
+            )
+            seen.add(s["key"])
+            ca_last[ca] = now
+            if ok_disp:
+                posted += 1  # count as handed-off notify (GHA will post)
+                log(f"enrich handed-off ca={ca} (no empty Discord card)")
+                try:
+                    bot_mod.append_paper_log(
+                        paper_path,
+                        {
+                            "ca": ca,
+                            "symbol": None,
+                            "n": s["n"],
+                            "total_usd": total_usd,
+                            "key": s["key"],
+                            "chain": chain,
+                            "source": "onchain",
+                            "source_mode": "onchain_watch",
+                            "posted": False,
+                            "reason": "enrich_dispatch",
+                            "mcap": None,
+                            "liq": None,
+                        },
+                    )
+                except Exception:
+                    pass
+            else:
+                skipped += 1
+                log(f"enrich dispatch failed — suppressing empty card ca={ca[:12]}…")
+            continue
 
         # Fill USD from dex price when missing
         price = safety.get("price_usd")
