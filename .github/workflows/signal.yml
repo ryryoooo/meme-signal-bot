@@ -2,8 +2,10 @@ name: meme-signal
 
 on:
   schedule:
+    # Primary RH notify = box scripts/signal_tick.sh (~20s FOMO).
+    # This workflow is GMGN-path backup only.
     # GitHub often skips */5 (thundering herd). Explicit offset minutes.
-    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+    - cron: "2,14,26,38,50 * * * *"  # ~12m GMGN backup; box FOMO tick is primary (~20s)
   workflow_dispatch: {}
 
 concurrency:
@@ -60,6 +62,16 @@ jobs:
           # would overwrite checkout even if path no longer lists it.
           restore-keys: |
             meme-signal-state-v7-
+
+
+      - name: Pull shared state (box↔GHA dedupe)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Best-effort merge of release tag signal-state into local state.json
+          export STATE_PATH="$GITHUB_WORKSPACE/state.json"
+          export ROOT="$GITHUB_WORKSPACE"
+          bash scripts/signal_state_sync.sh pull || true
 
       - name: Run once (signals + paper marks)
         env:
@@ -175,6 +187,16 @@ jobs:
           PAPER_BOOK_PATH: paper_book.jsonl
           PAPER_SUMMARY_PATH: paper_summary.md
         run: python3 bot.py --per-page 100
+
+
+      - name: Push shared state (box↔GHA dedupe)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export STATE_PATH="$GITHUB_WORKSPACE/state.json"
+          export ROOT="$GITHUB_WORKSPACE"
+          bash scripts/signal_state_sync.sh push || true
 
       - name: Upload paper artifacts
         if: always()
