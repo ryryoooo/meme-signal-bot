@@ -16,6 +16,7 @@ THEMARAN_EVERY_SEC="${THEMARAN_EVERY_SEC:-1800}"
 GMGN_VET_EVERY_SEC="${GMGN_VET_EVERY_SEC:-10800}"
 PAPER_DAILY_EVERY_SEC="${PAPER_DAILY_EVERY_SEC:-86400}"
 AUDIT_EVERY_SEC="${AUDIT_EVERY_SEC:-21600}"
+HUNT_EVERY_SEC="${HUNT_EVERY_SEC:-900}"
 AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
@@ -42,6 +43,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_gmgn_vet" ]] || echo 0 > "$STATE/last_gmgn_vet"
 [[ -f "$STATE/last_paper_daily" ]] || echo 0 > "$STATE/last_paper_daily"
 [[ -f "$STATE/last_wallet_audit" ]] || echo 0 > "$STATE/last_wallet_audit"
+[[ -f "$STATE/last_onchain_hunt" ]] || echo 0 > "$STATE/last_onchain_hunt"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -78,7 +80,7 @@ ensure_signal_tick() {
 }
 
 ensure_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -131,6 +133,23 @@ while true; do
     else
       echo "$now" > "$STATE/last_wallet_audit"
       result="wallet_audit_dispatch_failed"; log "wallet_audit gha dispatch failed"
+    fi
+  fi
+  # On-chain hot wallet hunt — tip-follow recent blocks (free RPC; no GMGN)
+  last_hunt=$(cat "$STATE/last_onchain_hunt" 2>/dev/null || echo 0)
+  if (( now - last_hunt >= HUNT_EVERY_SEC )); then
+    action="onchain_hunt"
+    if ( cd "$ROOT" && LIVE_TRADING=0 timeout 420 python3 scripts/onchain_hunt_wallets.py --once --blocks "${HUNT_BLOCKS:-800}" ) >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_onchain_hunt"; log "onchain_hunt ok"
+      if ( cd "$ROOT" && git status --porcelain rh-wallets/onchain_hot_active.jsonl rh-wallets/summary_onchain_hot.md rh-wallets/raw/onchain_hunt_state.json 2>/dev/null | grep -q . ); then
+        ( cd "$ROOT" && \
+          git add rh-wallets/onchain_hot_active.jsonl rh-wallets/summary_onchain_hot.md rh-wallets/raw/onchain_hunt_state.json scripts/onchain_hunt_wallets.py && \
+          git commit -m "chore(onchain): hot active wallet hunt" && \
+          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "onchain_hunt commit/push fail"
+      fi
+    else
+      result="onchain_hunt_failed"; log "onchain_hunt failed"
+      echo "$now" > "$STATE/last_onchain_hunt"
     fi
   fi
   # GMGN only on GHA, tiny — never on box. Skip while resolve busy or post-429 cool.
