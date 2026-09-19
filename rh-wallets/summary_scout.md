@@ -1,11 +1,11 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-09-19T08:13:28.383881+00:00
-- Ranked wallets: **2015**
+- Updated (UTC): 2026-09-19T08:40:35.250389+00:00
+- Ranked wallets: **2026**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=gmgn_disabled
 - FOMO overlaps: **0**
-- Merged to main watch: **2015**
+- Merged to main watch: **2026**
 
 ## Top by scout_rank_score
 
@@ -49,8 +49,8 @@
 | 36 | `0xfd92…0068` | elite | 17 | 17 | 12,477 | — | — | — | — | 19.34 |
 | 37 | `0xc4f8…3a63` | elite | 17 | 17 | 4,696 | — | — | — | — | 19.34 |
 | 38 | `0x3719…25da` | elite | 17 | 17 | 9,620 | — | — | — | — | 19.34 |
-| 39 | `0x72a3…c70d` | elite | 16 | 16 | 12,728 | — | — | — | — | 18.54 |
-| 40 | `0xd179…f00c` | elite | 16 | 16 | 10,711 | — | — | — | — | 18.54 |
+| 39 | `0xd86a…5d56` | elite | 17 | 17 | 3,737 | — | — | — | — | 19.34 |
+| 40 | `0x72a3…c70d` | elite | 16 | 16 | 12,728 | — | — | — | — | 18.54 |
 
 ## Top elite by frequency
 
