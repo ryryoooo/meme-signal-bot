@@ -37,7 +37,9 @@ permissions:
   actions: read
 
 concurrency:
-  group: gmgn-gha
+  # Own group so mega scout-tg-resolve (gmgn-gha) does not block 7d fills.
+  # Still one-at-a-time among vet runs; sleep/cap keep GMGN polite.
+  group: gmgn-vet-throttle
   cancel-in-progress: false
 
 jobs:
