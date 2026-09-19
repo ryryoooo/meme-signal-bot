@@ -122,7 +122,7 @@
 
 
 ### Dex-only notify cards (box onchain) — 2026-09-20
-Box onchain posts set `NOTIFY_MARKET_SOURCE=dex` (and `GMGN_DISABLED=1` / `GMGN_MARKET=0`): Discord card fields (mcap / liq / price / symbol / volume) come from **DexScreener** `market_snapshot` only — never wait on GMGN. Embed links DexScreener + explorer (GMGN link optional via `NOTIFY_SHOW_GMGN_LINK`). Empty Dex → still passthrough-post with partial/empty numbers. `scripts/signal_state_sync.sh` GitHub 429s are **non-blocking** (retry/backoff; not a notify failure). Cooldown default **300s**.
+Box onchain posts set `NOTIFY_MARKET_SOURCE=dex` (and `GMGN_DISABLED=1` / `GMGN_MARKET=0`): Discord card fields (mcap / liq / price / symbol / volume) come from **DexScreener** `market_snapshot` only — never wait on GMGN. Embed link is **GMGNアプリで開く** only (numbers still Dex; no Dex/explorer link fields). Empty Dex → still passthrough-post with partial/empty numbers. `scripts/signal_state_sync.sh` GitHub 429s are **non-blocking** (retry/backoff; not a notify failure). Cooldown default **300s**.
 
 ### Env
 - `SIGNAL_SOURCE=onchain` (default) | `fomo` | `both`

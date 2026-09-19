@@ -2897,28 +2897,10 @@ def build_embed(
     ]
 
     gmgn_chain = meta.get("gmgn_chain") or chain
+    # Numbers from Dex; link is always GMGN app deep link only (no Dex/explorer fields)
     gmgn_url = gmgn_tok.token_app_url(gmgn_chain, s["ca"], safety.get("gmgn_url"))
-    dex_url = safety.get("dex_url") or ""
-    if dex_url and ("gmgn.ai" in str(dex_url) or "gmgn" in str(dex_url).lower()[:40]):
-        # evaluate historically stuffed GMGN into dex_url — prefer real Dex when source is dex
-        if (safety.get("source") or "") == "dexscreener" or notify_market_source() == "dex":
-            dex_url = ""
-    if not dex_url:
-        # Best-effort DexScreener token page
-        dex_slug = meta.get("dex_slug") or gmgn_chain or chain
-        dex_url = f"https://dexscreener.com/{dex_slug}/{s['ca']}"
-    primary_url = dex_url or gmgn_url
-    fields.append({"name": "コントラクト", "value": f"[`{s['ca']}`]({primary_url})", "inline": False})
-    link_lines = [f"[DexScreener]({dex_url})"]
-    explorer_base = meta.get("explorer")
-    if explorer_base:
-        link_lines.append(f"[エクスプローラー]({explorer_base}{s['ca']})")
-    # GMGN optional (GHA / when available)
-    if gmgn_url and notify_market_source() != "dex":
-        link_lines.append(f"[GMGN]({gmgn_url})")
-    elif gmgn_url and env_bool("NOTIFY_SHOW_GMGN_LINK", False):
-        link_lines.append(f"[GMGN]({gmgn_url})")
-    fields.append({"name": "リンク", "value": " · ".join(link_lines), "inline": False})
+    fields.append({"name": "コントラクト", "value": f"[`{s['ca']}`]({gmgn_url})", "inline": False})
+    fields.append({"name": "リンク", "value": f"[GMGNアプリで開く]({gmgn_url})", "inline": False})
 
     def line(w: dict) -> str:
         addr = w.get("address") or ""
@@ -2965,7 +2947,7 @@ def build_embed(
     ts, footer = _discord_notify_stamp(f"数値は{src_note}取得時点 · お知らせのみ・自動では買いません")
     return {
         "title": title[:256],
-        "url": primary_url,
+        "url": gmgn_url,
         "description": description[:4000],
         "color": color,
         "fields": fields,
