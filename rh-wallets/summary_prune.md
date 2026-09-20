@@ -1,11 +1,11 @@
-# Watchlist prune (2026-09-19T19:36:39.341290+00:00)
+# Watchlist prune (2026-09-20T18:04:51.631622+00:00)
 
-- Watch: `/workspace/meme-foundation/discord-bot/rh-wallets/wallets.jsonl`
-- Before: **2561** (+0 promote-missing)
-- After: **2561**
+- Watch: `rh-wallets/wallets.jsonl`
+- Before: **2618** (+0 promote-missing)
+- After: **2618**
 - Mode: `demote` dry_run=False
 - Demoted: **0** · Removed: **0** · Flagged: **0**
-- Pruned list: `/workspace/meme-foundation/discord-bot/rh-wallets/raw/pruned_wallets.jsonl`
+- Pruned list: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/raw/pruned_wallets.jsonl`
 
 ## Knobs
 - PRUNE_DUST_MAX_BUY_USD=25.0
