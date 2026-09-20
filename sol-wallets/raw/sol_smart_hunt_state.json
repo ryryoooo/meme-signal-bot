@@ -1,119 +1,81 @@
 {
-  "updated_at": "2026-09-20T08:18:44.366753Z",
-  "n_cas": 24,
-  "n_exclude": 67,
-  "n_candidates": 177,
-  "n_candidates_all": 995,
+  "updated_at": "2026-09-20T08:26:05.857188Z",
+  "n_cas": 25,
+  "n_exclude": 62,
+  "n_candidates": 182,
+  "n_candidates_all": 1024,
   "n_watch": 25,
   "top": [
     {
       "address": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
-      "score": 186.944,
+      "score": 181.444,
       "n_cas": 6,
       "symbols": [
+        "JEANPHIL",
         "STONK",
-        "FLEX",
-        "PAID",
-        "CALI",
+        "DONATED",
         "TROLL",
-        "ANSEM"
-      ]
-    },
-    {
-      "address": "78Bo7xxGWBEvqbh3VMKvkFG4Z63cXKSJ2LCEXAanhN7a",
-      "score": 165.825,
-      "n_cas": 7,
-      "symbols": [
-        "CATE",
-        "PAID",
-        "WOJAK",
         "ANSEM",
-        "ZCAT",
-        "USELESS",
-        "POPCAT"
-      ]
-    },
-    {
-      "address": "Em8J3gBWapfVBGVhVipwQnLrqCvnWBnLajw6XFsFECPF",
-      "score": 163.844,
-      "n_cas": 5,
-      "symbols": [
-        "CATE",
-        "FLEX",
-        "PAID",
-        "CALI",
-        "ANSEM"
+        "EMBER"
       ]
     },
     {
       "address": "F7p3dFrjRTbtRp8FRF6qHLomXbKRBzpvBLjtQcfcgmNe",
-      "score": 163.247,
+      "score": 172.853,
       "n_cas": 6,
       "symbols": [
-        "JEANPHIL",
-        "Tokens",
+        "TROLL",
+        "Fartcoin",
+        "ANSEM",
+        "ZCAT",
+        "MOO",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "LionX7R69tL1EEcpRkJ9jRuwV7bi4jFoKmZZnxiVK6y",
+      "score": 157.314,
+      "n_cas": 7,
+      "symbols": [
+        "TIPPED",
+        "CATE",
+        "Annoyed",
         "TROLL",
         "Fartcoin",
         "ZCAT",
+        "POPCAT"
+      ]
+    },
+    {
+      "address": "FUEL3Te8gvaohxwQMapfMTeJVHh2z1BL9fvTCcHZeYEh",
+      "score": 154.808,
+      "n_cas": 7,
+      "symbols": [
+        "CATE",
+        "FLEX",
+        "PAID",
+        "TROLL",
+        "WOJAK",
+        "ANSEM",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "2tgUbS9UMoQD6GkDZBiqKYCURnGrSb6ocYwRABrSJUvY",
+      "score": 150.213,
+      "n_cas": 6,
+      "symbols": [
+        "JEANPHIL",
+        "TIPPED",
+        "TIGRINO",
+        "DONATED",
+        "Annoyed",
         "MOO"
       ]
     },
     {
-      "address": "gtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd",
-      "score": 159.316,
-      "n_cas": 6,
-      "symbols": [
-        "JEANPHIL",
-        "CATE",
-        "DONATED",
-        "Fartcoin",
-        "ANSEM",
-        "ZCAT"
-      ]
-    },
-    {
-      "address": "R32xAccFis3YzBzGwZ1C4QkGiehLxSao7gDmErA3kjk",
-      "score": 158.067,
-      "n_cas": 7,
-      "symbols": [
-        "JEANPHIL",
-        "TIPPED",
-        "TIGRINO",
-        "TROLL",
-        "ANSEM",
-        "ZCAT",
-        "POPCAT"
-      ]
-    },
-    {
-      "address": "UUAhspPgUdGuXUnokmxERH1VvNGNh1ouN3mfcbfV8yd",
-      "score": 148.644,
-      "n_cas": 6,
-      "symbols": [
-        "CALI",
-        "Fartcoin",
-        "WOJAK",
-        "ZCAT",
-        "USELESS",
-        "POPCAT"
-      ]
-    },
-    {
-      "address": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf",
-      "score": 143.04,
-      "n_cas": 6,
-      "symbols": [
-        "JEANPHIL",
-        "TIPPED",
-        "Tokens",
-        "TIGRINO",
-        "DONATED",
-        "Annoyed"
-      ]
-    },
-    {
       "address": "FkaLnX17cXZGyeu3kZGdHCNdFMJJzBrPPYVvd18B3MZp",
-      "score": 142.944,
+      "score": 138.944,
       "n_cas": 3,
       "symbols": [
         "Fartcoin",
@@ -122,37 +84,12 @@
       ]
     },
     {
-      "address": "EYvwg12vXcUN7pF1fASQZZgQ9RbVUMLjKqqCfi961ptw",
-      "score": 141.773,
-      "n_cas": 6,
-      "symbols": [
-        "TIPPED",
-        "DONATED",
-        "Annoyed",
-        "CALI",
-        "TROLL",
-        "WOJAK"
-      ]
-    },
-    {
-      "address": "6Qt8a3Y6B4nekSRQ1p2e5yqP5bSCbE6HzUTdWwdfYXmR",
-      "score": 139.367,
-      "n_cas": 6,
-      "symbols": [
-        "TIPPED",
-        "DONATED",
-        "Annoyed",
-        "CALI",
-        "TROLL",
-        "WOJAK"
-      ]
-    },
-    {
       "address": "4XBqViD1XYF1qHrErrsXBzDrCapvP9fEFX4LPjXZi9YU",
-      "score": 127.52,
-      "n_cas": 5,
+      "score": 138.877,
+      "n_cas": 6,
       "symbols": [
         "TIPPED",
+        "CATE",
         "CARDS",
         "ANSEM",
         "ZCAT",
@@ -160,15 +97,66 @@
       ]
     },
     {
-      "address": "F4cUjuWkXP7ptAVg13EUeCNPgPQYeuiLSUYNdZgYtW5w",
-      "score": 125.564,
+      "address": "6Qt8a3Y6B4nekSRQ1p2e5yqP5bSCbE6HzUTdWwdfYXmR",
+      "score": 138.573,
+      "n_cas": 6,
+      "symbols": [
+        "TIPPED",
+        "DONATED",
+        "Annoyed",
+        "CALI",
+        "TROLL",
+        "WOJAK"
+      ]
+    },
+    {
+      "address": "9ZQuCDRBDvDNsgaDe593dRHnyGgEYaisXF4VYMrZDLBa",
+      "score": 136.342,
+      "n_cas": 6,
+      "symbols": [
+        "FLEX",
+        "PAID",
+        "TIGRINO",
+        "DONATED",
+        "ZCAT",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "UUAhspPgUdGuXUnokmxERH1VvNGNh1ouN3mfcbfV8yd",
+      "score": 130.896,
+      "n_cas": 5,
+      "symbols": [
+        "CATE",
+        "Fartcoin",
+        "ZCAT",
+        "POPCAT",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "gtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd",
+      "score": 130.673,
       "n_cas": 5,
       "symbols": [
         "JEANPHIL",
-        "TIPPED",
-        "Tokens",
+        "DONATED",
+        "Fartcoin",
+        "ANSEM",
+        "ZCAT"
+      ]
+    },
+    {
+      "address": "DYP7RvYsGymhRUL9DyAQZeZZU1XjCTp796tPGYQKTM2V",
+      "score": 130.281,
+      "n_cas": 6,
+      "symbols": [
+        "Stryker",
         "TIGRINO",
-        "DONATED"
+        "Annoyed",
+        "CALI",
+        "MOO",
+        "JUPCAT"
       ]
     },
     {
@@ -181,11 +169,23 @@
       ]
     },
     {
-      "address": "GLiCiNEnku3pQsmkVkRvnDLbfUN9BWbsrPDWLdPaADng",
-      "score": 123.695,
+      "address": "shakRDxyKwaBbduqZTZt8Q4etTALbDLnAANStv9TLH3",
+      "score": 121.761,
       "n_cas": 5,
       "symbols": [
-        "TIPPED",
+        "CATE",
+        "ANSEM",
+        "ZCAT",
+        "USELESS",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "GLiCiNEnku3pQsmkVkRvnDLbfUN9BWbsrPDWLdPaADng",
+      "score": 121.195,
+      "n_cas": 5,
+      "symbols": [
+        "CATE",
         "TROLL",
         "ANSEM",
         "ZCAT",
@@ -200,7 +200,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 907.5857690575119
+      "hot": 860.4756958667091
     },
     {
       "ca": "tipp4C4Jnpft26HC9VXNjUPidojZqxXf8nzKvrKf5BS",
@@ -208,7 +208,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 195.65552752019602
+      "hot": 200.208135545051
     },
     {
       "ca": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
@@ -216,7 +216,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 149.545334110826
+      "hot": 150.238947703988
     },
     {
       "ca": "Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump",
@@ -225,16 +225,7 @@
         "gecko_trending",
         "pump_graduated"
       ],
-      "hot": 116.534265948749
-    },
-    {
-      "ca": "C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump",
-      "symbol": "Tokens",
-      "sources": [
-        "gecko_trending",
-        "dex_boosts"
-      ],
-      "hot": 97.8118110272027
+      "hot": 116.37709842060299
     },
     {
       "ca": "fvHLJUwsynVHJrssbZ8MLNyku9jt2izUspbBD4Spump",
@@ -242,7 +233,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 94.8827569459471
+      "hot": 96.8716891127475
     },
     {
       "ca": "98kfF7rmsg1QDUEoCqNE7g7M1FdrTt92TEp2CLzypump",
@@ -250,7 +241,17 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 94.0072830372806
+      "hot": 94.1320283006659
+    },
+    {
+      "ca": "C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump",
+      "symbol": "Tokens",
+      "sources": [
+        "gecko_trending",
+        "dex_boosts",
+        "pump_graduated"
+      ],
+      "hot": 93.68105151242801
     },
     {
       "ca": "G9QZfEPHtZrUF1arcUFvZgYn6zSQLZdvcjCuyhKrpump",
@@ -260,7 +261,7 @@
         "dex_boosts",
         "pump_graduated"
       ],
-      "hot": 68.125818950756
+      "hot": 60.72746632251069
     },
     {
       "ca": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
@@ -268,7 +269,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 60.5235687933655
+      "hot": 59.6895036522663
     },
     {
       "ca": "91ryaCo5yGpYZM3bs6GUPs97VWJQj7RozBmqPULgpump",
@@ -276,7 +277,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 47.7489755583271
+      "hot": 48.126132879816396
     },
     {
       "ca": "HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT",
@@ -284,7 +285,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 44.2665285195807
+      "hot": 44.7677215607066
     },
     {
       "ca": "CBLgLg4rjkqqwXuZjR1WAqWet2vR68Vne32J2bFLpump",
@@ -292,7 +293,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 42.82557814143141
+      "hot": 43.0184572573896
     },
     {
       "ca": "EBsK6LyH8ZCF6aq2uD4fTkFHuPzA1DLUE7fLjMyJpump",
@@ -300,16 +301,15 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 40.92115607824721
+      "hot": 42.3357585490972
     },
     {
       "ca": "8k4sBtEeK4pf26noKqApv8NBTnuSJcbdwpKYknk5PbAA",
       "symbol": "CALI",
       "sources": [
-        "gecko_trending",
-        "pump_graduated"
+        "gecko_trending"
       ],
-      "hot": 34.8808919884654
+      "hot": 35.900970758377795
     },
     {
       "ca": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
@@ -317,7 +317,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 31.9960156798665
+      "hot": 32.0080288558848
     },
     {
       "ca": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
@@ -326,7 +326,7 @@
         "gecko_trending",
         "pump_graduated"
       ],
-      "hot": 29.035181530764497
+      "hot": 29.1143446065462
     },
     {
       "ca": "8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump",
@@ -334,7 +334,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 28.7986467595766
+      "hot": 28.7256693104437
     },
     {
       "ca": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
@@ -343,7 +343,7 @@
         "gecko_trending",
         "pump_graduated"
       ],
-      "hot": 26.764568091762097
+      "hot": 27.289512425431198
     },
     {
       "ca": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
@@ -351,7 +351,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 26.235828612732597
+      "hot": 26.7018392493298
     },
     {
       "ca": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
@@ -359,7 +359,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 23.008252884761
+      "hot": 22.9855009925577
     },
     {
       "ca": "4NCuDE737HY4EJ573iZM4zo7xszn1MWL6a2Xjp9wpump",
@@ -370,20 +370,28 @@
       "hot": 19.972758782775678
     },
     {
-      "ca": "CAKJYWCH5A8KhXnxojiYCNcYF6oUYuYHQm2ctixipump",
-      "symbol": "MOO",
-      "sources": [
-        "gecko_trending"
-      ],
-      "hot": 19.0363445181029
-    },
-    {
       "ca": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
       "symbol": "POPCAT",
       "sources": [
         "gecko_trending"
       ],
-      "hot": 19.018694428346897
+      "hot": 19.1477840764732
+    },
+    {
+      "ca": "CAKJYWCH5A8KhXnxojiYCNcYF6oUYuYHQm2ctixipump",
+      "symbol": "MOO",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 18.639621289800303
+    },
+    {
+      "ca": "5dvXTZ5qwgafnHtwu3Ls3QrWx1U4LQsFeCuJgkk4QEC6",
+      "symbol": "EMBER",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 18.542152877881
     },
     {
       "ca": "AaEhFTX4naHSWSXz9TVe5QgLbtSLT8ZqYJGZzDDcoroh",
@@ -391,10 +399,10 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 18.856158292189022
+      "hot": 18.18875286919134
     }
   ],
-  "elapsed_s": 42.27,
+  "elapsed_s": 45.02,
   "source": "solana_trend",
   "chain": "solana"
 }
