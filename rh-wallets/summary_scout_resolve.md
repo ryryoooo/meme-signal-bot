@@ -1,20 +1,20 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-20T00:00:35.718608+00:00
-- Unique pairs: **2121/2451** (86.5%)
-- Trunc rows still unresolved: **526**
-- Methods: pair_cache=1 token_scoped=0 multi_union=0 mega=2 global=0 two_hit=0
-- Blockscout: tokens_fetched=3 nonempty=3 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=330
+- Updated (UTC): 2026-09-20T01:01:59.815075+00:00
+- Unique pairs: **2125/2451** (86.7%)
+- Trunc rows still unresolved: **514**
+- Methods: pair_cache=3 token_scoped=0 multi_union=0 mega=2 global=0 two_hit=0
+- Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=326
 
 ## Top unresolved blockers
 
-- `no_match`: 330
+- `no_match`: 326
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **330** (huge_pool≥1000 true-dead≈29, mid<500 still deepenable≈277)
+- no_match total: **326** (huge_pool≥1000 true-dead≈29, mid<500 still deepenable≈274)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -45,7 +45,7 @@
 - `0x1002|b2f5` reason=no_match tokens=2 union=3347 tier=elite
 - `0x110a|acfe` reason=no_match tokens=1 union=145 tier=good
 - `0x113f|ac20` reason=no_match tokens=1 union=248 tier=elite
-- `0x12c5|3470` reason=no_match tokens=1 union=121 tier=elite
+- `0x12c5|3470` reason=no_match tokens=1 union=311 tier=elite
 - `0x1343|8a62` reason=no_match tokens=1 union=138 tier=elite
 - `0x1364|0f7b` reason=no_match tokens=1 union=135 tier=good
 - `0x140f|8ffc` reason=no_match tokens=1 union=139 tier=elite
@@ -53,7 +53,6 @@
 - `0x14f1|a520` reason=no_match tokens=2 union=240 tier=elite
 - `0x150c|82a5` reason=no_match tokens=1 union=154 tier=good
 - `0x1613|db45` reason=no_match tokens=1 union=230 tier=good
-- `0x1672|f07b` reason=no_match tokens=3 union=464 tier=good
 - `0x1841|fe32` reason=no_match tokens=2 union=251 tier=elite
 - `0x19e5|5af9` reason=no_match tokens=1 union=128 tier=good
 - `0x19ee|51ad` reason=no_match tokens=2 union=258 tier=good
@@ -61,3 +60,4 @@
 - `0x1aef|ce1a` reason=no_match tokens=1 union=929 tier=elite
 - `0x1b14|8269` reason=no_match tokens=1 union=156 tier=elite
 - `0x1b4c|cb05` reason=no_match tokens=2 union=358 tier=good
+- `0x1b58|b8c0` reason=no_match tokens=1 union=133 tier=good
