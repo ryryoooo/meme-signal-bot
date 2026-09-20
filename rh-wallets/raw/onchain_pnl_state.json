@@ -1,21 +1,21 @@
 {
-  "updated_at": "2026-09-20T09:30:57.438689Z",
-  "updated_jst": "2026-09-20 18:30 JST",
+  "updated_at": "2026-09-20T12:08:21.524299Z",
+  "updated_jst": "2026-09-20 21:08 JST",
   "stats": {
     "attempted": 30,
-    "with_hits": 30,
-    "est_n": 30,
-    "pos": 16,
-    "neg": 4,
-    "zero": 10,
-    "null": 0,
-    "promoted": 16,
-    "pass_pnl": 16,
-    "cleared_pending": 16,
-    "weak_fills": 120,
-    "cas_n": 24,
+    "with_hits": 29,
+    "est_n": 29,
+    "pos": 12,
+    "neg": 8,
+    "zero": 9,
+    "null": 1,
+    "promoted": 12,
+    "pass_pnl": 12,
+    "cleared_pending": 12,
+    "weak_fills": 119,
+    "cas_n": 27,
     "rpc_429": 0
   },
   "cap": 30,
-  "cas_n": 24
+  "cas_n": 27
 }

@@ -1,46 +1,48 @@
-# Promote unknown smart — 2026-09-20 18:30 JST
+# Promote unknown smart — 2026-09-20 21:08 JST
 
 - Dry run: **0**
 - Pool analyzed: **55** (candidates + top extra)
-- Unknown published: **125**
-- Passed gates: **53** → selected/capped: **40**
-- Rejected: **2** | already in watch: **0** | contracts: **0**
-- Watchlist: **2587** → **2627** (+40)
+- Unknown published: **142**
+- Passed gates: **51** → selected/capped: **40**
+- Rejected: **4** | already in watch: **0** | contracts: **0**
+- Watchlist: **2600** → **2640** (+40)
 - Gates: score≥40.0 cas≥2…≤10 buys≥2 vol≥$10.0 active≤72.0h max/cycle=40
 - Elapsed: **0.08s**
 
 ## Added this run
 
-1. `0x4ae8f9294dcf802d22af1ccb1e05e8fc7ac26bb2` score=80.35 n_cas=4 syms=SI,PRIORS,PRISM,WALLET — active_multi_ca:score=80.3,n_cas=4,buys=4,vol=$390,last=0.6h,src=watch_candidates
-2. `0x0df6c565a49f8fcc02251836236f980d304a3930` score=78.793 n_cas=4 syms=IF,AD,ASKR,HOOKR — active_multi_ca:score=78.8,n_cas=4,buys=4,vol=$79,last=0.6h,src=watch_candidates
-3. `0x1f817ef8e6b9f1536a20cf0c2394733fd1a5981c` score=70.8 n_cas=2 syms=PONS,PARE — active_multi_ca:score=70.8,n_cas=2,buys=3,vol=$7022,last=0.0h,src=watch_candidates
-4. `0x6c9406172b366d20cbe688ee7076e5aa3645d51e` score=66.5 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=66.5,n_cas=2,buys=7,vol=$3660,last=0.1h,src=watch_candidates
-5. `0x84c8033c533fbdfd7548fc1b3bc582a7a34bf2a5` score=66.392 n_cas=2 syms=URANUS,musebook — active_multi_ca:score=66.4,n_cas=2,buys=2,vol=$4238,last=0.5h,src=watch_candidates
-6. `0x0bc8e136aefe7805035be606d2f48a96c66f48bf` score=65.638 n_cas=3 syms=SI,JEV,ASKR — active_multi_ca:score=65.6,n_cas=3,buys=3,vol=$768,last=0.2h,src=watch_candidates
-7. `0xf16372d758e34f318f7bbbb526c1c3e993a4b703` score=65.608 n_cas=3 syms=IF,AD,PARE — active_multi_ca:score=65.6,n_cas=3,buys=4,vol=$642,last=0.7h,src=watch_candidates
-8. `0xd840dbe718abc46c6c7704bd7ff16e69a23d37ba` score=63.638 n_cas=3 syms=SI,JEV,CEST — active_multi_ca:score=63.6,n_cas=3,buys=4,vol=$248,last=0.1h,src=watch_candidates
-9. `0x050b364974df2db6a11297a3bffd0cfa72424b51` score=63.574 n_cas=3 syms=SI,JEV,SCHIFFY — active_multi_ca:score=63.6,n_cas=3,buys=3,vol=$355,last=0.6h,src=watch_candidates
-10. `0x390777a566ced4d41b27d2e475d773d645a54848` score=62.983 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=63.0,n_cas=2,buys=8,vol=$2837,last=0.1h,src=watch_candidates
-11. `0x98a883eac08861798b481d08b8cbf58b4fbfcd7b` score=62.487 n_cas=3 syms=HOODCATS,AD,SHROOM — active_multi_ca:score=62.5,n_cas=3,buys=3,vol=$137,last=0.3h,src=watch_candidates
-12. `0x9c93024e1dc88d7557075cba3f408c3a8a83e675` score=62.486 n_cas=3 syms=JEV,AD,HOOKR — active_multi_ca:score=62.5,n_cas=3,buys=3,vol=$137,last=0.2h,src=watch_candidates
-13. `0x4ab990595b8d586bf0aaac3fc43978eca4b71ed3` score=62.418 n_cas=3 syms=JEV,CEST,PARE — active_multi_ca:score=62.4,n_cas=3,buys=3,vol=$124,last=0.6h,src=watch_candidates
-14. `0x0e3eb60df4d14b213dc4de53316ed7bcd4aadc87` score=62.38 n_cas=3 syms=SHROOM,DELTA,PARE — active_multi_ca:score=62.4,n_cas=3,buys=3,vol=$116,last=0.7h,src=watch_candidates
-15. `0x134d468b0bcaea6df127916f951f7938c06a37c6` score=62.029 n_cas=3 syms=DELTA,HOOKR,Index — active_multi_ca:score=62.0,n_cas=3,buys=3,vol=$46,last=1.1h,src=watch_candidates
-16. `0xd4235ded6ce5b633dad7123c8a4687317537c66c` score=61.934 n_cas=3 syms=SI,SCHIFFY,ASKR — active_multi_ca:score=61.9,n_cas=3,buys=3,vol=$27,last=0.5h,src=watch_candidates
-17. `0x39dab8cfd3e74bcefa75ffdd508afa9d8e2dc18c` score=61.842 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=61.8,n_cas=2,buys=10,vol=$2368,last=0.1h,src=watch_candidates
-18. `0xb544d956800283114e2a51bbe949e9a5603929e5` score=61.442 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=61.4,n_cas=2,buys=7,vol=$2648,last=0.2h,src=watch_candidates
-19. `0xd348c59e8ea31226b6ce40eb65d5a58041345d4e` score=60.679 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=60.7,n_cas=2,buys=7,vol=$2496,last=0.1h,src=watch_candidates
-20. `0x4b82847c82087ea19418bed079966810f64f39f4` score=59.996 n_cas=2 syms=CHUMP,PARE — active_multi_ca:score=60.0,n_cas=2,buys=2,vol=$3759,last=6.7h,src=watch_candidates
-21. `0xc292f9948e6d3805610e4ce9cdc6383e1d5c7203` score=58.542 n_cas=2 syms=DELTA,CHUMP — active_multi_ca:score=58.5,n_cas=2,buys=4,vol=$2428,last=0.3h,src=watch_candidates
-22. `0x7aeeaf88576fd40393caa98817a848dbd63d5269` score=58.105 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=58.1,n_cas=2,buys=6,vol=$2101,last=0.1h,src=watch_candidates
-23. `0x7dca673f2cc661220421a7d9528fcfa770cf36f1` score=56.581 n_cas=2 syms=URANUS,ASKR — active_multi_ca:score=56.6,n_cas=2,buys=8,vol=$1556,last=0.1h,src=watch_candidates
-24. `0xf5b77b30ef47f56e4ab7d6d28fbe3e91f894b9a9` score=56.001 n_cas=2 syms=HEDGE,PARE — active_multi_ca:score=56.0,n_cas=2,buys=3,vol=$2040,last=1.5h,src=watch_candidates
-25. `0x0ffa1e637b201a5d6eceee79d32e8cdb8d8634b9` score=55.87 n_cas=2 syms=PONS,CASHCAT — active_multi_ca:score=55.9,n_cas=2,buys=5,vol=$1774,last=0.1h,src=unknown_top
+1. `0xa67d7eb4dc68fa6ce8e34ef8cadaf075b9893fbb` score=164.302 n_cas=9 syms=CASHCAT,URANUS,SCHIFFY,WALLET,PRISM,SHROOM — active_multi_ca:score=164.3,n_cas=9,buys=12,vol=$1820,last=0.2h,src=watch_candidates
+2. `0x08d0c5049e4bc42102f22e6588c96374b923057c` score=136.239 n_cas=7 syms=SI,FOMOEGG,SCHIFFY,HOOKR,CEST,CPU — active_multi_ca:score=136.2,n_cas=7,buys=14,vol=$1568,last=0.5h,src=watch_candidates
+3. `0x9c97ee995ee9d19f5afbb2bd979c6ede03000e7f` score=114.812 n_cas=5 syms=CASHCAT,MEME,IF,SHROOM,CEST — active_multi_ca:score=114.8,n_cas=5,buys=7,vol=$3722,last=0.0h,src=watch_candidates
+4. `0xd840dbe718abc46c6c7704bd7ff16e69a23d37ba` score=80.319 n_cas=4 syms=SI,CEST,HOOKR,CEST — active_multi_ca:score=80.3,n_cas=4,buys=5,vol=$264,last=0.5h,src=watch_candidates
+5. `0xd71212997df250d8ce78b53db7e6b4e1b969cd24` score=79.355 n_cas=4 syms=JEV,HOODCATS,SHROOM,HOOKR — active_multi_ca:score=79.4,n_cas=4,buys=5,vol=$71,last=0.1h,src=watch_candidates
+6. `0x1f421bce684b0a7cd2926744a6edc7eddcb048b4` score=70.2 n_cas=2 syms=JEV,CASHCAT — active_multi_ca:score=70.2,n_cas=2,buys=2,vol=$21890,last=0.8h,src=watch_candidates
+7. `0x031da5a0b0663aa1d4154bf42fce0285bbab11fc` score=70.2 n_cas=2 syms=MEME,DELTA — active_multi_ca:score=70.2,n_cas=2,buys=2,vol=$9548,last=2.1h,src=watch_candidates
+8. `0x15224e5a379887eac533bfa22b8bb7ee32c53dde` score=68.032 n_cas=3 syms=NSTRAT,ASKR,HEDGE — active_multi_ca:score=68.0,n_cas=3,buys=3,vol=$1246,last=1.0h,src=watch_candidates
+9. `0x750e70496c9ebe5a13551f0147e02206861869a4` score=67.882 n_cas=3 syms=AD,CPU,HEDGE — active_multi_ca:score=67.9,n_cas=3,buys=9,vol=$496,last=0.1h,src=watch_candidates
+10. `0xc8062fdca1f5cedf8c868150ce738970465d6764` score=67.603 n_cas=2 syms=PRISM,Index — active_multi_ca:score=67.6,n_cas=2,buys=2,vol=$4481,last=1.0h,src=watch_candidates
+11. `0xed14832b607a6e1ed0e2ac99a6365d8148ce8578` score=66.554 n_cas=2 syms=CEST,IF — active_multi_ca:score=66.6,n_cas=2,buys=3,vol=$4151,last=1.7h,src=watch_candidates
+12. `0xcfb481dad0a5acf826e317b4423ee6f0cd3876c4` score=65.519 n_cas=3 syms=AI,CEST,HEDGE — active_multi_ca:score=65.5,n_cas=3,buys=3,vol=$744,last=2.1h,src=watch_candidates
+13. `0x3eef9e104e4dacb3165f28e3bc43dd7e506aa224` score=64.96 n_cas=3 syms=MEME,ASKR,HEDGE — active_multi_ca:score=65.0,n_cas=3,buys=5,vol=$392,last=0.2h,src=watch_candidates
+14. `0xddddd6569e77113cec78e93de9de48ba5da7e6fa` score=64.244 n_cas=3 syms=WALLET,IF,DELTA — active_multi_ca:score=64.2,n_cas=3,buys=7,vol=$9,last=0.0h,src=watch_candidates
+15. `0x788e953548e5193676574c600c990bec0e0ba627` score=63.396 n_cas=3 syms=SCHIFFY,WALLET,CEST — active_multi_ca:score=63.4,n_cas=3,buys=4,vol=$199,last=0.4h,src=watch_candidates
+16. `0x0c5bb8200a27d4207f55de00d3381eb58758d930` score=63.3 n_cas=3 syms=CEST,CPU,Index — active_multi_ca:score=63.3,n_cas=3,buys=4,vol=$180,last=2.0h,src=watch_candidates
+17. `0xceac58ee82815b0a5bdfd698d1cc63094f9693bc` score=62.697 n_cas=3 syms=MEME,IF,HEDGE — active_multi_ca:score=62.7,n_cas=3,buys=3,vol=$179,last=2.4h,src=watch_candidates
+18. `0x1d392b26a0d62588a9fdab6efddd057dc417556b` score=62.1 n_cas=3 syms=CEST,9e9,SUPER — active_multi_ca:score=62.1,n_cas=3,buys=3,vol=$60,last=1.1h,src=watch_candidates
+19. `0x134d468b0bcaea6df127916f951f7938c06a37c6` score=62.029 n_cas=3 syms=DELTA,HOOKR,Index — active_multi_ca:score=62.0,n_cas=3,buys=3,vol=$46,last=3.7h,src=watch_candidates
+20. `0x0e3eb60df4d14b213dc4de53316ed7bcd4aadc87` score=61.965 n_cas=3 syms=SI,SHROOM,DELTA — active_multi_ca:score=62.0,n_cas=3,buys=3,vol=$33,last=0.7h,src=watch_candidates
+21. `0x2ca0e50ddfc0a6ff0c759526cc09c647643b3094` score=61.963 n_cas=3 syms=SI,PRISM,CEST — active_multi_ca:score=62.0,n_cas=3,buys=3,vol=$33,last=0.0h,src=watch_candidates
+22. `0xfad5025d8604c3615628ca287b83de014c44b8d9` score=61.961 n_cas=3 syms=PONS,SHROOM,HOOKR — active_multi_ca:score=62.0,n_cas=3,buys=3,vol=$32,last=0.5h,src=watch_candidates
+23. `0xd71212eaed944deb835dcca0a26f34e4c47850a2` score=61.861 n_cas=3 syms=JEV,IF,SHROOM — active_multi_ca:score=61.9,n_cas=3,buys=3,vol=$12,last=0.5h,src=watch_candidates
+24. `0x8414064eecd085146d170e567a1ad85191f76df3` score=61.832 n_cas=3 syms=PONS,CASHCAT,SHROOM — active_multi_ca:score=61.8,n_cas=3,buys=3,vol=$6,last=0.6h,src=watch_candidates
+25. `0x19a2605b590aec49da52aff984243a9c6b593762` score=61.118 n_cas=2 syms=MEME,HOOKR — active_multi_ca:score=61.1,n_cas=2,buys=2,vol=$3184,last=1.5h,src=watch_candidates
 
 ## Reject sample
 
-- `0x08d0c5049e4bc42102f22e6588c96374b923057c` score=191.697 n_cas=11 reasons=hub_n_cas>10
-- `0x6c3ed2461e4f90e8f22d975994173544af9b5bd3` score=47.4 n_cas=1 reasons=n_cas<2
+- `0xa5f84a769e79e989c5781417be462777552d9f48` score=57.0 n_cas=1 reasons=n_cas<2
+- `0x623265cb986174e0c90d54c0b93153651bf9c466` score=57.0 n_cas=1 reasons=n_cas<2
+- `0x638fd47ccf2e838a09b556f4fe458233cb3624d6` score=53.179 n_cas=1 reasons=n_cas<2
+- `0xf79e28332aec70eaf819b184999447b5022be65d` score=49.031 n_cas=1 reasons=n_cas<2
 
 ## Notes
 
