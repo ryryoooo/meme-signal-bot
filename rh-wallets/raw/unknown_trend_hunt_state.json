@@ -1,59 +1,59 @@
 {
-  "updated_at": "2026-09-20T08:08:46.935353Z",
+  "updated_at": "2026-09-20T08:24:50.490695Z",
   "n_cas": 30,
-  "n_known": 11714,
-  "n_candidates": 49,
-  "n_watch": 20,
+  "n_known": 11527,
+  "n_candidates": 172,
+  "n_watch": 25,
   "top": [
     {
-      "address": "0xad90a5ce3f7c790b6d33b4fd33efac85285fefde",
-      "score": 69.616,
-      "n_cas": 2
+      "address": "0x08d0c5049e4bc42102f22e6588c96374b923057c",
+      "score": 197.64,
+      "n_cas": 11
     },
     {
-      "address": "0x610db3bdb2f872d6c7b4a5ec4b23e6ddfc015979",
-      "score": 65.006,
-      "n_cas": 2
+      "address": "0x6a41697a5c1d725ba787dfb3903e1e0338c9b131",
+      "score": 152.325,
+      "n_cas": 8
     },
     {
-      "address": "0xb544d956800283114e2a51bbe949e9a5603929e5",
-      "score": 64.081,
-      "n_cas": 2
+      "address": "0x942b41d990133d8d9989bf3bb2f89f9aa1d127fd",
+      "score": 135.8,
+      "n_cas": 6
     },
     {
-      "address": "0xf6385c1d677f91851d07398c76e63c0f11bbdbf3",
-      "score": 59.845,
-      "n_cas": 2
+      "address": "0x6abea4998f9ef34ee1cda5715ccca0e4d4efb730",
+      "score": 122.529,
+      "n_cas": 6
     },
     {
-      "address": "0x28371b5899296204991033a9bfc4e1cf07411443",
-      "score": 58.373,
-      "n_cas": 2
+      "address": "0x359b288eb3ab1fb4553b5424b96d62f33e6eb359",
+      "score": 109.801,
+      "n_cas": 5
     },
     {
-      "address": "0x39dab8cfd3e74bcefa75ffdd508afa9d8e2dc18c",
-      "score": 58.058,
-      "n_cas": 2
+      "address": "0xc78304acdf1f0d62b51441a38e5c1bab78f03f7a",
+      "score": 99.261,
+      "n_cas": 5
     },
     {
-      "address": "0x3ec73b58426fc7a1b314d1b1347f055fbb1d3533",
-      "score": 51.106,
-      "n_cas": 2
+      "address": "0xfd2a475d7ce02ec077867d72177063b5c2ab01b6",
+      "score": 98.005,
+      "n_cas": 5
     },
     {
-      "address": "0x2b23525618d38aff20efbf00bf3d12d023b1c910",
-      "score": 49.2,
-      "n_cas": 1
+      "address": "0x668001289b9da5a23840a6d4fa195d977f23bb3b",
+      "score": 96.71,
+      "n_cas": 5
     },
     {
-      "address": "0x43370250bfc02c7f085cb105558da41e9cdb2d79",
-      "score": 47.625,
-      "n_cas": 2
+      "address": "0x11bc74e240c13f7067529b21dfb9933ff7fcb136",
+      "score": 87.4,
+      "n_cas": 3
     },
     {
-      "address": "0x49ff8ee55aedf538d34075c472b3494156160d3a",
-      "score": 47.438,
-      "n_cas": 2
+      "address": "0x11445b5d1178de4e84e7ca0381b86b0699ab1360",
+      "score": 83.198,
+      "n_cas": 3
     }
   ],
   "cas": [
@@ -72,15 +72,15 @@
       ]
     },
     {
-      "ca": "0x39dbed3a2bd333467115de45665cc57f813c4571",
-      "symbol": "PONS",
+      "ca": "0x4d066ab4d924b7b3d01c6ecbfc142efe33aeb7fa",
+      "symbol": "JEV",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0x4d066ab4d924b7b3d01c6ecbfc142efe33aeb7fa",
-      "symbol": "JEV",
+      "ca": "0x39dbed3a2bd333467115de45665cc57f813c4571",
+      "symbol": "PONS",
       "sources": [
         "gecko_trending"
       ]
@@ -97,14 +97,6 @@
       "symbol": "URANUS",
       "sources": [
         "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0xee9a89fadf3894fed75bf312f9252f770e287f5a",
-      "symbol": "FOMOEGG",
-      "sources": [
-        "gecko_trending",
-        "dex_boosts"
       ]
     },
     {
@@ -130,15 +122,15 @@
       ]
     },
     {
-      "ca": "0x385307be7df9b45f55f8be72e0cf8b36466813ee",
-      "symbol": "9e9",
+      "ca": "0xd17c81cb01d44cc6e822936e8f098960001b47d2",
+      "symbol": "HOODCATS",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0xd17c81cb01d44cc6e822936e8f098960001b47d2",
-      "symbol": "HOODCATS",
+      "ca": "0x385307be7df9b45f55f8be72e0cf8b36466813ee",
+      "symbol": "9e9",
       "sources": [
         "gecko_trending"
       ]
@@ -173,13 +165,6 @@
       ]
     },
     {
-      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
-      "symbol": "SUPER",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
       "ca": "0x232cdfc415d10b673845d83dc02ba2eabe7e30d1",
       "symbol": "IF",
       "sources": [
@@ -187,8 +172,8 @@
       ]
     },
     {
-      "ca": "0xab093def657f15df31b33922a95e047add645b29",
-      "symbol": "SHROOM",
+      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
+      "symbol": "SUPER",
       "sources": [
         "gecko_trending"
       ]
@@ -202,8 +187,8 @@
       ]
     },
     {
-      "ca": "0x11b70d0243baf75e85ce03201a92b5b7c33beb59",
-      "symbol": "ROBIN",
+      "ca": "0xab093def657f15df31b33922a95e047add645b29",
+      "symbol": "SHROOM",
       "sources": [
         "gecko_trending"
       ]
@@ -211,6 +196,13 @@
     {
       "ca": "0x91a2dae9699f0b82540b5886b0d8759c22820ba3",
       "symbol": "musebook",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
+      "ca": "0x11b70d0243baf75e85ce03201a92b5b7c33beb59",
+      "symbol": "ROBIN",
       "sources": [
         "gecko_trending"
       ]
@@ -237,15 +229,15 @@
       ]
     },
     {
-      "ca": "0x18e674231a58c239dc7daedcffe15ec3a24cff5c",
-      "symbol": "HOOKR",
+      "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
+      "symbol": "HEDGE",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
-      "symbol": "HEDGE",
+      "ca": "0x18e674231a58c239dc7daedcffe15ec3a24cff5c",
+      "symbol": "HOOKR",
       "sources": [
         "gecko_trending"
       ]
@@ -258,6 +250,13 @@
       ]
     },
     {
+      "ca": "0x56910d4409f3a0c78c64dd8d0545ff0705389870",
+      "symbol": "Index",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x3ba500f1ababbcf0f0247d06d1c56fd7e6c4c09d",
       "symbol": "WORM",
       "sources": [
@@ -265,14 +264,14 @@
       ]
     },
     {
-      "ca": "0x56910d4409f3a0c78c64dd8d0545ff0705389870",
-      "symbol": "Index",
+      "ca": "0x15d36b6a28d8327abc7afabf0f106ae2c9af5c4d",
+      "symbol": "PARE",
       "sources": [
         "gecko_trending"
       ]
     }
   ],
-  "elapsed_s": 60.16,
+  "elapsed_s": 65.72,
   "rpc_calls": 0,
   "rpc_429": 0
 }
