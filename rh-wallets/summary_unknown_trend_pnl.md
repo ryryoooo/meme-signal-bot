@@ -1,37 +1,27 @@
 # Unknown-trend promoted wallets — PnL status
 
-- Updated: **2026-09-20 15:18 JST**
-- Source: `rh-wallets/wallets.jsonl` tags `unknown_trend` + `pnl_pending`
-- Count: **95** addresses (peak_ca_overlap: 39; pnl_pending tag: 95)
-- Merged onto origin: +40 local-only promotes (55→95)
+- Updated: **2026-09-20 16:10 JST**
+- Source: on-chain / Gecko trade-history estimates (`pnl_source=onchain_est`) — **not GMGN**
+- Priority addrs file: 95 (`raw/unknown_trend_pnl_pending_addrs.txt`)
 
-## realized_pnl_usd
+## First batch (`summary_onchain_pnl.md`)
 
-| bucket | count |
+| bucket (`realized_pnl_usd_est`) | count |
 |--------|------:|
-| positive (>) | **0** |
-| negative (<) | **0** |
-| zero (=0) | **0** |
-| still null | **95** |
+| positive (>) | **41** |
+| negative (<) | **19** |
+| zero (~0) | **20** |
+| still null / no trades in window | **15** |
 
-**Profit answer: unknown — all 95/95 still `realized_pnl_usd=null` (tag `pnl_pending`). No invented numbers. Cached fills: 0.**
+- Trade hits: **80/95**
+- Quality-gated promote → `realized_pnl_usd` + clear `pnl_pending`: **39** (`pass_pnl=39`)
+- Remaining `pnl_pending` among 95: **56** (neg/zero/low-quality/null — daemon keeps filling)
 
 ## Fill path
 
-- Box GMGN: **disabled** (do not call from box IP)
-- GHA: `gmgn-vet-throttle.yml` with `priority=pnl_pending` → fills `realized_pnl_usd` / `win_rate` / `n_trades`, clears `pnl_pending` on success
+- Box GMGN: **disabled**
+- Continuous: `scripts/estimate_wallet_pnl_onchain.py` via daemon (`PNL_FILL_EVERY_SEC=900` + after trend promote)
+- Fields: `realized_pnl_usd_est`, `pnl_source=onchain_est`; promote when est>0 and quality ok
+- Logs: `rh-wallets/summary_onchain_pnl.md`, `rh-wallets/pnl_fill_log.jsonl`
 
-## GMGN 429 cooldown
-
-- Last 429: **2026-09-20 14:13 JST** (`2026-09-20T05:13:01Z`)
-- Default cool window: 6h → until **2026-09-20 20:13 JST**
-- Cooled now: **False**
-- Job dispatch: **held** until cool (avoid another 429). Pending fill: **95** wallets.
-
-## Next
-
-```bash
-gh workflow run gmgn-vet-throttle.yml -f cap=5 -f sleep_sec=25 -f priority=pnl_pending -f period=30d -f rate_limit_cooldown_hours=6
-```
-
-At cap=5 / ~25s sleep, ~19 runs on the 3h schedule to clear 95 if no further 429.
+**Honest: these are estimates from recent Gecko pool trades + optional MTM — not vetted GMGN PnL.**
