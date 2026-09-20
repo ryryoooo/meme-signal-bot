@@ -103,7 +103,7 @@ Daemon: `SOL7D_EVERY_SEC` in `scripts/scout-wallet-bot.sh` (default 3600). Separ
 | Solana smart | `raw/sol_smart_signal_state.json` | `paper_sol_smart_book.json` | `summary_paper_sol_smart.md` |
 
 - Tick: `scripts/sol_paper_tick.py` / `scripts/sol_paper_tick.sh`（~90s、scout-wallet-bot が ensure）
-- ルール: サイズ 20%（n≥3→30%）· 同時最大 3 · 1 mint 1 本 · +100% 半分利確 · −40% ストップ
+- ルール: **攻撃的ムーンバッグ** サイズ 30%（n≥3→40%）· 同時最大 4 · 1 mint 1 本 · TP1+25%で50%利確 · TP2+60%→ムーン袋15% · ストップ-50% · ムーン袋破局-75%のみ
 - エントリー = 通知時 `alert_price_usd` · 値洗い DexScreener のみ（box GMGN なし）
 - **【紙実況】** → `DISCORD_SOL_PAPER_WEBHOOK_URL` のみ（StonkFun / Sol smart シグナルchへは残高投稿しない）
 - 実況タイミング: 起動announce · fill/close/milestone · ~20分 heartbeat（`SOL_PAPER_JIKEI_SEC`）

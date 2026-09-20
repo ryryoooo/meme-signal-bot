@@ -10,19 +10,26 @@ Rules (meme constitution style):
   - Size ~20% (30% if n>=3) of bankroll, capped by cash
   - One open per mint; max concurrent PAPER_MAX_OPEN (default 3)
   - Entry = alert_price_usd at notify
-  - Exits: +100% take half; −40% stop; mark-to-market each tick
+  - Exits (攻撃的ムーンバッグ): TP1 +25% sell 50%; TP2 +60% → leave 15% moonbag;
+    main stop −50% before moonbag; moonbag catastrophic −75% only; mark each tick
+  - Size default 30% (n≥3 → 40%); PAPER_MAX_OPEN 3–4; no add while moonbag on mint
   - Discord 【紙実況】 ONLY via DISCORD_SOL_PAPER_WEBHOOK_URL
     (never StonkFun / Sol smart signal channels)
 
 Env (shared):
   SOL_PAPER_TICK_SEC=90
   SOL_PAPER_BANKROLL_USD=100
-  SOL_PAPER_MAX_OPEN=3
+  SOL_PAPER_MAX_OPEN=4
   SOL_PAPER_ALERT_MAX_AGE_SEC=21600
   SOL_PAPER_DISCORD=1          # 【紙実況】 to DISCORD_SOL_PAPER_WEBHOOK_URL only
   SOL_PAPER_JIKEI_SEC=1200     # heartbeat 実況 cadence (~20 min)
   SOL_PAPER_SEED_ON_START=1    # open up to max_open from newest alerts if empty
   PAPER_MARK_HEARTBEAT=0      # forced off (paper_trade mark spam)
+  # Aggressive moonbag (defaults applied in _apply_env_for_book):
+  # PAPER_SIZE_PCT_DEFAULT=30 PAPER_SIZE_PCT_STRONG=40
+  # PAPER_TP1_MULT=1.25 PAPER_TP1_SELL_PCT=0.50
+  # PAPER_TP2_MULT=1.60 PAPER_MOONBAG_PCT=0.15
+  # PAPER_STOP_MULT=0.50 PAPER_MOON_STOP_MULT=0.25
 """
 from __future__ import annotations
 
@@ -52,7 +59,7 @@ if str(os.environ.get("PAPER_MARK_HEARTBEAT") or "").strip() == "":
 
 INTERVAL = float(os.environ.get("SOL_PAPER_TICK_SEC") or "90")
 BANKROLL = float(os.environ.get("SOL_PAPER_BANKROLL_USD") or "100")
-MAX_OPEN = int(float(os.environ.get("SOL_PAPER_MAX_OPEN") or "3"))
+MAX_OPEN = int(float(os.environ.get("SOL_PAPER_MAX_OPEN") or "4"))
 ALERT_MAX_AGE = float(os.environ.get("SOL_PAPER_ALERT_MAX_AGE_SEC") or str(6 * 3600))
 SEED_ON_START = str(os.environ.get("SOL_PAPER_SEED_ON_START") or "1").strip().lower() in (
     "1",
@@ -94,6 +101,15 @@ CHANNELS: list[dict[str, Any]] = [
         "n_key": "wallet_count",
     },
 ]
+
+def _pos_flag(p: dict) -> str:
+    st = p.get("status") or "open"
+    if st == "moonbag" or p.get("moonbag"):
+        return "ムーン袋"
+    if st in ("tp1_taken", "half_taken") or p.get("tp1_taken"):
+        return "TP1後"
+    return "open"
+
 
 _price_cache: dict[str, tuple[float, dict]] = {}
 _PRICE_TTL = 12.0
@@ -163,7 +179,7 @@ def _book_snapshot(ch: dict, st: dict | None = None) -> dict:
         mult = float(p.get("last_mark_mult") or (mark / entry if entry else 0) or 0)
         u = rem * mult - rem if mult else 0.0
         unreal += u
-        flag = "半分後" if (p.get("status") == "half_taken") else "open"
+        flag = _pos_flag(p)
         pos_lines.append(
             f"· `${p.get('symbol') or '?'}` {mult:.2f}x · 残${rem:.0f} · uPnL ${u:+.2f} · {flag}"
         )
@@ -199,14 +215,14 @@ def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict
             f"**合算** 純資産 **${total_eq:.2f}** · 現金 ${total_cash:.2f} · "
             f"実現 ${total_rpnl:+.2f} · 含み ${total_u:+.2f}"
         ),
-        f"原資 ${BANKROLL:.0f}×2 · LIVE_TRADING=0 · 実注文なし",
+        f"原資 ${BANKROLL:.0f}×2 · LIVE_TRADING=0 · 攻撃的ムーンバッグ · 実注文なし",
     ]
     head_desc = chr(10).join(head_lines)
     if event_note:
         head_desc = event_note + chr(10) + chr(10) + head_desc
     embeds: list[dict] = [
         {
-            "title": "【紙実況】Solana 仮想トレード",
+            "title": "【紙実況】Solana 仮想トレード（攻撃的ムーンバッグ）",
             "description": head_desc[:1900],
             "color": 0xF1C40F,
             "footer": {"text": "DISCORD_SOL_PAPER only · signal ch へは投稿しない"},
@@ -243,7 +259,7 @@ def post_jikkei(reason: str, *, force: bool = False, event_note: str | None = No
         log("jikkei skip: DISCORD_SOL_PAPER_WEBHOOK_URL missing")
         return False
     now = time.time()
-    is_event = reason.startswith("event:") or reason in ("open", "half", "stop", "seed", "announce")
+    is_event = reason.startswith("event:") or reason in ("open", "half", "tp1", "tp2", "stop", "seed", "announce")
     if not force:
         if is_event:
             if now - _last_event_post < _EVENT_GAP and reason != "announce":
@@ -422,6 +438,15 @@ def _apply_env_for_book() -> None:
     os.environ["PAPER_MAX_LOSSES_WEEK"] = os.environ.get("PAPER_MAX_LOSSES_WEEK") or "0"
     if str(os.environ.get("PAPER_MARK_HEARTBEAT") or "").strip() == "":
         os.environ["PAPER_MARK_HEARTBEAT"] = "0"
+    # Aggressive moonbag defaults (do not override if already set)
+    os.environ.setdefault("PAPER_SIZE_PCT_DEFAULT", "30")
+    os.environ.setdefault("PAPER_SIZE_PCT_STRONG", "40")
+    os.environ.setdefault("PAPER_TP1_MULT", "1.25")
+    os.environ.setdefault("PAPER_TP1_SELL_PCT", "0.50")
+    os.environ.setdefault("PAPER_TP2_MULT", "1.60")
+    os.environ.setdefault("PAPER_MOONBAG_PCT", "0.15")
+    os.environ.setdefault("PAPER_STOP_MULT", "0.50")
+    os.environ.setdefault("PAPER_MOON_STOP_MULT", "0.25")
 
 
 def active_cas(st: dict) -> set[str]:
@@ -550,13 +575,13 @@ def adopt_alerts(
 def write_summary(ch: dict, st: dict) -> None:
     paper = paper_mod.ensure_paper_state(st)
     positions = st.get("paper_positions") or []
-    active = [p for p in positions if (p.get("status") or "") in ("open", "half_taken")]
+    active = [p for p in positions if (p.get("status") or "") in paper_mod.ACTIVE_STATUSES]
     stopped = [p for p in positions if (p.get("status") or "") == "stopped"]
-    half = [p for p in positions if p.get("half_taken")]
+    half = [p for p in positions if p.get("half_taken") or p.get("tp1_taken") or p.get("moonbag")]
     closed_pnl = []
     wins = losses = 0
     for p in positions:
-        if (p.get("status") or "") not in ("stopped", "closed", "done", "half_taken"):
+        if (p.get("status") or "") not in ("stopped", "closed", "done", "half_taken", "tp1_taken", "moonbag"):
             continue
         # count fully closed only for win rate
         if (p.get("status") or "") in ("stopped", "closed", "done"):
@@ -603,7 +628,7 @@ def write_summary(ch: dict, st: dict) -> None:
         f"- 原資: **${bankroll:.2f}** · 現金 **${cash:.2f}** · 純資産 **${equity:.2f}**",
         f"- 実現PnL: **${realized:+.2f}** · 含み損益: **${unreal:+.2f}**",
         f"- 勝率: **{win_rate:.0f}%** ({wins}W/{losses}L · 決着{decided})",
-        f"- ルール: サイズ20%(n≥3→30%) / 同時最大{MAX_OPEN} / 1mint1本 / +100%半分 / −40%ストップ",
+        f"- ルール: **攻撃的ムーンバッグ** サイズ30%(n≥3→40%) / 同時最大{MAX_OPEN} / 1mint1本 / TP1+25%で50% / TP2+60%→ムーン15% / ストップ-50% / ムーン袋破局-75%",
         f"- 価格: DexScreenerのみ（box GMGNなし）",
         f"- 帳簿: `{ch['book'].name}` · fills `{ch['fills'].name}`",
         f"- fills: " + (", ".join(f"{k}={v}" for k, v in sorted(fills_counts.items())) or "（なし）"),
@@ -617,7 +642,7 @@ def write_summary(ch: dict, st: dict) -> None:
             mult = float(p.get("last_mark_mult") or 0)
             rem = float(p.get("remaining_usd") or 0)
             u = rem * mult - rem if mult else 0.0
-            flag = "半分後" if (p.get("status") == "half_taken") else "open"
+            flag = _pos_flag(p)
             lines.append(
                 f"- `${p.get('symbol') or '?'}` {mult:.2f}x · 残${rem:.2f} · "
                 f"uPnL ${u:+.2f} · {flag} · `{(p.get('ca') or '')[:12]}…`"
@@ -668,7 +693,11 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
     )
 
     before = {
-        (p.get("ca") or "").lower(): (p.get("status"), bool(p.get("half_taken")))
+        (p.get("ca") or "").lower(): (
+            p.get("status"),
+            bool(p.get("half_taken") or p.get("tp1_taken")),
+            bool(p.get("moonbag")),
+        )
         for p in (st.get("paper_positions") or [])
     }
     stats = paper_mod.process_paper_positions(
@@ -683,9 +712,11 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
     event_notes: list[str] = []
     for p in st.get("paper_positions") or []:
         ca = (p.get("ca") or "").lower()
-        prev_st, prev_half = before.get(ca, (None, False))
+        prev_st, prev_tp1, prev_moon = before.get(ca, (None, False, False))
         now_st = p.get("status")
-        if prev_st in ("open", "half_taken") and now_st in ("stopped", "closed", "done"):
+        now_tp1 = bool(p.get("half_taken") or p.get("tp1_taken"))
+        now_moon = bool(p.get("moonbag") or now_st == "moonbag")
+        if prev_st in paper_mod.ACTIVE_STATUSES and now_st in ("stopped", "closed", "done"):
             if ca and ca not in closed:
                 closed.append(ca)
             log(
@@ -697,9 +728,15 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
                 f"{float(p.get('last_mark_mult') or 0):.2f}x · "
                 f"PnL ${float(p.get('realized_pnl_usd') or 0):+.2f}"
             )
-        elif prev_st == "open" and now_st == "half_taken" and not prev_half:
+        elif (not prev_moon) and now_moon:
             event_notes.append(
-                f"💰 `{ch['id']}` ${p.get('symbol') or '?'} 半分利確 · "
+                f"🚀 `{ch['id']}` ${p.get('symbol') or '?'} ムーン袋へ · "
+                f"{float(p.get('last_mark_mult') or 0):.2f}x · "
+                f"残 ${float(p.get('remaining_usd') or 0):.2f}"
+            )
+        elif (not prev_tp1) and now_tp1 and not now_moon:
+            event_notes.append(
+                f"🎯 `{ch['id']}` ${p.get('symbol') or '?'} TP1利確 · "
                 f"{float(p.get('last_mark_mult') or 0):.2f}x"
             )
     st["tick_closed_cas"] = closed[-500:]
@@ -714,6 +751,8 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
         "active": active_n,
         "marked": stats.get("marked", 0),
         "half": stats.get("half", 0),
+        "tp1": stats.get("tp1", 0),
+        "tp2": stats.get("tp2", 0),
         "stop": stats.get("stop", 0),
         "cash": float(paper.get("cash_usd") or 0),
         "equity": float(paper.get("equity_usd") or 0),
@@ -732,13 +771,14 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
     os.environ["PAPER_MARK_HEARTBEAT"] = os.environ.get("PAPER_MARK_HEARTBEAT") or "0"
     results = []
     all_notes: list[str] = []
-    opened_total = half_total = stop_total = eq_ms = 0
+    opened_total = half_total = tp2_total = stop_total = eq_ms = 0
     for ch in CHANNELS:
         try:
             r = tick_channel(ch, force_seed=force_seed)
             results.append(r)
             opened_total += int(r.get("opened") or 0)
             half_total += int(r.get("half") or 0)
+            tp2_total += int(r.get("tp2") or 0)
             stop_total += int(r.get("stop") or 0)
             eq_ms += int(r.get("equity_ms") or 0)
             all_notes.extend(r.get("event_notes") or [])
@@ -746,7 +786,7 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
                 all_notes.append(f"📥 `{r['id']}` 新規オープン +{r['opened']}")
             log(
                 f"tick {r['id']}: open+={r['opened']} active={r['active']} "
-                f"marked={r['marked']} half={r['half']} stop={r['stop']} "
+                f"marked={r['marked']} half={r['half']} tp2={r.get('tp2',0)} stop={r['stop']} "
                 f"cash=${r['cash']:.2f} eq=${r['equity']:.2f} "
                 f"rpnl=${r['realized']:+.2f} alerts={r['alerts']}"
             )
@@ -761,15 +801,17 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
             post_jikkei(
                 "announce",
                 force=True,
-                event_note="🟢 紙トレード実況スタート（原資 $100×2）",
+                event_note="🟢 紙トレード実況スタート（原資 $100×2 · 攻撃的ムーンバッグ）",
             )
-    elif all_notes or half_total or stop_total or opened_total or eq_ms:
+    elif all_notes or half_total or tp2_total or stop_total or opened_total or eq_ms:
         note = chr(10).join(all_notes[:8]) if all_notes else None
         reason = "event:fill"
         if stop_total:
             reason = "event:stop"
+        elif tp2_total:
+            reason = "event:tp2"
         elif half_total:
-            reason = "event:half"
+            reason = "event:tp1"
         elif opened_total:
             reason = "event:open"
         elif eq_ms:

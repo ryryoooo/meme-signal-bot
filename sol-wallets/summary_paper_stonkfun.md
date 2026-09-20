@@ -1,19 +1,20 @@
 # 【紙】StonkFun digger 仮想トレード
 
-- 生成: 2026-09-20 19:51 JST
+- 生成: 2026-09-20 20:47 JST
 - チャンネル: `stonkfun` · LIVE_TRADING=**0** · 実注文なし
-- 原資: **$100.00** · 現金 **$40.00** · 純資産 **$106.22**
-- 実現PnL: **$+0.00** · 含み損益: **$+6.22**
+- 原資: **$100.00** · 現金 **$23.46** · 純資産 **$105.11**
+- 実現PnL: **$+3.46** · 含み損益: **$+1.65**
 - 勝率: **0%** (0W/0L · 決着0)
-- ルール: サイズ20%(n≥3→30%) / 同時最大3 / 1mint1本 / +100%半分 / −40%ストップ
+- ルール: **攻撃的ムーンバッグ** サイズ30%(n≥3→40%) / 同時最大4 / 1mint1本 / TP1+25%で50% / TP2+60%→ムーン15% / ストップ-50% / ムーン袋破局-75%
 - 価格: DexScreenerのみ（box GMGNなし）
 - 帳簿: `paper_stonkfun_book.json` · fills `paper_stonkfun_fills.jsonl`
-- fills: mark=1, open=3
+- fills: mark=73, open=4, tp1=1
 
 ## オープンポジション
-- `$CHIPPY` 1.31x · 残$20.00 · uPnL $+6.22 · open · `d7cjdchaglyx…`
-- `$ASS` 0.00x · 残$20.00 · uPnL $+0.00 · open · `exg27yok3x9g…`
+- `$CHIPPY` 1.35x · 残$10.00 · uPnL $+3.46 · TP1後 · `d7cjdchaglyx…`
+- `$ASS` 0.92x · 残$20.00 · uPnL $-1.63 · open · `exg27yok3x9g…`
 - `$Dih` 0.00x · 残$20.00 · uPnL $+0.00 · open · `f1pgaer6bvnx…`
+- `$METCAT` 0.99x · 残$30.00 · uPnL $-0.18 · open · `4yfh2vmdy99t…`
 
 ## 最近クローズ（ストップ）
 - （なし）

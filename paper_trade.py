@@ -1,10 +1,15 @@
 """Virtual paper trading ($300 bankroll). Never places real orders.
 
 Risk rules (env-overridable; 0 = unlimited for caps):
-- concurrent opens: PAPER_MAX_OPEN (default 5)
-- size 20% (30% if n>=3)
-- +100% half-take / -40% stop
-- weekly entry / loss caps off by default (PAPER_MAX_ENTRIES_WEEK=0, PAPER_MAX_LOSSES_WEEK=0)
+- concurrent opens: PAPER_MAX_OPEN (default 5; Sol tick uses 3–4)
+- size: PAPER_SIZE_PCT_DEFAULT / PAPER_SIZE_PCT_STRONG (Sol aggressive: 30 / 40)
+- Aggressive moonbag exits:
+  TP1 PAPER_TP1_MULT / PAPER_TP1_SELL_PCT (default 1.25 / 0.50 of original)
+  TP2 PAPER_TP2_MULT → leave PAPER_MOONBAG_PCT (default 1.60 / 0.15)
+  main stop PAPER_STOP_MULT before moonbag (default 0.50 = -50%)
+  moonbag catastrophic PAPER_MOON_STOP_MULT (default 0.25 = -75%; 0=off)
+- legacy half_taken (+100% sold 50%) migrates as TP1-done → TP2 trims to moonbag
+- weekly entry / loss caps off by default
 """
 from __future__ import annotations
 
@@ -15,11 +20,13 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Callable
 
+# Legacy alias; exits use tp1_mult()/stop_mult() env knobs
 PAPER_HALF_TAKE_MULT = 2.0
-PAPER_STOP_MULT = 0.60
-PAPER_SIZE_PCT_DEFAULT = 20
-PAPER_SIZE_PCT_STRONG = 30
+PAPER_STOP_MULT = 0.50  # aggressive default (-50%)
+PAPER_SIZE_PCT_DEFAULT = 30  # aggressive; env override
+PAPER_SIZE_PCT_STRONG = 40
 DEFAULT_BANKROLL_USD = 300.0
+ACTIVE_STATUSES = ("open", "half_taken", "tp1_taken", "moonbag")
 
 
 def _env_int(name: str, default: int) -> int:
@@ -27,6 +34,48 @@ def _env_int(name: str, default: int) -> int:
         return int(float(os.environ.get(name, str(default))))
     except (TypeError, ValueError):
         return default
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def size_pct_default() -> int:
+    return max(1, int(_env_float("PAPER_SIZE_PCT_DEFAULT", PAPER_SIZE_PCT_DEFAULT)))
+
+
+def size_pct_strong() -> int:
+    return max(size_pct_default(), int(_env_float("PAPER_SIZE_PCT_STRONG", PAPER_SIZE_PCT_STRONG)))
+
+
+def tp1_mult() -> float:
+    return max(1.01, _env_float("PAPER_TP1_MULT", 1.25))
+
+
+def tp1_sell_pct() -> float:
+    """Fraction of *original* notional sold at TP1."""
+    return min(0.95, max(0.05, _env_float("PAPER_TP1_SELL_PCT", 0.50)))
+
+
+def tp2_mult() -> float:
+    return max(tp1_mult(), _env_float("PAPER_TP2_MULT", 1.60))
+
+
+def moonbag_pct() -> float:
+    return min(0.50, max(0.01, _env_float("PAPER_MOONBAG_PCT", 0.15)))
+
+
+def moon_stop_mult() -> float:
+    """0 = disabled. Default 0.25 ≈ -75% on moonbag only."""
+    return max(0.0, _env_float("PAPER_MOON_STOP_MULT", 0.25))
+
+
+def stop_mult() -> float:
+    """Main stop before moonbag. Default 0.50 = -50% (aggressive)."""
+    return max(0.01, min(0.99, _env_float("PAPER_STOP_MULT", PAPER_STOP_MULT)))
 
 
 def max_entries_week() -> int:
@@ -40,7 +89,7 @@ def max_losses_week() -> int:
 
 
 def max_open_positions() -> int:
-    """Max concurrent open/half_taken positions. 0 = unlimited."""
+    """Max concurrent open/tp1/moonbag positions. 0 = unlimited."""
     return max(0, _env_int("PAPER_MAX_OPEN", 5))
 
 
@@ -106,7 +155,7 @@ def active_positions(state: dict) -> list[dict]:
     return [
         p
         for p in (state.get("paper_positions") or [])
-        if (p.get("status") or "") in ("open", "half_taken")
+        if (p.get("status") or "") in ACTIVE_STATUSES
     ]
 
 
@@ -167,7 +216,7 @@ def open_paper_position(
     if not entry_price or entry_price <= 0:
         return None
 
-    size_pct = PAPER_SIZE_PCT_STRONG if n >= 3 else PAPER_SIZE_PCT_DEFAULT
+    size_pct = size_pct_strong() if n >= 3 else size_pct_default()
     equity = float(paper.get("equity_usd") or bankroll_usd())
     # size against bankroll baseline (not floating equity) to avoid compounding aggression
     base = bankroll_usd()
@@ -194,6 +243,10 @@ def open_paper_position(
         "opened_at": time.time(),
         "status": "open",
         "half_taken": False,
+        "tp1_taken": False,
+        "tp2_taken": False,
+        "moonbag": False,
+        "legacy_half": False,
         "realized_pnl_usd": 0.0,
         "n": n,
         "chain": chain,
@@ -294,30 +347,143 @@ def process_paper_positions(
     webhook: str | None = None,
     discord_post: Callable | None = None,
 ) -> dict:
-    """Update marks; apply +100% half / -40% stop. Never real orders."""
+    """Update marks; aggressive moonbag TP1/TP2 + stops. Never real orders.
+
+    Legacy half_taken (old +100% / 50% sold) ⇒ TP1 done; TP2 trims to moonbag %.
+    """
     paper = ensure_paper_state(state)
     _rollover_week(paper)
     now = time.time()
-    stats = {"marked": 0, "half": 0, "stop": 0, "open": 0}
+    stats = {
+        "marked": 0,
+        "half": 0,
+        "tp1": 0,
+        "tp2": 0,
+        "stop": 0,
+        "moon_stop": 0,
+        "open": 0,
+        "migrated": 0,
+    }
     notices: list[str] = []
     positions = list(state.get("paper_positions") or [])
 
+    t1m = tp1_mult()
+    t1s = tp1_sell_pct()
+    t2m = tp2_mult()
+    moon_pct = moonbag_pct()
+    main_stop = stop_mult()
+    m_stop = moon_stop_mult()
+
+    def _sell(pos: dict, sell_cost: float, price: float, mult: float, *, event: str, label: str) -> float:
+        rem = float(pos.get("remaining_usd") or 0)
+        sell_cost = min(max(0.0, sell_cost), rem)
+        if sell_cost <= 0:
+            return 0.0
+        exit_value = sell_cost * mult
+        pnl = exit_value - sell_cost
+        paper["cash_usd"] = float(paper.get("cash_usd") or 0) + exit_value
+        paper["realized_pnl_usd"] = float(paper.get("realized_pnl_usd") or 0) + pnl
+        pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
+        pos["remaining_usd"] = rem - sell_cost
+        notion = float(pos.get("notional_usd") or rem or 1.0)
+        size_pct = float(pos.get("size_pct") or size_pct_default())
+        pos["remaining_pct"] = size_pct * (float(pos["remaining_usd"]) / notion) if notion else 0.0
+        append_paper_book(
+            book_path,
+            {
+                "event": event,
+                "ca": pos.get("ca"),
+                "symbol": pos.get("symbol"),
+                "entry_price": pos.get("entry_price"),
+                "exit_price": price,
+                "mult": mult,
+                "pnl_usd": pnl,
+                "sold_usd": sell_cost,
+                "remaining_usd": pos["remaining_usd"],
+                "cash_usd": paper["cash_usd"],
+                "status": pos.get("status"),
+            },
+        )
+        notices.append(
+            f"{label} ${pos.get('symbol') or '?'} · {mult:.2f}倍 · "
+            f"PnL ${pnl:+.2f} · 残 ${pos['remaining_usd']:.2f}"
+        )
+        print(
+            f"paper {event} {str(pos.get('ca') or '')[:10]}… mult={mult:.2f} "
+            f"pnl={pnl:.2f} rem={pos['remaining_usd']:.2f}"
+        )
+        return pnl
+
+    def _full_exit(
+        pos: dict,
+        price: float,
+        mult: float,
+        *,
+        event: str,
+        label: str,
+        count_week_loss: bool,
+    ) -> None:
+        rem = float(pos.get("remaining_usd") or 0)
+        _sell(pos, rem, price, mult, event=event, label=label)
+        pos["status"] = "stopped"
+        pos["closed_at"] = now
+        pos["remaining_usd"] = 0.0
+        pos["remaining_pct"] = 0.0
+        pos["moonbag"] = False
+        if count_week_loss:
+            paper["week_losses"] = int(paper.get("week_losses") or 0) + 1
+            was = bool(paper.get("week_stopped"))
+            if max_losses_week() > 0 and paper["week_losses"] >= max_losses_week():
+                paper["week_stopped"] = True
+                if not was:
+                    notices.append(
+                        f"🛑 週停止 · 連敗 {paper['week_losses']}/{max_losses_week()} · "
+                        f"今週の新規エントリー停止"
+                    )
+
     for pos in positions:
         status = pos.get("status") or "open"
-        if status not in ("open", "half_taken"):
+        if status not in ACTIVE_STATUSES:
             continue
         ca = pos.get("ca")
         entry = float(pos.get("entry_price") or 0)
         if not ca or entry <= 0:
             continue
+
+        # Migrate legacy half_taken (old +100% half) → TP1 done
+        if status == "half_taken" and not pos.get("tp1_taken") and not pos.get("moonbag"):
+            pos["tp1_taken"] = True
+            pos["half_taken"] = True
+            pos["legacy_half"] = True
+            pos.setdefault("tp1_sell_pct", 0.50)
+            stats["migrated"] += 1
+            append_paper_book(
+                book_path,
+                {
+                    "event": "migrate_legacy_half",
+                    "ca": ca,
+                    "symbol": pos.get("symbol"),
+                    "note": "old +100% half → TP1 done; await TP2 trim to moonbag",
+                    "remaining_usd": pos.get("remaining_usd"),
+                    "notional_usd": pos.get("notional_usd"),
+                },
+            )
+
         dex = fetch_dex(ca, pos.get("chain") or chain)
         price = None
         try:
-            price = float(dex.get("price_usd")) if dex.get("price_usd") is not None else None
+            if dex.get("price_usd") is not None:
+                price = float(dex.get("price_usd"))
         except (TypeError, ValueError):
             price = None
         if not price or price <= 0:
-            continue
+            # Fall back to last mark so TP/stop still apply when Dex flaps
+            try:
+                price = float(pos.get("last_mark_price") or 0)
+            except (TypeError, ValueError):
+                price = 0.0
+            if not price or price <= 0:
+                continue
         mult = price / entry
         pos["last_mark_price"] = price
         pos["last_mark_mult"] = mult
@@ -326,7 +492,7 @@ def process_paper_positions(
         pos["last_liq"] = dex.get("liq_usd")
         stats["marked"] += 1
         rem = float(pos.get("remaining_usd") or 0)
-        mark_value = rem * mult
+        notion = float(pos.get("notional_usd") or rem or 0)
         append_paper_book(
             book_path,
             {
@@ -335,90 +501,95 @@ def process_paper_positions(
                 "symbol": pos.get("symbol"),
                 "price": price,
                 "mult": mult,
-                "status": status,
+                "status": pos.get("status"),
                 "remaining_usd": rem,
-                "mark_value_usd": mark_value,
+                "mark_value_usd": rem * mult,
                 "mcap": pos.get("last_mcap"),
                 "liq": pos.get("last_liq"),
             },
         )
 
-        # -40% stop (full exit of remaining)
-        if mult <= PAPER_STOP_MULT:
-            exit_value = rem * mult
-            pnl = exit_value - rem
-            paper["cash_usd"] = float(paper.get("cash_usd") or 0) + exit_value
-            paper["realized_pnl_usd"] = float(paper.get("realized_pnl_usd") or 0) + pnl
-            pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
-            pos["status"] = "stopped"
-            pos["closed_at"] = now
-            pos["remaining_usd"] = 0
-            pos["remaining_pct"] = 0
-            paper["week_losses"] = int(paper.get("week_losses") or 0) + 1
-            was_week_stopped = bool(paper.get("week_stopped"))
-            if max_losses_week() > 0 and paper["week_losses"] >= max_losses_week():
-                paper["week_stopped"] = True
-                if not was_week_stopped:
-                    notices.append(
-                        f"🛑 週停止 · 連敗 {paper['week_losses']}/{max_losses_week()} · "
-                        f"今週の新規エントリー停止"
-                    )
-            stats["stop"] += 1
-            notices.append(
-                f"⛔ ストップ ${pos.get('symbol') or '?'} · {mult:.2f}倍 · PnL ${pnl:+.2f}"
-            )
-            append_paper_book(
-                book_path,
-                {
-                    "event": "stop",
-                    "ca": ca,
-                    "symbol": pos.get("symbol"),
-                    "entry_price": entry,
-                    "exit_price": price,
-                    "mult": mult,
-                    "pnl_usd": pnl,
-                    "cash_usd": paper["cash_usd"],
-                    "week_losses": paper["week_losses"],
-                    "week_stopped": paper["week_stopped"],
-                },
-            )
-            print(f"paper stop {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}")
+        is_moon = bool(pos.get("moonbag") or status == "moonbag")
+
+        if is_moon:
+            if m_stop > 0 and mult <= m_stop:
+                _full_exit(
+                    pos,
+                    price,
+                    mult,
+                    event="moon_stop",
+                    label="☄️ ムーン袋ストップ",
+                    count_week_loss=True,
+                )
+                stats["moon_stop"] += 1
+                stats["stop"] += 1
+            else:
+                stats["open"] += 1
             continue
 
-        # +100% half take
-        if (not pos.get("half_taken")) and mult >= PAPER_HALF_TAKE_MULT and status == "open":
-            half = rem / 2.0
-            exit_value = half * mult
-            # cost basis of half was `half`; pnl = exit - half
-            pnl = exit_value - half
-            paper["cash_usd"] = float(paper.get("cash_usd") or 0) + exit_value
-            paper["realized_pnl_usd"] = float(paper.get("realized_pnl_usd") or 0) + pnl
-            pos["realized_pnl_usd"] = float(pos.get("realized_pnl_usd") or 0) + pnl
-            pos["remaining_usd"] = rem - half
-            pos["remaining_pct"] = float(pos.get("size_pct") or PAPER_SIZE_PCT_DEFAULT) / 2.0
+        if mult <= main_stop:
+            _full_exit(
+                pos,
+                price,
+                mult,
+                event="stop",
+                label="⛔ ストップ",
+                count_week_loss=True,
+            )
+            stats["stop"] += 1
+            continue
+
+        if (
+            (not pos.get("tp1_taken"))
+            and (not pos.get("half_taken"))
+            and mult >= t1m
+            and status == "open"
+        ):
+            sell = (notion * t1s) if notion > 0 else rem * t1s
+            _sell(
+                pos,
+                sell,
+                price,
+                mult,
+                event="tp1",
+                label=f"🎯 TP1(+{(t1m - 1) * 100:.0f}%/{t1s * 100:.0f}%)",
+            )
+            pos["tp1_taken"] = True
             pos["half_taken"] = True
-            pos["status"] = "half_taken"
+            pos["status"] = "tp1_taken"
+            pos["tp1_at"] = now
+            pos["tp1_price"] = price
             pos["half_taken_at"] = now
             pos["half_taken_price"] = price
+            stats["tp1"] += 1
             stats["half"] += 1
-            notices.append(
-                f"💰 半分利確 ${pos.get('symbol') or '?'} · {mult:.2f}倍 · PnL ${pnl:+.2f}"
-            )
-            append_paper_book(
-                book_path,
-                {
-                    "event": "half_take",
-                    "ca": ca,
-                    "symbol": pos.get("symbol"),
-                    "entry_price": entry,
-                    "exit_price": price,
-                    "mult": mult,
-                    "pnl_usd": pnl,
-                    "remaining_usd": pos["remaining_usd"],
-                    "cash_usd": paper["cash_usd"],
-                },
-            )
-            print(f"paper half_take {ca[:10]}… mult={mult:.2f} pnl={pnl:.2f}")
+            continue
+
+        tp1_done = bool(
+            pos.get("tp1_taken")
+            or pos.get("half_taken")
+            or status in ("half_taken", "tp1_taken")
+        )
+        if tp1_done and (not pos.get("tp2_taken")) and (not is_moon) and mult >= t2m:
+            target = (notion * moon_pct) if notion > 0 else rem * moon_pct
+            sell = max(0.0, rem - target)
+            if sell > 1e-9:
+                _sell(
+                    pos,
+                    sell,
+                    price,
+                    mult,
+                    event="tp2",
+                    label=f"🚀 TP2(+{(t2m - 1) * 100:.0f}%→ムーン{moon_pct * 100:.0f}%)",
+                )
+            pos["tp2_taken"] = True
+            pos["moonbag"] = True
+            pos["status"] = "moonbag"
+            pos["tp2_at"] = now
+            pos["tp2_price"] = price
+            pos["moonbag_at"] = now
+            stats["tp2"] += 1
+            stats["half"] += 1
             continue
 
         stats["open"] += 1
@@ -428,13 +599,11 @@ def process_paper_positions(
     _mark_equity(state, book_path, now)
     paper = state["paper"]
 
-    # Paper-PnL equity milestones (bankroll ratios) — not signal multiplier followups
     equity_notices = _equity_milestone_notices(paper)
     notices.extend(equity_notices)
     if equity_notices:
         stats["equity_ms"] = len(equity_notices)
 
-    # Heartbeat: always surface open marks so price is tracked visibly each poll
     heartbeat_on = str((os.environ.get("PAPER_MARK_HEARTBEAT") or "1")).strip().lower() in (
         "1",
         "true",
@@ -444,7 +613,7 @@ def process_paper_positions(
         lines = []
         for pos in positions:
             st = pos.get("status") or "open"
-            if st not in ("open", "half_taken"):
+            if st not in ACTIVE_STATUSES:
                 continue
             if not pos.get("last_mark_mult"):
                 continue
@@ -453,7 +622,12 @@ def process_paper_positions(
             u_pnl = rem * mult - rem
             mcap = pos.get("last_mcap")
             mcap_s = f"${mcap:,.0f}" if isinstance(mcap, (int, float)) else "-"
-            flag = "半分後" if st == "half_taken" else "オープン"
+            if st == "moonbag" or pos.get("moonbag"):
+                flag = "ムーン袋"
+            elif st in ("tp1_taken", "half_taken") or pos.get("tp1_taken"):
+                flag = "TP1後"
+            else:
+                flag = "オープン"
             lines.append(
                 f"· `${pos.get('symbol') or '?'}` {mult:.2f}x · uPnL ${u_pnl:+.2f} · "
                 f"残 ${rem:.0f} · mcap {mcap_s} · {flag}"
@@ -466,7 +640,7 @@ def process_paper_positions(
             webhook,
             embeds=[
                 {
-                    "title": "紙トレード更新",
+                    "title": "紙トレード更新（攻撃的ムーンバッグ）",
                     "description": "\n".join(notices)[:1900],
                     "color": 0x1ABC9C,
                     "footer": {
@@ -576,8 +750,8 @@ def write_paper_summary(
             ev = str(row.get("event") or "")
             book_counts[ev] = book_counts.get(ev, 0) + 1
 
-    pos_open = sum(1 for p in positions if (p.get("status") or "") in ("open", "half_taken"))
-    pos_half = sum(1 for p in positions if p.get("half_taken"))
+    pos_open = sum(1 for p in positions if (p.get("status") or "") in ACTIVE_STATUSES)
+    pos_half = sum(1 for p in positions if p.get("half_taken") or p.get("tp1_taken") or p.get("moonbag"))
     pos_stop = sum(1 for p in positions if p.get("status") == "stopped")
 
     curve = paper.get("equity_curve") or []
@@ -621,10 +795,10 @@ def write_paper_summary(
     lines += [
         "",
         "## 紙ポジション（FOUNDATION）",
-        f"- 同時最大{max_open_positions() or '∞'}本 / サイズ {PAPER_SIZE_PCT_DEFAULT}%（n≥3→{PAPER_SIZE_PCT_STRONG}%）",
-        f"- +100%半分 / −40%ストップ / 週エントリー{'無制限' if max_entries_week()<=0 else max_entries_week()} / 連敗停止{'なし' if max_losses_week()<=0 else max_losses_week()}",
+        f"- 同時最大{max_open_positions() or '∞'}本 / サイズ {size_pct_default()}%（n≥3→{size_pct_strong()}%）",
+        f"- 攻撃的ムーンバッグ / TP1+25%/50%·TP2+60%→15%·Stop-50% / 週エントリー{'無制限' if max_entries_week()<=0 else max_entries_week()} / 連敗停止{'なし' if max_losses_week()<=0 else max_losses_week()}",
         f"- 帳簿: " + ", ".join(f"{k}={v}" for k, v in sorted(book_counts.items())),
-        f"- 状態 open系={pos_open} / 半分利確済={pos_half} / ストップ={pos_stop}",
+        f"- 状態 open系={pos_open} / TP1orムーン={pos_half} / ストップ={pos_stop}",
         "",
         "## エクイティ曲線（直近）",
     ]
