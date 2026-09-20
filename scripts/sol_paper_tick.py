@@ -755,12 +755,14 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
 
     if announce:
         # skip duplicate opening if we just posted announce <90s ago (restart race)
-        recent = (time.time() - _last_jikkei_at) < 90
-        post_jikkei(
-            "announce",
-            force=not recent,
-            event_note="🟢 紙トレード実況スタート（原資 $100×2）",
-        )
+        if (time.time() - _last_jikkei_at) < 90:
+            log("announce skip: recent jikkei already posted")
+        else:
+            post_jikkei(
+                "announce",
+                force=True,
+                event_note="🟢 紙トレード実況スタート（原資 $100×2）",
+            )
     elif all_notes or half_total or stop_total or opened_total or eq_ms:
         note = chr(10).join(all_notes[:8]) if all_notes else None
         reason = "event:fill"
