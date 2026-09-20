@@ -1,58 +1,58 @@
 {
-  "updated_at": "2026-09-20T07:47:55.817696Z",
+  "updated_at": "2026-09-20T08:08:46.935353Z",
   "n_cas": 30,
-  "n_known": 11692,
-  "n_candidates": 52,
-  "n_watch": 21,
+  "n_known": 11714,
+  "n_candidates": 49,
+  "n_watch": 20,
   "top": [
     {
-      "address": "0xca1fb9b7cd3314086c6623aceb5ddf08436f1060",
-      "score": 68.96,
+      "address": "0xad90a5ce3f7c790b6d33b4fd33efac85285fefde",
+      "score": 69.616,
       "n_cas": 2
     },
     {
-      "address": "0x7aeeaf88576fd40393caa98817a848dbd63d5269",
-      "score": 55.349,
+      "address": "0x610db3bdb2f872d6c7b4a5ec4b23e6ddfc015979",
+      "score": 65.006,
       "n_cas": 2
     },
     {
-      "address": "0xa5f84a769e79e989c5781417be462777552d9f48",
-      "score": 53.4,
+      "address": "0xb544d956800283114e2a51bbe949e9a5603929e5",
+      "score": 64.081,
+      "n_cas": 2
+    },
+    {
+      "address": "0xf6385c1d677f91851d07398c76e63c0f11bbdbf3",
+      "score": 59.845,
+      "n_cas": 2
+    },
+    {
+      "address": "0x28371b5899296204991033a9bfc4e1cf07411443",
+      "score": 58.373,
+      "n_cas": 2
+    },
+    {
+      "address": "0x39dab8cfd3e74bcefa75ffdd508afa9d8e2dc18c",
+      "score": 58.058,
+      "n_cas": 2
+    },
+    {
+      "address": "0x3ec73b58426fc7a1b314d1b1347f055fbb1d3533",
+      "score": 51.106,
+      "n_cas": 2
+    },
+    {
+      "address": "0x2b23525618d38aff20efbf00bf3d12d023b1c910",
+      "score": 49.2,
       "n_cas": 1
-    },
-    {
-      "address": "0x0bd25aaf269cb40d023be6c80ab5c8cd08746935",
-      "score": 52.744,
-      "n_cas": 2
-    },
-    {
-      "address": "0x11445b5d1178de4e84e7ca0381b86b0699ab1360",
-      "score": 51.598,
-      "n_cas": 2
-    },
-    {
-      "address": "0xafde4c61e7c2198c217132e180d1e2698ee0b4ec",
-      "score": 50.473,
-      "n_cas": 2
     },
     {
       "address": "0x43370250bfc02c7f085cb105558da41e9cdb2d79",
-      "score": 48.833,
+      "score": 47.625,
       "n_cas": 2
     },
     {
-      "address": "0x996baa14b78fcf34b8598bcf362dc13e36a9c61a",
-      "score": 48.501,
-      "n_cas": 2
-    },
-    {
-      "address": "0x885abce35924db3c70f4f51403c4340009abe02c",
-      "score": 48.494,
-      "n_cas": 1
-    },
-    {
-      "address": "0xd910b8398b78d532cbc1ca41e9d07509994b280b",
-      "score": 48.251,
+      "address": "0x49ff8ee55aedf538d34075c472b3494156160d3a",
+      "score": 47.438,
       "n_cas": 2
     }
   ],
@@ -86,15 +86,15 @@
       ]
     },
     {
-      "ca": "0xb911f04a24a9f6234537829290335e623ee71e18",
-      "symbol": "URANUS",
+      "ca": "0x020bfc650a365f8bb26819deaabf3e21291018b4",
+      "symbol": "CASHCAT",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0x020bfc650a365f8bb26819deaabf3e21291018b4",
-      "symbol": "CASHCAT",
+      "ca": "0xb911f04a24a9f6234537829290335e623ee71e18",
+      "symbol": "URANUS",
       "sources": [
         "gecko_trending"
       ]
@@ -123,6 +123,13 @@
       ]
     },
     {
+      "ca": "0x42afa2124ca5a2b83898e46b2da9a190995b1e18",
+      "symbol": "SCHIFFY",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x385307be7df9b45f55f8be72e0cf8b36466813ee",
       "symbol": "9e9",
       "sources": [
@@ -137,32 +144,11 @@
       ]
     },
     {
-      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
-      "symbol": "SUPER",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0x42afa2124ca5a2b83898e46b2da9a190995b1e18",
-      "symbol": "SCHIFFY",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
       "ca": "0x204652a8a7a14ff7ab5c3329462e5dae9caff60b",
       "symbol": "NSTRAT",
       "sources": [
         "gecko_trending",
         "notify_peak_2x"
-      ]
-    },
-    {
-      "ca": "0x0339f5459fc690ac85f1782e15782a151b4a9e1b",
-      "symbol": "WALLET",
-      "sources": [
-        "gecko_trending"
       ]
     },
     {
@@ -173,8 +159,8 @@
       ]
     },
     {
-      "ca": "0x232cdfc415d10b673845d83dc02ba2eabe7e30d1",
-      "symbol": "IF",
+      "ca": "0x0339f5459fc690ac85f1782e15782a151b4a9e1b",
+      "symbol": "WALLET",
       "sources": [
         "gecko_trending"
       ]
@@ -182,6 +168,20 @@
     {
       "ca": "0x8eaa17be69ae9616cede4671e6d837bb89491e18",
       "symbol": "CPU",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
+      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
+      "symbol": "SUPER",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
+      "ca": "0x232cdfc415d10b673845d83dc02ba2eabe7e30d1",
+      "symbol": "IF",
       "sources": [
         "gecko_trending"
       ]
@@ -202,22 +202,8 @@
       ]
     },
     {
-      "ca": "0xa92768863a55d8a0591709f7f5e594a249d36ea3",
-      "symbol": "ASKR",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
       "ca": "0x11b70d0243baf75e85ce03201a92b5b7c33beb59",
       "symbol": "ROBIN",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0xe8ffd7e24187f72afb08d75b1bb13088a989a791",
-      "symbol": "DELTA",
       "sources": [
         "gecko_trending"
       ]
@@ -230,6 +216,13 @@
       ]
     },
     {
+      "ca": "0xe8ffd7e24187f72afb08d75b1bb13088a989a791",
+      "symbol": "DELTA",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x1258af9d5e3f2a31e585711966ac295b64ddf6a5",
       "symbol": "CEST",
       "sources": [
@@ -237,8 +230,8 @@
       ]
     },
     {
-      "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
-      "symbol": "HEDGE",
+      "ca": "0xa92768863a55d8a0591709f7f5e594a249d36ea3",
+      "symbol": "ASKR",
       "sources": [
         "gecko_trending"
       ]
@@ -251,8 +244,8 @@
       ]
     },
     {
-      "ca": "0x3ba500f1ababbcf0f0247d06d1c56fd7e6c4c09d",
-      "symbol": "WORM",
+      "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
+      "symbol": "HEDGE",
       "sources": [
         "gecko_trending"
       ]
@@ -265,6 +258,13 @@
       ]
     },
     {
+      "ca": "0x3ba500f1ababbcf0f0247d06d1c56fd7e6c4c09d",
+      "symbol": "WORM",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x56910d4409f3a0c78c64dd8d0545ff0705389870",
       "symbol": "Index",
       "sources": [
@@ -272,7 +272,7 @@
       ]
     }
   ],
-  "elapsed_s": 55.24,
+  "elapsed_s": 60.16,
   "rpc_calls": 0,
   "rpc_429": 0
 }
