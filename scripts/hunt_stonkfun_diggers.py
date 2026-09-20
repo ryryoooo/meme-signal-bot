@@ -27,6 +27,9 @@ Env knobs:
   STONK_PAGES_MCAP          graduated mcap pages (default 2)
   STONK_DAEMON=1            loop; STONK_INTERVAL_SEC (default 1800)
   STONK_ONCE=1              one pass (default when not daemon)
+  STONK_PROMOTE_AFTER=1     run promote_stonkfun_diggers.py after each hunt (daemon/scout)
+
+Merges into stonkfun_diggers.jsonl (dedupe). PnL vet via scripts/promote_stonkfun_diggers.py.
 """
 from __future__ import annotations
 
@@ -600,11 +603,93 @@ def score_diggers(
     return diggers, hub_auto
 
 
+def _load_existing_diggers() -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    if not OUT_JSONL.exists():
+        return out
+    for line in OUT_JSONL.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        addr = (row.get("address") or "").strip()
+        if addr:
+            out[addr] = row
+    return out
+
+
+def _merge_digger(old: dict | None, new: dict) -> dict:
+    """Dedupe merge: keep best score, union launches, preserve promote/PnL fields."""
+    if not old:
+        return new
+    out = dict(old)
+    if float(new.get("score") or 0) >= float(old.get("score") or 0):
+        for k in (
+            "hit_mints", "hit_early15", "hit_early5", "avg_rank", "best_rank",
+            "score", "peak_sum_usd", "launches", "scanned_at", "tags",
+        ):
+            if k in new:
+                out[k] = new[k]
+    else:
+        # still union launches by mint (best rank)
+        launches = {(x.get("mint")): x for x in (old.get("launches") or []) if x.get("mint")}
+        for L in new.get("launches") or []:
+            m = L.get("mint")
+            if not m:
+                continue
+            prev = launches.get(m)
+            if prev is None or int(L.get("rank") or 99) < int(prev.get("rank") or 99):
+                launches[m] = L
+        if launches:
+            rows = list(launches.values())
+            ranks = [int(r.get("rank") or 99) for r in rows]
+            out["launches"] = sorted(rows, key=lambda x: int(x.get("rank") or 99))
+            out["hit_mints"] = len(rows)
+            out["hit_early15"] = sum(1 for r in ranks if r <= 15)
+            out["hit_early5"] = sum(1 for r in ranks if r <= 5)
+            out["avg_rank"] = round(sum(ranks) / len(ranks), 2) if ranks else out.get("avg_rank")
+            out["best_rank"] = min(ranks) if ranks else out.get("best_rank")
+    # Preserve vet/PnL if present on old
+    for k in (
+        "realized_pnl_usd_est", "pnl_source", "pnl_est_meta", "vetted_at",
+        "last_active", "last_active_at", "promote_reason", "pass_pnl",
+    ):
+        if k in old and k not in new:
+            out[k] = old[k]
+    tags = list(dict.fromkeys(list(old.get("tags") or []) + list(new.get("tags") or [])))
+    out["tags"] = tags
+    out["source"] = "stonkfun_digger"
+    out["platform"] = "stonkfun"
+    out["chain"] = "solana"
+    return out
+
+
 def write_outputs(diggers: list[dict], mint_results: list[dict], meta: dict) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    existing = _load_existing_diggers()
+    merged: dict[str, dict] = dict(existing)
+    for d in diggers:
+        addr = (d.get("address") or "").strip()
+        if not addr:
+            continue
+        merged[addr] = _merge_digger(merged.get(addr), d)
+    # Prefer pass_pnl / high score ordering for file
+    rows = sorted(
+        merged.values(),
+        key=lambda d: (
+            -int(bool(d.get("pass_pnl"))),
+            -float(d.get("realized_pnl_usd_est") or 0),
+            -float(d.get("score") or 0),
+        ),
+    )
     with OUT_JSONL.open("w", encoding="utf-8") as f:
-        for d in diggers:
+        for d in rows:
             f.write(json.dumps(d, ensure_ascii=False) + "\n")
+    meta["merged_total"] = len(rows)
+    meta["scan_diggers"] = len(diggers)
 
     lines = [
         f"# StonkFun diggers — {jst_now_label()}",
@@ -612,7 +697,7 @@ def write_outputs(diggers: list[dict], mint_results: list[dict], meta: dict) -> 
         f"- chain: **solana** (do not merge into RH `wallets.jsonl`)",
         f"- source: StonkFun public API + free Solana RPC (`{RPC_URL}`)",
         f"- winners processed: **{meta.get('processed')}** (peak ≥ ${meta.get('peak_min'):,.0f})",
-        f"- diggers (hits ≥ {meta.get('min_hits')}): **{len(diggers)}**",
+        f"- diggers this scan (hits ≥ {meta.get('min_hits')}): **{len(diggers)}** (file merged total: **{meta.get('merged_total', len(diggers))}**)",
         f"- hubs auto-excluded: **{meta.get('hubs_auto', 0)}**",
         f"- LIVE_TRADING=0 / no box GMGN",
         "",
@@ -754,6 +839,24 @@ def run_once(args: argparse.Namespace) -> int:
     for d in diggers[:12]:
         sample = ",".join(f"{x.get('symbol')}#{x['rank']}" for x in (d.get("launches") or [])[:3])
         log(f"  TOP {d['address']} hits={d['hit_mints']} score={d['score']} {sample}")
+
+    # Optional inline promote (scout daemon also calls promote separately)
+    if os.environ.get("STONK_PROMOTE_AFTER") == "1":
+        promote = ROOT / "scripts" / "promote_stonkfun_diggers.py"
+        if promote.exists():
+            log("running promote_stonkfun_diggers after hunt…")
+            try:
+                rc = subprocess.run(
+                    [sys.executable, str(promote), "--apply"],
+                    cwd=str(ROOT),
+                    env={**os.environ, "LIVE_TRADING": "0", "GMGN_DISABLED": "1"},
+                    timeout=env_int("STONK_PROMOTE_TIMEOUT", 600),
+                    check=False,
+                )
+                log(f"promote rc={rc.returncode}")
+            except Exception as e:
+                log(f"promote error: {type(e).__name__}: {e}")
+
     return 0 if diggers else (0 if mint_results else 2)
 
 

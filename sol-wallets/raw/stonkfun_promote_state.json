@@ -1,0 +1,13 @@
+{
+  "candidates": 34,
+  "vetted": 34,
+  "passed": 29,
+  "added": 29,
+  "rejected": 5,
+  "total": 29,
+  "active_hours": 168,
+  "min_hits": 2,
+  "min_realized": 0.0,
+  "at": "2026-09-20T08:21:23Z",
+  "dry": false
+}

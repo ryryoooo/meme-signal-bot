@@ -244,11 +244,19 @@ while true; do
     action="stonkfun_diggers"
     if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 STONK_ONCE=1 timeout 900 python3 scripts/hunt_stonkfun_diggers.py --once ) >> "$LOG" 2>&1; then
       echo "$now" > "$STATE/last_stonkfun"; log "stonkfun_diggers ok"
-      if ( cd "$ROOT" && git status --porcelain sol-wallets/stonkfun_diggers.jsonl sol-wallets/summary_stonkfun_diggers.md sol-wallets/raw/stonkfun_hunt_state.json scripts/hunt_stonkfun_diggers.py 2>/dev/null | grep -q . ); then
+      # PnL + activity vet → merge profitable active diggers (separate from sol_smart / RH)
+      if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 timeout 600 python3 scripts/promote_stonkfun_diggers.py --apply ) >> "$LOG" 2>&1; then
+        log "promote_stonkfun_diggers ok"
+      else
+        log "promote_stonkfun_diggers failed"
+      fi
+      if ( cd "$ROOT" && git status --porcelain sol-wallets/stonkfun_diggers.jsonl sol-wallets/summary_stonkfun_diggers.md sol-wallets/summary_promote_stonkfun.md sol-wallets/promote_stonkfun_log.jsonl sol-wallets/raw/stonkfun_hunt_state.json sol-wallets/raw/stonkfun_promote_state.json scripts/hunt_stonkfun_diggers.py scripts/promote_stonkfun_diggers.py 2>/dev/null | grep -q . ); then
         ( cd "$ROOT" && \
           git add sol-wallets/stonkfun_diggers.jsonl sol-wallets/summary_stonkfun_diggers.md \
-                  sol-wallets/raw/stonkfun_hunt_state.json scripts/hunt_stonkfun_diggers.py scripts/scout-wallet-bot.sh && \
-          git commit -m "chore(sol): stonkfun digger hunt" && \
+                  sol-wallets/summary_promote_stonkfun.md sol-wallets/promote_stonkfun_log.jsonl \
+                  sol-wallets/raw/stonkfun_hunt_state.json sol-wallets/raw/stonkfun_promote_state.json \
+                  scripts/hunt_stonkfun_diggers.py scripts/promote_stonkfun_diggers.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(sol): stonkfun digger hunt + promote" && \
           git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "stonkfun_diggers commit/push fail"
       fi
     else

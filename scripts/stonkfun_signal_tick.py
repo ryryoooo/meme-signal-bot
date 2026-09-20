@@ -44,6 +44,7 @@ os.environ.setdefault("GMGN_SMARTMONEY", "0")
 os.environ.setdefault("GMGN_MARKET", "0")
 
 from load_secrets import load as load_secrets  # noqa: E402
+import gmgn_token as gmgn_tok  # noqa: E402
 
 JST = timezone(timedelta(hours=9))
 SF_API = (os.environ.get("STONKFUN_API") or "https://www.stonkfun.xyz/api/public/v1").rstrip("/")
@@ -94,9 +95,22 @@ def log(msg: str) -> None:
     print(f"{ts} stonkfun_signal {msg}", flush=True)
 
 
-def jst_label(ts: float | None = None) -> str:
+def jst_label(ts: float | None = None, *, seconds: bool = False) -> str:
     dt = datetime.fromtimestamp(ts or time.time(), JST)
-    return dt.strftime("%Y-%m-%d %H:%M:%S JST")
+    if seconds:
+        return dt.strftime("%Y-%m-%d %H:%M:%S JST")
+    return dt.strftime("%Y-%m-%d %H:%M JST")
+
+
+def notify_stamp(footer_base: str = "stonkfun_signal") -> tuple[str, dict, str]:
+    """UTC ISO for embed.timestamp + JST wall-time for field/footer (RH-style)."""
+    now_utc = datetime.now(timezone.utc)
+    now_jst = now_utc.astimezone(JST)
+    ts = now_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    jst = now_jst.strftime("%Y-%m-%d %H:%M JST")
+    base = (footer_base or "").strip()
+    footer = {"text": (f"{base} · 投稿 {jst}" if base else f"投稿 {jst}")[:2048]}
+    return ts, footer, jst
 
 
 def short_addr(a: str, n: int = 4) -> str:
@@ -411,9 +425,15 @@ def build_embed(
     digger_lines = []
     for d in diggers[:5]:
         addr = d.get("address") or ""
+        real = d.get("realized_pnl_usd_est")
+        extra = f" pnl≈${float(real):,.0f}" if isinstance(real, (int, float)) else ""
         digger_lines.append(
-            f"`{short_addr(addr)}` hits={d.get('hit_mints', '?')} score={d.get('score', '?')}"
+            f"`{short_addr(addr)}` hits={d.get('hit_mints', '?')} score={d.get('score', '?')}{extra}"
         )
+    gmgn_url = gmgn_tok.token_app_url("sol", mint)
+    ts_iso, footer, jst = notify_stamp("stonkfun_signal" + (" · test" if test else ""))
+    # Buy-time JST if block_time known (else notify time)
+    buy_jst = jst_label(float(block_time), seconds=False) if block_time else jst
     fields = [
         {"name": "Symbol", "value": str(sym), "inline": True},
         {"name": "Status", "value": str(status or "—"), "inline": True},
@@ -421,16 +441,21 @@ def build_embed(
         {"name": "Mint", "value": f"`{mint}`", "inline": False},
         {"name": "Diggers", "value": "\n".join(digger_lines) or "—", "inline": False},
         {
-            "name": "Links",
-            "value": (
-                f"[StonkFun](https://www.stonkfun.xyz/token/{mint}) · "
-                f"[Dex](https://dexscreener.com/solana/{mint}) · "
-                f"[Solscan](https://solscan.io/tx/{sig})"
-            ),
+            "name": "リンク",
+            "value": f"[GMGNアプリで開く]({gmgn_url})",
             "inline": False,
         },
+        {
+            "name": "通知時刻",
+            "value": f"**{jst}**" + (f"\n(buy {buy_jst})" if block_time else ""),
+            "inline": True,
+        },
+        {
+            "name": "投稿",
+            "value": f"**{jst}**",
+            "inline": True,
+        },
     ]
-    ts_label = jst_label(float(block_time) if block_time else None)
     color = 0xF1C40F if test else 0x00C2FF
     return {
         "title": title[:256],
@@ -440,30 +465,40 @@ def build_embed(
         )[:4000],
         "color": color,
         "fields": fields,
-        "footer": {"text": f"stonkfun_signal · {ts_label}"},
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+        "footer": footer,
+        "timestamp": ts_iso,
     }
 
 
 def post_test_embed(webhook: str) -> bool:
+    demo_mint = "So11111111111111111111111111111111111111112"
+    gmgn_url = gmgn_tok.token_app_url("sol", demo_mint)
+    ts_iso, footer, jst = notify_stamp("stonkfun_signal · test")
     embed = {
         "title": "【テスト】 StonkFun digger channel",
         "description": (
             "**テスト投稿** — DISCORD_STONKFUN_WEBHOOK_URL 配線確認。\n"
             "今後、StonkFun digger ウォレットの買いシグナルはこのチャンネルのみに流れます"
-            "（RH `DISCORD_WEBHOOK_URL` には送りません）。"
+            "（RH `DISCORD_WEBHOOK_URL` には送りません）。\n"
+            "リンクは GMGNアプリ universal link / 通知時刻は JST 表示。"
         ),
         "color": 0xF1C40F,
         "fields": [
             {"name": "Channel", "value": "dedicated StonkFun", "inline": True},
             {"name": "Fallback", "value": "none (RH blocked)", "inline": True},
-            {"name": "Time", "value": jst_label(), "inline": False},
+            {
+                "name": "リンク",
+                "value": f"[GMGNアプリで開く]({gmgn_url})",
+                "inline": False,
+            },
+            {"name": "通知時刻", "value": f"**{jst}**", "inline": True},
+            {"name": "投稿", "value": f"**{jst}**", "inline": True},
         ],
-        "footer": {"text": f"stonkfun_signal · test · {jst_label()}"},
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+        "footer": footer,
+        "timestamp": ts_iso,
     }
     ok = discord_post(webhook, [embed], content="")
-    log(f"test embed {'ok' if ok else 'FAIL'}")
+    log(f"test embed {'ok' if ok else 'FAIL'} jst={jst} gmgn={gmgn_url}")
     return ok
 
 
