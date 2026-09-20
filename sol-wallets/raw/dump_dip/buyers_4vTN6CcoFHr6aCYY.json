@@ -18,23 +18,6 @@
   ],
   "buyers": [
     {
-      "address": "74pBdqs9niFM5VUNwVMCQDK7TQhVB3ACKUEJ5DvmGThB",
-      "mint": "4vTN6CcoFHr6aCYYHTmS3D8vU7QmJtveojJwCsuahrGX",
-      "amount": 11312896.143082,
-      "blockTime": 1789839250,
-      "sig": "fwvZVooaa5p9RsVa9EUvgyVZep4grxdNHukfsUD8rcSRAS5S7ngfGu46MZwizpryco2nNxEyosPCwGwi6Q6pHgr",
-      "venue": "stonkfun_launchlab",
-      "stage": "pre_grad_dip",
-      "entry_px": null,
-      "trough_px": 0.5,
-      "bounce_px": 1.2,
-      "dump_pct": 0.5,
-      "mult_est": null,
-      "profitable": false,
-      "near_trough": false,
-      "synthetic_window": true
-    },
-    {
       "address": "9onnEBbWa6HDbDbR2nzZDeU6KmU8KpFCrrdytzSB1Wtz",
       "mint": "4vTN6CcoFHr6aCYYHTmS3D8vU7QmJtveojJwCsuahrGX",
       "amount": 768138.2663300019,
@@ -48,7 +31,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -65,7 +48,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -82,7 +65,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -99,7 +82,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -116,7 +99,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -133,7 +116,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -150,7 +133,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -167,7 +150,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -184,7 +167,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -201,7 +184,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -218,7 +201,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -235,7 +218,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -252,7 +235,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -269,7 +252,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -286,7 +269,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -303,7 +286,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -320,7 +303,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -337,7 +320,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -354,7 +337,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -371,7 +354,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -388,7 +371,58 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "JBWKHLUAFDzYR3A3qgun3EtDe6MZEzYyMCQWZf9G1tmx",
+      "mint": "4vTN6CcoFHr6aCYYHTmS3D8vU7QmJtveojJwCsuahrGX",
+      "amount": 1458140.474737,
+      "blockTime": 1789839383,
+      "sig": "2K1mt5fKpdMnTMP6SNsv9Ua4pnVzor6CHi2HgFdEUtAH21j7fEFAsGyGkYLYGaJhkf53rVq2Lm6w7Bf9HBMjGErb",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "18QCT1TH7rd43TjiXj1QAvnx3ouNoGfCLuNRXTWyKV9",
+      "mint": "4vTN6CcoFHr6aCYYHTmS3D8vU7QmJtveojJwCsuahrGX",
+      "amount": 1284169.0074369998,
+      "blockTime": 1789839117,
+      "sig": "4rsSDg34QeCWKkS14QbETjiUjradBgTELnfKuGDWiFZe7CSEExmrdm26YH2oRWGhpsMf3pH6D3wLXFd4VmzGB98j",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "Gnid4oUxNFfkMhCAJs8XZwiccHqLEQhCmFbCPxqPD6Xc",
+      "mint": "4vTN6CcoFHr6aCYYHTmS3D8vU7QmJtveojJwCsuahrGX",
+      "amount": 84159.556823,
+      "blockTime": 1789839391,
+      "sig": "4evSex8DBZFbLx4YGWwdzMPjNMrNE46rc26hQMe2GgEoL8QZDNnmhPLwoh6Djd8K893XtXmgsZedomDrS6TAcHbJ",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
       "synthetic_window": true
     }
   ]

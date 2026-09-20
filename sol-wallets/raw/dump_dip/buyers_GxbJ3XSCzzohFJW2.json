@@ -31,7 +31,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -48,24 +48,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
-      "synthetic_window": true
-    },
-    {
-      "address": "74pBdqs9niFM5VUNwVMCQDK7TQhVB3ACKUEJ5DvmGThB",
-      "mint": "GxbJ3XSCzzohFJW2HFeYS5kboBwHaAHjTdvdPM6rdXwe",
-      "amount": 21422979.964754,
-      "blockTime": 1789839914,
-      "sig": "64tPBJRQa2ug1zZsYeTkDYMKH7RQZTTq7Tx1jY1HD8QVzQL8oeNh29Var2SzV7NgY9fFRtGUFMmr6qbr13oX4Sz2",
-      "venue": "stonkfun_launchlab",
-      "stage": "pre_grad_dip",
-      "entry_px": null,
-      "trough_px": 0.5,
-      "bounce_px": 1.2,
-      "dump_pct": 0.5,
-      "mult_est": null,
-      "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -82,7 +65,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -99,7 +82,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -116,7 +99,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -133,7 +116,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -150,7 +133,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -167,7 +150,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -184,7 +167,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -201,7 +184,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -218,7 +201,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -235,7 +218,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -252,7 +235,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -269,7 +252,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -286,7 +269,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -303,7 +286,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -320,7 +303,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -337,7 +320,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -354,7 +337,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -371,7 +354,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -388,7 +371,58 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "DPAHnJnUnoM7VstdmS2LewAb6Vwa9s8x928uqSfmBEkG",
+      "mint": "GxbJ3XSCzzohFJW2HFeYS5kboBwHaAHjTdvdPM6rdXwe",
+      "amount": 204210.139424,
+      "blockTime": 1789839983,
+      "sig": "3fSGDHS1dYbuUcozCZDGYV4CuFB5kAA3Gsshc5LMPxxq8wFnkEmTjVPNMGE3ic1W8RCkHKRkX9waWouw9Zy2VZ1P",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "G1piUs7DRZm7DQeCFREtsuFZTqpZdk9nJiUqb5WbL3ya",
+      "mint": "GxbJ3XSCzzohFJW2HFeYS5kboBwHaAHjTdvdPM6rdXwe",
+      "amount": 2029971.424138,
+      "blockTime": 1789839999,
+      "sig": "4Ej36zoApBsaELbve2XRLSJh47LCbXjoMVpCSEnKvWEp83u8h5PHLdiZivubjedQ8efkDexujppbo284DfxLKcrb",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "7GNhcYeyACVSsEyUXMATaWUoh3WsfmJpu7KsqwEUDYoo",
+      "mint": "GxbJ3XSCzzohFJW2HFeYS5kboBwHaAHjTdvdPM6rdXwe",
+      "amount": 4596661.258901,
+      "blockTime": 1789840003,
+      "sig": "3kcZtS7vA8r3X7r6QHaj6r4F7c1TrmYVvzeHSBGYT4kk8xNFTeQUotXBYAvHDUonuGtyWrkURhRwodjt6Gjk2hER",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
       "synthetic_window": true
     }
   ]

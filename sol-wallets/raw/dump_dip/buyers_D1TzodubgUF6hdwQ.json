@@ -18,23 +18,6 @@
   ],
   "buyers": [
     {
-      "address": "74pBdqs9niFM5VUNwVMCQDK7TQhVB3ACKUEJ5DvmGThB",
-      "mint": "D1TzodubgUF6hdwQ25VUXEFgjrPKcGEBZkX6bM3U4NXu",
-      "amount": 22712522.547075,
-      "blockTime": 1789855867,
-      "sig": "5pyktWnrKKhzhPZJDGKTfS3xtR7RuNhqR2eRadqNy2gjacvrRnkgG5Zq4w4xSr14dhta5VF4Abxf6SJM8ntNJaDT",
-      "venue": "stonkfun_launchlab",
-      "stage": "pre_grad_dip",
-      "entry_px": null,
-      "trough_px": 0.5,
-      "bounce_px": 1.2,
-      "dump_pct": 0.5,
-      "mult_est": null,
-      "profitable": false,
-      "near_trough": false,
-      "synthetic_window": true
-    },
-    {
       "address": "BUVVqR4bWRHVtpZJio5QTsadmTwoyWfFocNAE1phvxoZ",
       "mint": "D1TzodubgUF6hdwQ25VUXEFgjrPKcGEBZkX6bM3U4NXu",
       "amount": 4030431.905001,
@@ -48,7 +31,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -65,7 +48,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -82,7 +65,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -99,7 +82,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -116,7 +99,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -133,7 +116,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -150,7 +133,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -167,7 +150,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -184,7 +167,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -201,7 +184,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -218,7 +201,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -235,7 +218,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -252,7 +235,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -269,7 +252,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -286,7 +269,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -303,7 +286,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -320,7 +303,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -337,7 +320,58 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "6C4Q7PY6K83fn3cBhC6gMuwvbmYvNEZ4w4AeVEhEcpmi",
+      "mint": "D1TzodubgUF6hdwQ25VUXEFgjrPKcGEBZkX6bM3U4NXu",
+      "amount": 0.0,
+      "blockTime": 1789855751,
+      "sig": "2XhW9TiyuaTzAt2VtBxoVijZxhLezLq5wRpEHVP1Dfuk9k6tt7PkKFWBUbMi12xPL84gJeB8vJUQBwEd5bTnvcKi",
+      "venue": "other",
+      "stage": "post_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "AeNkErGSdxgm6mYaPtoHTTMe3mk3PTLGtWuKHEYT8t2D",
+      "mint": "D1TzodubgUF6hdwQ25VUXEFgjrPKcGEBZkX6bM3U4NXu",
+      "amount": 1463631.6869020006,
+      "blockTime": 1789856013,
+      "sig": "YFA4x6TehLgqDsHS42zMb3WqKWY47eFkpHA1neiwRjxCfbRJf3rqU2V7rqoQKQnYiXkk6RxEEM736szT21mHVGm",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "AttB8WEK4dTnq1w9TMBDaEYNacCqr6FdZT7rZ6jhRpi5",
+      "mint": "D1TzodubgUF6hdwQ25VUXEFgjrPKcGEBZkX6bM3U4NXu",
+      "amount": 699719.5123449997,
+      "blockTime": 1789855682,
+      "sig": "63NfAonAZN4aQeByKBjuRU4KehAKzFRXjvPAd82M4XsiM6sDzw3qPivsP1cZkHwgAZHchNciAxXCAKAVvBKnbhA6",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
       "synthetic_window": true
     }
   ]

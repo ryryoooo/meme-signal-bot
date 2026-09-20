@@ -18,23 +18,6 @@
   ],
   "buyers": [
     {
-      "address": "74pBdqs9niFM5VUNwVMCQDK7TQhVB3ACKUEJ5DvmGThB",
-      "mint": "9eu5qyTGEXKRPmY26bnDwp82nsVaQZ3tHcnbnY85MHrB",
-      "amount": 5688733.717817,
-      "blockTime": 1789845122,
-      "sig": "xt8oFCq8u9mpyt7LUFJAM5K2AAUqHvYyJdydfVnGt4L1owYPXwDbauBcDKnkFdsiqYwzt1iY8Dx6gxUBqxhH83q",
-      "venue": "stonkfun_launchlab",
-      "stage": "pre_grad_dip",
-      "entry_px": null,
-      "trough_px": 0.5,
-      "bounce_px": 1.2,
-      "dump_pct": 0.5,
-      "mult_est": null,
-      "profitable": false,
-      "near_trough": false,
-      "synthetic_window": true
-    },
-    {
       "address": "2e4sTzDwLV21JGVHVJVnLKZofV8v4PCeKKraifG7xM7j",
       "mint": "9eu5qyTGEXKRPmY26bnDwp82nsVaQZ3tHcnbnY85MHrB",
       "amount": 5019548.285493,
@@ -48,7 +31,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -65,7 +48,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -82,7 +65,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -99,7 +82,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -116,7 +99,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -133,7 +116,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -150,7 +133,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -167,7 +150,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -184,7 +167,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -201,7 +184,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -218,7 +201,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -235,7 +218,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -252,7 +235,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -269,7 +252,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -286,7 +269,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -303,7 +286,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -320,7 +303,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -337,7 +320,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -354,7 +337,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -371,7 +354,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -388,7 +371,7 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
       "synthetic_window": true
     },
     {
@@ -405,7 +388,41 @@
       "dump_pct": 0.5,
       "mult_est": null,
       "profitable": false,
-      "near_trough": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "Gnid4oUxNFfkMhCAJs8XZwiccHqLEQhCmFbCPxqPD6Xc",
+      "mint": "9eu5qyTGEXKRPmY26bnDwp82nsVaQZ3tHcnbnY85MHrB",
+      "amount": 91330.690019,
+      "blockTime": 1789845160,
+      "sig": "2aPSH9R7WqR6s32Qh9jW3zQkhC3PPY5yS2sGB4FbFsn6RUpSZUGBoCMegB3sKoNTeA6D5h8TWqBuhgj5DqGvAGSi",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "ySq2NsDoUBpMhoLJi64BG3rpwnKyFBp2GwJqWnnkHr6",
+      "mint": "9eu5qyTGEXKRPmY26bnDwp82nsVaQZ3tHcnbnY85MHrB",
+      "amount": 285761.931386,
+      "blockTime": 1789845161,
+      "sig": "5tKrE7FxwGxmHVmt6ebt9xj78FpQr4vfYdrgLHna32oQi3musCFJRhp2ZV2hprZwGKLKyLmm1dYvGBqtRedvzEAw",
+      "venue": "stonkfun_launchlab",
+      "stage": "pre_grad_dip",
+      "entry_px": null,
+      "trough_px": 0.5,
+      "bounce_px": 1.2,
+      "dump_pct": 0.5,
+      "mult_est": null,
+      "profitable": false,
+      "near_trough": true,
       "synthetic_window": true
     }
   ]

@@ -1,176 +1,288 @@
 {
-  "updated_at": "2026-09-20T09:26:47Z",
-  "n_published": 81,
-  "n_raw": 81,
-  "n_pre_grad": 10,
-  "n_pre_only": 4,
-  "n_post_grad": 77,
+  "updated_at": "2026-09-20T11:59:02Z",
+  "rpc": "https://solana-rpc.publicnode.com",
+  "dump_pct": 0.35,
+  "n_cas": 28,
+  "n_published": 29,
+  "n_raw": 145,
+  "n_pre_grad": 12,
+  "n_post_grad": 23,
   "n_both": 6,
-  "n_watch": 36,
-  "rescored_from_cache": true,
+  "n_watch": 52,
+  "rpc_calls": 1226,
+  "rpc_429s": 0,
+  "elapsed_s": 1261.89,
   "top": [
     {
+      "address": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+      "score": 103.0,
+      "n_mints": 15,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "4vTN6Cco",
+        "GzzSzH4u",
+        "FoXDxdtP",
+        "Z1gDxGt3",
+        "8BTv8DqB",
+        "9eu5qyTG",
+        "CrFZVK5t",
+        "G6ZA8mLU",
+        "D1Tzodub",
+        "AXnapHhQ",
+        "GxbJ3XSC",
+        "3n6xnQZx"
+      ]
+    },
+    {
       "address": "GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL",
-      "score": 88.743,
+      "score": 85.088,
+      "n_mints": 6,
       "stages": [
         "post_grad_dip",
         "pre_grad_dip"
       ],
       "symbols": [
         "VRCAT",
+        "BOLD",
         "HABB",
-        "PEEPO",
+        "FEELSGOOD",
         "PEEPEE",
-        "BOLD"
-      ]
-    },
-    {
-      "address": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
-      "score": 82.0,
-      "stages": [
-        "pre_grad_dip"
-      ],
-      "symbols": [
-        "4vTN6Cco",
-        "8BTv8DqB",
-        "9eu5qyTG",
-        "AXnapHhQ",
-        "CrFZVK5t",
-        "D1Tzodub",
-        "FoXDxdtP",
-        "G6ZA8mLU",
-        "GxbJ3XSC",
-        "GzzSzH4u",
-        "Z1gDxGt3"
+        "PEEPO"
       ]
     },
     {
       "address": "Cu2PXdAtCRDLVUzqjM9eNaVCGaSK95iaQCTB1aLP2k6o",
-      "score": 79.9,
+      "score": 84.0,
+      "n_mints": 11,
       "stages": [
         "post_grad_dip",
         "pre_grad_dip"
       ],
       "symbols": [
         "4vTN6Cco",
+        "FoXDxdtP",
+        "Z1gDxGt3",
         "8BTv8DqB",
         "9eu5qyTG",
         "AXnapHhQ",
-        "FoXDxdtP",
         "PEEPO",
         "GxbJ3XSC",
-        "Z1gDxGt3"
+        "3n6xnQZx",
+        "AEuPmg7z",
+        "CrBwwtFc"
       ]
     },
     {
       "address": "BUVVqR4bWRHVtpZJio5QTsadmTwoyWfFocNAE1phvxoZ",
-      "score": 79.9,
+      "score": 66.0,
+      "n_mints": 8,
       "stages": [
         "post_grad_dip",
         "pre_grad_dip"
       ],
       "symbols": [
-        "8BTv8DqB",
-        "AXnapHhQ",
-        "D1Tzodub",
-        "G6ZA8mLU",
-        "PEEPO",
-        "GxbJ3XSC",
         "GzzSzH4u",
-        "Z1gDxGt3"
-      ]
-    },
-    {
-      "address": "5CEbueQnq1Ym2uSSx2xXds3jQAqT1BDnkA59RZobSPAG",
-      "score": 59.15,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT",
-        "PEEPO",
-        "BOLD"
-      ]
-    },
-    {
-      "address": "AiGGmZTav9Z9iSNPXrjEJvMNJVPRiXJQGkS8v12wxDge",
-      "score": 55.9,
-      "stages": [
-        "post_grad_dip",
-        "pre_grad_dip"
-      ],
-      "symbols": [
+        "Z1gDxGt3",
+        "8BTv8DqB",
+        "G6ZA8mLU",
+        "D1Tzodub",
         "AXnapHhQ",
-        "CrFZVK5t",
         "PEEPO",
         "GxbJ3XSC"
       ]
     },
     {
-      "address": "686a4Zgq4XqeaizFaVxonua5WbTr4q1XbLzeMFuCrK2L",
-      "score": 55.9,
+      "address": "5CEbueQnq1Ym2uSSx2xXds3jQAqT1BDnkA59RZobSPAG",
+      "score": 56.327,
+      "n_mints": 4,
       "stages": [
-        "post_grad_dip",
-        "pre_grad_dip"
+        "post_grad_dip"
       ],
       "symbols": [
-        "AXnapHhQ",
-        "CrFZVK5t",
-        "D1Tzodub",
+        "VRCAT",
+        "BOLD",
+        "PEEPEE",
         "PEEPO"
       ]
     },
     {
-      "address": "C1Bo2QzRtBfycrntT4viQ6bDMjfBhuzzTp3inwzUybif",
-      "score": 38.9,
+      "address": "AiGGmZTav9Z9iSNPXrjEJvMNJVPRiXJQGkS8v12wxDge",
+      "score": 54.0,
+      "n_mints": 6,
       "stages": [
         "post_grad_dip",
         "pre_grad_dip"
       ],
       "symbols": [
-        "PEEPEE",
-        "Z1gDxGt3"
+        "CrFZVK5t",
+        "AXnapHhQ",
+        "PEEPO",
+        "GxbJ3XSC",
+        "AEuPmg7z",
+        "M4CMwkDw"
+      ]
+    },
+    {
+      "address": "686a4Zgq4XqeaizFaVxonua5WbTr4q1XbLzeMFuCrK2L",
+      "score": 42.0,
+      "n_mints": 4,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "CrFZVK5t",
+        "D1Tzodub",
+        "AXnapHhQ",
+        "PEEPO"
+      ]
+    },
+    {
+      "address": "6Qt8a3Y6B4nekSRQ1p2e5yqP5bSCbE6HzUTdWwdfYXmR",
+      "score": 40.475,
+      "n_mints": 2,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "Annoyed",
+        "PUMPCAT"
+      ]
+    },
+    {
+      "address": "EYvwg12vXcUN7pF1fASQZZgQ9RbVUMLjKqqCfi961ptw",
+      "score": 40.475,
+      "n_mints": 2,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "Annoyed",
+        "PUMPCAT"
+      ]
+    },
+    {
+      "address": "7oruN2p2H12TEkWhBS1uriB7VDRqN9kHmATYk8Zhn4MK",
+      "score": 40.475,
+      "n_mints": 2,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "Annoyed",
+        "PUMPCAT"
+      ]
+    },
+    {
+      "address": "8PH2vbqLaTpm1dwFdXz6AD6sMENKEac8KqbJ5LS41YuW",
+      "score": 40.475,
+      "n_mints": 2,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "Annoyed",
+        "PUMPCAT"
+      ]
+    },
+    {
+      "address": "4M6WJ1b9y4kYUYhRFkxgux5L7AkbJ4iETYzwz5apjKmF",
+      "score": 38.57,
+      "n_mints": 2,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT",
+        "D1Tzodub"
       ]
     },
     {
       "address": "AfjtYaMoqAdcL3LH6qRdNX1YYX281gfgtfMeVnHY51Y9",
-      "score": 34.0,
+      "score": 37.0,
+      "n_mints": 4,
       "stages": [
         "pre_grad_dip"
       ],
       "symbols": [
         "4vTN6Cco",
-        "CrFZVK5t",
-        "D1Tzodub"
-      ]
-    },
-    {
-      "address": "7QoTjc15WNqZnRqBnR6ie81XSbfUDHz4bRbcqKxuuAGu",
-      "score": 34.0,
-      "stages": [
-        "pre_grad_dip"
-      ],
-      "symbols": [
-        "AXnapHhQ",
+        "GzzSzH4u",
         "CrFZVK5t",
         "D1Tzodub"
       ]
     },
     {
       "address": "93w4QjcqJBxB9wBi8Z8fGdw2XfiJe1B6GcVdzjaqHBUB",
-      "score": 34.0,
+      "score": 37.0,
+      "n_mints": 4,
       "stages": [
         "pre_grad_dip"
       ],
       "symbols": [
-        "D1Tzodub",
         "GzzSzH4u",
-        "Z1gDxGt3"
+        "Z1gDxGt3",
+        "D1Tzodub",
+        "3n6xnQZx"
+      ]
+    },
+    {
+      "address": "3U5gS3DpYpLdLQTpHdS14M8CCs4sy2W7WLQNUjRLuBjB",
+      "score": 30.57,
+      "n_mints": 2,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "GzzSzH4u",
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "ErmryfQrjK9HQqAcMffgnxKkHqnBQdSobhRdAAHyN4h1",
+      "score": 29.0,
+      "n_mints": 3,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "4vTN6Cco",
+        "D1Tzodub",
+        "3n6xnQZx"
+      ]
+    },
+    {
+      "address": "8VxjFE1BdJW7mNmCCNBQN2BmZZcksNqfvEaUsxhi6du8",
+      "score": 29.0,
+      "n_mints": 3,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "FoXDxdtP",
+        "AXnapHhQ",
+        "AEuPmg7z"
+      ]
+    },
+    {
+      "address": "7QoTjc15WNqZnRqBnR6ie81XSbfUDHz4bRbcqKxuuAGu",
+      "score": 29.0,
+      "n_mints": 3,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "CrFZVK5t",
+        "D1Tzodub",
+        "AXnapHhQ"
       ]
     },
     {
       "address": "D8chPhbyAV9fvDovJva9J3hbBNM4wxxN5kKLT9yXyqRX",
       "score": 28.707,
+      "n_mints": 1,
       "stages": [
         "post_grad_dip"
       ],
@@ -179,84 +291,471 @@
       ]
     },
     {
-      "address": "EDi13D18VWxG27LTsFKNHWzwXy9HGVMZjLRHv225YPCB",
-      "score": 28.668,
+      "address": "HJJ9T6rQfmu4VaJWP9pk28MmKtZu4rBpi2fWjDW7VRe3",
+      "score": 28.083,
+      "n_mints": 1,
       "stages": [
         "post_grad_dip"
       ],
       "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "6meJ3FqrKzDubYKpQEpnRctHwQcpUiKgm6M4ceQBNUnr",
-      "score": 28.668,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "5FnE3q4tcDkEjRGuHgcxoBLXoZjWXDE5xEpJyneHDc9g",
-      "score": 28.668,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "J4YzTJtkYiauC6rgb8Js1E6vnDdgza11xiMTeW8FDzGn",
-      "score": 28.668,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "JCFpfkrCAoovfRtkAdCde2TvPZHCmQgK5mm8Hc2LKWMZ",
-      "score": 28.668,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "3QcYGRe8cbvMZJuUohNsm685ksDjXpzwXko5WaTMHBmr",
-      "score": 28.668,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "89q3zEgHzuPSYkrSq1TANDqP7HJMLAnxxXtCJGEnVqB4",
-      "score": 28.467,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
-      ]
-    },
-    {
-      "address": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE",
-      "score": 28.467,
-      "stages": [
-        "post_grad_dip"
-      ],
-      "symbols": [
-        "VRCAT"
+        "BOLD"
       ]
     }
-  ]
+  ],
+  "ca_stats": [
+    {
+      "symbol": "KEK",
+      "pool": "G5SG3RkWycHm2eGozAJSUTuYLMbRJcD63kShB8Ki9VCV",
+      "n_windows": 1,
+      "ohlcv_bars": 67,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": -3.28,
+      "chg_h6": 69.88,
+      "liq_usd": 15868.56,
+      "ca": "BtFegYSVBRxyiKj3pDotZm4eASjoD51x6vp1VuryB12K",
+      "n_buyers": 0,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "WOJAK",
+      "pool": "BWh4RGBiantA3RZBrw8pZnMstkDCb2thJQ4v8p5x9SyC",
+      "n_windows": 1,
+      "ohlcv_bars": 100,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": 5.0,
+      "chg_h6": 24.57,
+      "liq_usd": 125563.32,
+      "ca": "DUe1qheefigxhjboRqKkGWjSTeYivjLo6yq763redsRC",
+      "n_buyers": 0,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "Stryker",
+      "pool": "EyeeG5fzZEigSQv7jUdxydePnsPL382KyVfXAANXVmeD",
+      "n_windows": 3,
+      "ohlcv_bars": 94,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "dex_boosts",
+        "gecko_trending",
+        "pump_fun"
+      ],
+      "chg_h1": 2.37,
+      "chg_h6": -89.59,
+      "liq_usd": 41507.25,
+      "ca": "G9QZfEPHtZrUF1arcUFvZgYn6zSQLZdvcjCuyhKrpump",
+      "n_buyers": 13,
+      "n_profitable": 13
+    },
+    {
+      "symbol": "Tokens",
+      "pool": "Cc1EFpiwYod6rnj198HhVQn9vnMN73m1vxEHY8ab3994",
+      "n_windows": 2,
+      "ohlcv_bars": 62,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "dex_boosts",
+        "gecko_trending"
+      ],
+      "chg_h1": -19.25,
+      "chg_h6": -68.69,
+      "liq_usd": 33396.54,
+      "ca": "C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump",
+      "n_buyers": 3,
+      "n_profitable": 3
+    },
+    {
+      "symbol": "4vTN6Cco",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "4vTN6CcoFHr6aCYYHTmS3D8vU7QmJtveojJwCsuahrGX",
+      "n_buyers": 24,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "GzzSzH4u",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "GzzSzH4ueap99cwuBBbRDK7CgCraRw8vnNwXT1LYdzR8",
+      "n_buyers": 20,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "VRCAT",
+      "pool": "3egtwzBHVtohiUXpo6vk2KSf1PxMLa8m4gUtUF3YLQ9f",
+      "n_windows": 1,
+      "ohlcv_bars": 100,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": 8.23,
+      "chg_h6": 34.06,
+      "liq_usd": 8249.85,
+      "ca": "2Ek943F8zqj2zWvYPu9JMbog1u1tLfYsnwNAZDp5sMfF",
+      "n_buyers": 23,
+      "n_profitable": 23
+    },
+    {
+      "symbol": "Annoyed",
+      "pool": "BNq95e7uvYYyER4VzhSD3yGPgTr3vQG27fmXqQHFjUhU",
+      "n_windows": 4,
+      "ohlcv_bars": 100,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "gecko_trending",
+        "pump_fun"
+      ],
+      "chg_h1": -1.39,
+      "chg_h6": -60.16,
+      "liq_usd": 26879.47,
+      "ca": "EBsK6LyH8ZCF6aq2uD4fTkFHuPzA1DLUE7fLjMyJpump",
+      "n_buyers": 19,
+      "n_profitable": 19
+    },
+    {
+      "symbol": "FoXDxdtP",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "FoXDxdtPgFAzjTbZJn5fUUvfy22cseoeC4oLVtVb7ktT",
+      "n_buyers": 24,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "Z1gDxGt3",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "Z1gDxGt3XGmDkr7pqFeqKtxo5hpHt6yAQDn3ZcVLzAC",
+      "n_buyers": 26,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "8BTv8DqB",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "8BTv8DqBAB946cahjEfZ3mJMu12TPPZvqVsgnnA748Y6",
+      "n_buyers": 17,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "9eu5qyTG",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "9eu5qyTGEXKRPmY26bnDwp82nsVaQZ3tHcnbnY85MHrB",
+      "n_buyers": 24,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "BOLD",
+      "pool": "2UC5VpUMKU1ViqvQYEVjvwKoTRE9ZD7NGVLT89fShAHe",
+      "n_windows": 2,
+      "ohlcv_bars": 78,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": -33.3,
+      "chg_h6": -39.74,
+      "liq_usd": 10406.49,
+      "ca": "tDaipedqjB6y4pzV2Mrgv44X1nd1pQGvVoHTZZB1aC4",
+      "n_buyers": 13,
+      "n_profitable": 13
+    },
+    {
+      "symbol": "HABB",
+      "pool": "8gJXY4pwiZ81jwfHj1rLbFpdAaGQviqZ7e33qtPtuqK",
+      "n_windows": 1,
+      "ohlcv_bars": 37,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": 6.59,
+      "liq_usd": 3816.58,
+      "ca": "88ToUJM97oxk3Mzw2cnmM25oJEPgSc85N7ex2qETtW6E",
+      "n_buyers": 14,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "CrFZVK5t",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "CrFZVK5tMowpETTruH9tZDBFt9A6zSWj7LHiZGFbSTNK",
+      "n_buyers": 27,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "PUMPCAT",
+      "pool": "6HLorrkY3vqPsyTZDFvTGTnwnZsLM343Jxw6XvEPTKRt",
+      "n_windows": 2,
+      "ohlcv_bars": 100,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "gecko_trending"
+      ],
+      "chg_h1": -9.61,
+      "chg_h6": -39.58,
+      "liq_usd": 21702.74,
+      "ca": "DFQHUegJWE29Xu3BUxPezqi77uyHURRyxJpdtyvLpump",
+      "n_buyers": 24,
+      "n_profitable": 24
+    },
+    {
+      "symbol": "FEELSGOOD",
+      "pool": "8eRh3PYkBpfADNwkrRuXs6SjiNpNMCL8zCR9SVh3bMQF",
+      "n_windows": 2,
+      "ohlcv_bars": 100,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "gecko_trending"
+      ],
+      "chg_h1": 13.14,
+      "chg_h6": -31.18,
+      "liq_usd": 450941.18,
+      "ca": "HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT",
+      "n_buyers": 28,
+      "n_profitable": 28
+    },
+    {
+      "symbol": "G6ZA8mLU",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "G6ZA8mLUqaBcQiuTBjDWpF11feV5ELhqLCG3frQaYhzA",
+      "n_buyers": 25,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "D1Tzodub",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "D1TzodubgUF6hdwQ25VUXEFgjrPKcGEBZkX6bM3U4NXu",
+      "n_buyers": 21,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "AXnapHhQ",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "AXnapHhQ6Gj5FwQSDSHdfKC9dqbdKJQ6JUENXgAPLggc",
+      "n_buyers": 20,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "PEEPEE",
+      "pool": "7u3BpSbSXUcGabDRhHAtHeMyUfmcSeptyAjK96qG6xBp",
+      "n_windows": 1,
+      "ohlcv_bars": 63,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": -0.37,
+      "chg_h6": -6.67,
+      "liq_usd": 13930.53,
+      "ca": "GJWu1rjX47ZxkGdDJpTKr3okRiu5r9s1Y5nsbf76sfm4",
+      "n_buyers": 19,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "PEEPO",
+      "pool": "BqUTCJL5bGsFivChM5g9rrheQVWjtPQeCTng7wa1TKnq",
+      "n_windows": 1,
+      "ohlcv_bars": 100,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": 10.6,
+      "chg_h6": -15.84,
+      "liq_usd": 8364.3,
+      "ca": "GBopV3ML3DBZfhcwPiE25eiYMyMSwtN24YoQGdbnmpDy",
+      "n_buyers": 21,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "GxbJ3XSC",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "GxbJ3XSCzzohFJW2HFeYS5kboBwHaAHjTdvdPM6rdXwe",
+      "n_buyers": 24,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "BB",
+      "pool": "D36wVDrA9GXuJr1C2CxAaN2PUMyU6w8YMW4hENdNJwRZ",
+      "n_windows": 1,
+      "ohlcv_bars": 72,
+      "stage_hint": "post_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": 0.35,
+      "chg_h6": -0.37,
+      "liq_usd": 161506.18,
+      "ca": "BBosJLw8ZzoATiEyywiifx7AgmrD2Cm3XjFWbhbRhChy",
+      "n_buyers": 0,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "3n6xnQZx",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "3n6xnQZxzWGgAFgVVqu3nhH5fx5AACy2uZG4cWyNB9TM",
+      "n_buyers": 24,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "AEuPmg7z",
+      "pool": "9ukm8JrrmzDwbQV3hWGzzHyHh7ZH92rsozqSkj6PVE8G",
+      "n_windows": 1,
+      "ohlcv_bars": 10,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "AEuPmg7zfTb5kCPXtTNCzi8YkR46ze2aNNY84WTJjbbf",
+      "n_buyers": 31,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "CrBwwtFc",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "CrBwwtFcH4xefAQq6TNKchq6fRjsUrCPVV5nNCUicsWE",
+      "n_buyers": 10,
+      "n_profitable": 0
+    },
+    {
+      "symbol": "M4CMwkDw",
+      "pool": null,
+      "n_windows": 1,
+      "ohlcv_bars": 0,
+      "stage_hint": "pre_grad_dip",
+      "sources": [
+        "seed_74pB"
+      ],
+      "chg_h1": null,
+      "chg_h6": null,
+      "liq_usd": null,
+      "ca": "M4CMwkDwqHLxmSaNLcZkUgfNuhjJeswkYF6p8Jowt6u",
+      "n_buyers": 27,
+      "n_profitable": 0
+    }
+  ],
+  "source": "dump_dip",
+  "chain": "solana"
 }
