@@ -1,4 +1,4 @@
-# StonkFun diggers — 2026-09-20 18:36 JST
+# StonkFun diggers — 2026-09-20 21:09 JST
 
 - chain: **solana** (do not merge into RH `wallets.jsonl`)
 - source: StonkFun public API + free Solana RPC (`https://solana-rpc.publicnode.com`)
@@ -57,13 +57,13 @@
 - **BABYCATE** peak=$1,239,388 buyers=30 pool_sigs=986 `4JHXtNwMogExmcxXB1Ykb1A9s6yyAWKYG7xRurnT14Ws`
 - **NINJACAT** peak=$1,178,703 buyers=0 pool_sigs=0 `9CPfv7rc6vxBd3jtovmZtf5Zy8bdvssv8c4BwzbGk147`
 - **TOPCAT** peak=$922,727 buyers=30 pool_sigs=1010 `BT845WxZtv9qmmEiGXB9rueBi1LT1ViHr6gbYx142FFP`
-- **GNOME** peak=$889,749 buyers=0 pool_sigs=0 `GCjgZ2X4XmSrLX7SVuiAVkA3c1ptXdtWiVQN4u1P9GeR`
 - **PONDER** peak=$867,379 buyers=26 pool_sigs=1818 `3QgAJyTGGKfp1QPHBV6tV5P1kq2KwvPBfdG4jjxvZobF`
 - **PSA10** peak=$808,708 buyers=30 pool_sigs=1535 `DnJeAP7hWjVNTTk1NUaDJ5Aps9qDroSsEMcKBCpSTNK`
 - **INURANUS** peak=$699,435 buyers=30 pool_sigs=939 `FKWAyaxNccZCgT142vdMT6658geBEJb7cdNNkMb86Kwo`
 - **UMADBRO** peak=$646,343 buyers=30 pool_sigs=1510 `EPeReW6ScEqdeC7eVDceLuJDLrW7m1ggnaenSeQoP9b2`
 - **PEEPEE** peak=$585,788 buyers=30 pool_sigs=1098 `C8KYEyUKnxHsjUadTLTcyocFFBgFcwGRiGZBcG8PpN3K`
 - **BITDOG** peak=$574,429 buyers=0 pool_sigs=0 `B3jjDNkBw48utaFxRRSWxg4oUkN23YxodChdEf4bxhQS`
+- **LEEROY** peak=$562,258 buyers=0 pool_sigs=0 `5VLjC8DdHYkVHVMgnkdhVKWgPDhUephvoFrk1UMTQkPk`
 - **SANTA** peak=$541,416 buyers=0 pool_sigs=0 `3c7mmVSyEH8jfZXgxvpLsETtko1Y16DyRJ5XYB4snhGt`
 - **MEMEMAN** peak=$528,288 buyers=30 pool_sigs=7618 `9gaMApmv31oRKEqBmdyooYi5wpzAahi9h85VeHVFUW2Y`
 - **HIKIKOMORI** peak=$501,302 buyers=30 pool_sigs=3874 `DkjoTNGY6nFGEPRPGCo79siM1w3ZL3RDyfBDPGNSnGn3`
