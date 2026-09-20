@@ -245,7 +245,7 @@ MIN_MCAP_USD = float(os.environ.get("MIN_MCAP_USD", "5000"))
 MIN_CLUSTER_USD = float(os.environ.get("MIN_CLUSTER_USD", "150"))
 # Priority notify tier (rule-based; optional second webhook)
 MIN_CLUSTER_PRIORITY = float(os.environ.get("MIN_CLUSTER_PRIORITY", "150"))
-PRIORITY_MIN_WALLETS = int(os.environ.get("PRIORITY_MIN_WALLETS", "2"))
+PRIORITY_MIN_WALLETS = int(os.environ.get("PRIORITY_MIN_WALLETS", "3"))
 PRIORITY_MIN_AGE_SEC = int(os.environ.get("PRIORITY_MIN_AGE_SEC", "1800"))  # 30m soft
 PRIORITY_MAX_AGE_SEC = int(os.environ.get("PRIORITY_MAX_AGE_SEC", "172800"))  # 48h soft
 PRIORITY_MIN_ABS_M5 = float(os.environ.get("PRIORITY_MIN_ABS_M5", "1"))

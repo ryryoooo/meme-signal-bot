@@ -27,6 +27,10 @@ os.environ.setdefault("GMGN_MARKET", "0")
 os.environ.setdefault("NOTIFY_MARKET_SOURCE", "dex")
 os.environ.setdefault("NOTIFY_PASSTHROUGH", "1")
 os.environ.setdefault("CHAIN", "robinhood")
+os.environ.setdefault("MIN_WALLETS", "2")
+os.environ.setdefault("PRIORITY_NOTIFY", "1")
+os.environ.setdefault("PRIORITY_MIN_WALLETS", "3")
+os.environ.setdefault("MIN_CLUSTER_PRIORITY", "150")
 # GHA: long Dex/Gecko retries (box uses DEX_FAST_FAIL instead)
 os.environ["DEX_FAST_FAIL"] = "0"
 os.environ.setdefault("DEX_GECKO_FALLBACK", "1")
@@ -253,6 +257,14 @@ def main() -> int:
     except (TypeError, ValueError):
         retry_count = 0
 
+
+    try:
+        min_wallets = int(float(os.environ.get("MIN_WALLETS", "2")))
+    except (TypeError, ValueError):
+        min_wallets = 2
+    if len(wallets) < min_wallets:
+        _log(f"skip n<{min_wallets} wallets={len(wallets)} ca={ca[:12]}… (enrich requires cluster)")
+        return 0
     _log(
         f"enrich start ca={ca} chain={chain} wallets={len(wallets)} "
         f"retry={retry_count} seen_key={seen_key[:48]}…"
