@@ -1,6 +1,6 @@
 # On-chain PnL estimates (Gecko trades via jina; no box GMGN)
 
-- Updated: **2026-09-20 16:12 JST**
+- Updated: **2026-09-20 16:13 JST**
 - First batch targets: **95** (`unknown_trend_pnl_pending_addrs.txt`)
 - Continuous daemon fill: every **900s** + after trend promote (`PNL_EST_CAP=40`)
 
@@ -13,9 +13,9 @@
 | zero (~0) | **20** |
 | still null / no trades in window | **15** |
 
-- With trade hits (meta): **95/95**
-- Quality-gated promote → `realized_pnl_usd` + clear `pnl_pending`: **39**
-- Still `pnl_pending` among the 95: **56**
+- With trade hits in Gecko recent window: **80/95**
+- Quality-gated promote → `realized_pnl_usd` + clear `pnl_pending`: **39** (`pass_pnl=39`)
+- Still `pnl_pending` among the 95: **56** (neg / zero / low-quality / null)
 
 ## Notes
 
