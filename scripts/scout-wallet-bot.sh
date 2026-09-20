@@ -20,6 +20,7 @@ HUNT_EVERY_SEC="${HUNT_EVERY_SEC:-900}"
 TREND_HUNT_EVERY_SEC="${TREND_HUNT_EVERY_SEC:-900}"
 PNL_FILL_EVERY_SEC="${PNL_FILL_EVERY_SEC:-900}"
 STONKFUN_EVERY_SEC="${STONKFUN_EVERY_SEC:-1800}"
+SOL_SMART_EVERY_SEC="${SOL_SMART_EVERY_SEC:-1800}"
 AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
@@ -51,6 +52,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_trend_hunt" ]] || echo 0 > "$STATE/last_trend_hunt"
 [[ -f "$STATE/last_pnl_fill" ]] || echo 0 > "$STATE/last_pnl_fill"
 [[ -f "$STATE/last_stonkfun" ]] || echo 0 > "$STATE/last_stonkfun"
+[[ -f "$STATE/last_sol_smart" ]] || echo 0 > "$STATE/last_sol_smart"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -128,7 +130,7 @@ ensure_stonkfun_signal_tick() {
 }
 
 ensure_stonkfun_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -252,6 +254,27 @@ while true; do
     else
       result="stonkfun_diggers_failed"; log "stonkfun_diggers failed"
       echo "$now" > "$STATE/last_stonkfun"
+    fi
+  fi
+
+  # Solana-wide smart unknown hunt — Dex/Gecko/pump free (SEPARATE from stonkfun diggers)
+  last_ss=$(cat "$STATE/last_sol_smart" 2>/dev/null || echo 0)
+  if (( now - last_ss >= SOL_SMART_EVERY_SEC )); then
+    action="sol_smart_hunt"
+    if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 SOL_TREND_ONCE=1 timeout 900 python3 scripts/hunt_sol_smart_wallets.py --once ) >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_sol_smart"; log "sol_smart_hunt ok"
+      if ( cd "$ROOT" && git status --porcelain sol-wallets/sol_smart_unknown.jsonl sol-wallets/summary_sol_smart_unknown.md sol-wallets/watch_candidates_sol.jsonl sol-wallets/raw/sol_smart_hunt_state.json scripts/hunt_sol_smart_wallets.py 2>/dev/null | grep -q . ); then
+        ( cd "$ROOT" && \
+          git add sol-wallets/sol_smart_unknown.jsonl sol-wallets/summary_sol_smart_unknown.md \
+                  sol-wallets/watch_candidates_sol.jsonl sol-wallets/raw/sol_smart_hunt_state.json \
+                  sol-wallets/raw/sol_smart_unknown_all.jsonl sol-wallets/README.md \
+                  scripts/hunt_sol_smart_wallets.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(sol): solana-wide smart wallet hunt" && \
+          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "sol_smart_hunt commit/push fail"
+      fi
+    else
+      result="sol_smart_hunt_failed"; log "sol_smart_hunt failed"
+      echo "$now" > "$STATE/last_sol_smart"
     fi
   fi
 

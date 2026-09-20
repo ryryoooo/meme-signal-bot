@@ -34,3 +34,20 @@ nohup bash scripts/stonkfun_signal_tick.sh >>/home/box/.local/share/scout-wallet
 # one-shot + test embed
 STONKFUN_SIGNAL_TEST=1 STONKFUN_TICK_ONCE=1 bash scripts/stonkfun_signal_tick.sh
 ```
+
+
+## Solana-wide smart unknown (separate from StonkFun)
+
+Quality active smart-wallet discovery across Solana trending / graduating tokens — **not** StonkFun-only.
+
+- `sol_smart_unknown.jsonl` — scored unknown wallets (`source=solana_trend`, `chain=solana`)
+- `summary_sol_smart_unknown.md` — human summary
+- `watch_candidates_sol.jsonl` — quality-gated staging (not Discord-wired yet)
+- `raw/sol_smart_hunt_state.json` — hunt state
+
+Hunt: `scripts/hunt_sol_smart_wallets.py` (DexScreener + GeckoTerminal via jina + optional pump.fun; free Solana RPC unused by default for buyers).
+
+Daemon interval: `SOL_SMART_EVERY_SEC` (default 1800) in `scripts/scout-wallet-bot.sh` — independent of `STONKFUN_EVERY_SEC`.
+
+Excludes hubs/CEX/routers and (by default) addresses already on `stonkfun_diggers.jsonl` so the two lists stay distinct. **Never** merges into RH `wallets.jsonl` or StonkFun Discord.
+
