@@ -1,8 +1,8 @@
-# StonkFun diggers — 2026-09-20 17:42 JST
+# StonkFun diggers — 2026-09-20 18:36 JST
 
 - chain: **solana** (do not merge into RH `wallets.jsonl`)
 - source: StonkFun public API + free Solana RPC (`https://solana-rpc.publicnode.com`)
-- winners processed: **25** (peak ≥ $40,000)
+- winners processed: **24** (peak ≥ $40,000)
 - diggers this scan (hits ≥ 2): **34** (file merged total: **34**)
 - hubs auto-excluded: **0**
 - LIVE_TRADING=0 / no box GMGN
@@ -64,7 +64,6 @@
 - **UMADBRO** peak=$646,343 buyers=30 pool_sigs=1510 `EPeReW6ScEqdeC7eVDceLuJDLrW7m1ggnaenSeQoP9b2`
 - **PEEPEE** peak=$585,788 buyers=30 pool_sigs=1098 `C8KYEyUKnxHsjUadTLTcyocFFBgFcwGRiGZBcG8PpN3K`
 - **BITDOG** peak=$574,429 buyers=0 pool_sigs=0 `B3jjDNkBw48utaFxRRSWxg4oUkN23YxodChdEf4bxhQS`
-- **LEEROY** peak=$562,258 buyers=0 pool_sigs=0 `5VLjC8DdHYkVHVMgnkdhVKWgPDhUephvoFrk1UMTQkPk`
 - **SANTA** peak=$541,416 buyers=0 pool_sigs=0 `3c7mmVSyEH8jfZXgxvpLsETtko1Y16DyRJ5XYB4snhGt`
 - **MEMEMAN** peak=$528,288 buyers=30 pool_sigs=7618 `9gaMApmv31oRKEqBmdyooYi5wpzAahi9h85VeHVFUW2Y`
 - **HIKIKOMORI** peak=$501,302 buyers=30 pool_sigs=3874 `DkjoTNGY6nFGEPRPGCo79siM1w3ZL3RDyfBDPGNSnGn3`
