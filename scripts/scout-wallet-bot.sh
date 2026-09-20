@@ -134,6 +134,44 @@ ensure_stonkfun_signal_tick() {
 }
 
 ensure_stonkfun_signal_tick
+
+# Solana smart wallets Discord (dedicated channel; never RH / StonkFun webhooks)
+ensure_sol_smart_signal_tick() {
+  local tick="$ROOT/scripts/sol_smart_signal_tick.sh"
+  local pidfile="$STATE/sol_smart_signal_tick.pid"
+  local tick_log="$STATE/sol_smart_signal_tick.log"
+  local lock="$STATE/sol_smart_signal_tick.lock"
+  if [[ ! -x "$tick" ]]; then
+    log "sol_smart_signal_tick missing: $tick"
+    return 0
+  fi
+  if [[ -f "$pidfile" ]]; then
+    local old
+    old=$(cat "$pidfile" 2>/dev/null || echo "")
+    if [[ "$old" =~ ^[0-9]+$ ]] && kill -0 "$old" 2>/dev/null; then
+      return 0
+    fi
+    rm -f "$pidfile"
+  fi
+  if pgrep -f '/scripts/sol_smart_signal_tick\.sh' >/dev/null 2>&1; then
+    return 0
+  fi
+  if pgrep -f 'sol_smart_signal_tick\.py' >/dev/null 2>&1; then
+    return 0
+  fi
+  SOL_SMART_POLL_SECONDS="${SOL_SMART_POLL_SECONDS:-30}" \
+  SOL_SMART_TICK_STATE_DIR="$STATE" \
+  SOL_SMART_TICK_LOG="$tick_log" \
+  SOL_SMART_TICK_LOCK="$lock" \
+  SOL_SMART_TICK_PID="$pidfile" \
+  LIVE_TRADING=0 \
+  GMGN_DISABLED=1 \
+    nohup bash "$tick" >>"$tick_log" 2>&1 &
+  echo $! > "$pidfile"
+  log "sol_smart_signal_tick started pid=$! poll=${SOL_SMART_POLL_SECONDS:-30}s webhook=dedicated_only"
+}
+
+ensure_sol_smart_signal_tick
 log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s sol7d=${SOL7D_EVERY_SEC}s dumpdip=${DUMPDIP_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
@@ -439,5 +477,7 @@ nl = chr(10)
 path.write_text(json.dumps(out, ensure_ascii=False) + nl, encoding="utf-8")
 PYH
   ensure_signal_tick
+  ensure_stonkfun_signal_tick
+  ensure_sol_smart_signal_tick
   sleep "$POLL_SEC"
 done
