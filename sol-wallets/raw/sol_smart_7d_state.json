@@ -1,16 +1,20 @@
 {
-  "updated_at": "2026-09-20T10:15:36.416403Z",
+  "updated_at": "2026-09-20T12:00:06.292576Z",
   "partial": false,
   "rpc": "https://api.mainnet-beta.solana.com",
-  "window_sec": 604800,
-  "n_cas": 42,
-  "n_cas_done": 42,
-  "n_exclude": 55,
-  "n_published": 186,
-  "n_candidates_all": 213,
-  "n_watch": 32,
-  "rpc_calls": 1284,
-  "rpc_429s": 109,
+  "n_published": 192,
+  "n_candidates_all": 219,
+  "merge": "union_by_address",
+  "restore": {
+    "git_active": 186,
+    "thin_active": 12,
+    "merged_active": 192,
+    "git_all": 213,
+    "thin_all": 12,
+    "merged_all": 219
+  },
+  "source": "solana_rpc_7d",
+  "chain": "solana",
   "top": [
     {
       "address": "56XVRVAsgWv6ADaxzoNnbL38LMoWKM5WiSAhrAWUbd2p",
@@ -42,6 +46,16 @@
       ]
     },
     {
+      "address": "8psNvWTrdNTiVRNzAgsou9kETXNJm2SXZyaKuJraVRtf",
+      "score": 87.55,
+      "n_cas": 3,
+      "symbols": [
+        "ANSEM",
+        "CYPHERCAT",
+        "OTC"
+      ]
+    },
+    {
       "address": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC",
       "score": 84.55,
       "n_cas": 3,
@@ -49,6 +63,16 @@
         "TIPPED",
         "DONATED",
         "WOJAK"
+      ]
+    },
+    {
+      "address": "DYP7RvYsGymhRUL9DyAQZeZZU1XjCTp796tPGYQKTM2V",
+      "score": 84.55,
+      "n_cas": 3,
+      "symbols": [
+        "Pepe",
+        "JUPCAT",
+        "PUMPCAT"
       ]
     },
     {
@@ -85,6 +109,60 @@
       "symbols": [
         "GLDx",
         "Pepe"
+      ]
+    },
+    {
+      "address": "6ooVBXhnqAXaF91cu49YmWhoFuE6WLdZWTwNYvTuhyBd",
+      "score": 65.7,
+      "n_cas": 2,
+      "symbols": [
+        "FLEX",
+        "PUMPCAT"
+      ]
+    },
+    {
+      "address": "9nXDunV8eNvYSVys7JSBkm2hz9Q79Q3EYeko19srVeMC",
+      "score": 65.7,
+      "n_cas": 2,
+      "symbols": [
+        "BP",
+        "USELESS"
+      ]
+    },
+    {
+      "address": "6Qt8a3Y6B4nekSRQ1p2e5yqP5bSCbE6HzUTdWwdfYXmR",
+      "score": 65.7,
+      "n_cas": 2,
+      "symbols": [
+        "Annoyed",
+        "OTC"
+      ]
+    },
+    {
+      "address": "EYvwg12vXcUN7pF1fASQZZgQ9RbVUMLjKqqCfi961ptw",
+      "score": 65.7,
+      "n_cas": 2,
+      "symbols": [
+        "Annoyed",
+        "OTC"
+      ]
+    },
+    {
+      "address": "7b7qso5k16cCL7or1tFuCzabWptPR42MbH7HwHmivTx8",
+      "score": 60.7,
+      "n_cas": 2,
+      "symbols": [
+        "USDF",
+        "EVO"
+      ]
+    },
+    {
+      "address": "mQYD4ZhNAD3VHCFhEhTWGDdVfzQg1Z1WLFW47sEbkTv",
+      "score": 60.7,
+      "n_cas": 2,
+      "symbols": [
+        "USDF",
+        "fomo"
       ]
     },
     {
@@ -126,461 +204,6 @@
       "symbols": [
         "JEANPHIL"
       ]
-    },
-    {
-      "address": "62pB4YRapCjEMT1xej59bWKhBpcm6rE9nSCwov6y3Ban",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "TIPPED"
-      ]
-    },
-    {
-      "address": "BV2pD41jMPmqfaTyGZXPB6eRiLggc8j9oPZ2aWjC3qW4",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "TIPPED"
-      ]
-    },
-    {
-      "address": "8RmCninssSiRZs1Do1Ug13t4toeT57hJVnvZc4EMZXMb",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "CATE"
-      ]
-    },
-    {
-      "address": "5Romb7REvaW7LULWehQN3BBgg3wfsnGLtZGfXFVi17xv",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "CATE"
-      ]
-    },
-    {
-      "address": "MfDuWeqSHEqTFVYZ7LoexgAK9dxk7cy4DFJWjWMGVWa",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "TRUMP"
-      ]
-    },
-    {
-      "address": "RDDSiaFVoFeSuqJsGX3zj7pWmXN97fKxp4AiRJRNhgR",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "FLEX"
-      ]
-    },
-    {
-      "address": "AyYfdH1yGvh3eNRUftcBY8RscVocJD1jj1FWFwAgKJK1",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "FLEX"
-      ]
-    },
-    {
-      "address": "BC9zN19vKTEC38UtVtirLpb1NECQPxjJ6jQggmPfyc5m",
-      "score": 36.85,
-      "n_cas": 1,
-      "symbols": [
-        "FLEX"
-      ]
     }
-  ],
-  "ca_stats": [
-    {
-      "ca": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
-      "symbol": "JEANPHIL",
-      "pool": "4R8CiMnJWDNoes3fQi1ccPFJygPXazaHaWpHrN3rZeNj",
-      "n_buyers": 6,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "tipp4C4Jnpft26HC9VXNjUPidojZqxXf8nzKvrKf5BS",
-      "symbol": "TIPPED",
-      "pool": "CJieB7FUMhEFMaEFjAxQJnkVXNMvaBm3DHHP8RTgBeG1",
-      "n_buyers": 4,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
-      "symbol": "STONK",
-      "pool": "zxTpi4BtaWX3mgdAPoezkMD1hxx8CdeCfrqXMWvSCLX",
-      "n_buyers": 0,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump",
-      "symbol": "CATE",
-      "pool": "HMzvsEEmtzHhvZNw9uwbaG85HCTmFnkbhzUx16cy7ca3",
-      "n_buyers": 4,
-      "sources": [
-        "gecko_trending",
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-      "symbol": "TRUMP",
-      "pool": "3C5YE97HADPDxZehYq9Cis8AXr9aNyrUsczKzE1nDbW9",
-      "n_buyers": 3,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "fvHLJUwsynVHJrssbZ8MLNyku9jt2izUspbBD4Spump",
-      "symbol": "FLEX",
-      "pool": "8qwgwpdfbBMNhdG76bDmtvLeSqtG9cEwuGGy6wGKhTB9",
-      "n_buyers": 3,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "98kfF7rmsg1QDUEoCqNE7g7M1FdrTt92TEp2CLzypump",
-      "symbol": "PAID",
-      "pool": "6e3jZLtf4tQbWZm3f7A66jF8tfZn6MRQVrbDFgcNWarA",
-      "n_buyers": 0,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "4JHXtNwMogExmcxXB1Ykb1A9s6yyAWKYG7xRurnT14Ws",
-      "symbol": "BABYCATE",
-      "pool": "8bQnjS5Lw2NPxWMESpo8UY9mf2ErcQ1kwPpDSRfne8xu",
-      "n_buyers": 8,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
-      "symbol": "SPYx",
-      "pool": "6truu3rZuiB9rKQg4VYC3Dt3QwV7DgwGqXrYUcrvnDDE",
-      "n_buyers": 4,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "DDVUsN8sDFxbaX6gNBoD44kjZhFETWJnwAn4EX1dpump",
-      "symbol": "BABYCATE",
-      "pool": "FYNWkGx9f1PLtdtvVw3bnty5bDbGKZ3UirJMcU25VX7c",
-      "n_buyers": 5,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "Xsv9hRk1z5ystj9MhnA7Lq4vjSsLwzL2nxrwmwtD3re",
-      "symbol": "GLDx",
-      "pool": "78ReVNMLGRWmjtf2HmBoHUe2pRcsctXTTbxJnbhchyze",
-      "n_buyers": 7,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "CBLgLg4rjkqqwXuZjR1WAqWet2vR68Vne32J2bFLpump",
-      "symbol": "DONATED",
-      "pool": "851G7eJBavuNfn3QcU951tDZkQZK17XPLE2jCzuqtEEs",
-      "n_buyers": 5,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump",
-      "symbol": "Tokens",
-      "pool": "Cc1EFpiwYod6rnj198HhVQn9vnMN73m1vxEHY8ab3994",
-      "n_buyers": 3,
-      "sources": [
-        "gecko_trending",
-        "dex_boosts"
-      ]
-    },
-    {
-      "ca": "BPxxfRCXkUVhig4HS1Lh7kZqV6SPJhzfEk4x6fVBjPCy",
-      "symbol": "BP",
-      "pool": "6qz7THwQvcjF3HyDGLuKaLBUk6EyJKeZXZMWLAeiwfjd",
-      "n_buyers": 3,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "G9QZfEPHtZrUF1arcUFvZgYn6zSQLZdvcjCuyhKrpump",
-      "symbol": "Stryker",
-      "pool": "EyeeG5fzZEigSQv7jUdxydePnsPL382KyVfXAANXVmeD",
-      "n_buyers": 7,
-      "sources": [
-        "gecko_trending",
-        "dex_boosts",
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
-      "symbol": "CARDS",
-      "pool": "HnhpJPJgBG2KwniMTNW8cVBHvk1hFog3RC3kjnyc23tD",
-      "n_buyers": 2,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "91ryaCo5yGpYZM3bs6GUPs97VWJQj7RozBmqPULgpump",
-      "symbol": "TIGRINO",
-      "pool": "2fwy38cJcChCVySA9cd5SAFaEPtZQWN2ssFip43hnsHU",
-      "n_buyers": 7,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT",
-      "symbol": "FEELSGOOD",
-      "pool": "8eRh3PYkBpfADNwkrRuXs6SjiNpNMCL8zCR9SVh3bMQF",
-      "n_buyers": 9,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "EBsK6LyH8ZCF6aq2uD4fTkFHuPzA1DLUE7fLjMyJpump",
-      "symbol": "Annoyed",
-      "pool": "BNq95e7uvYYyER4VzhSD3yGPgTr3vQG27fmXqQHFjUhU",
-      "n_buyers": 5,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "8k4sBtEeK4pf26noKqApv8NBTnuSJcbdwpKYknk5PbAA",
-      "symbol": "CALI",
-      "pool": "2i2iULr7UwK1SDRB17T5FUtiMnFQL7fyy7rh69brZihc",
-      "n_buyers": 2,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B",
-      "symbol": "Pepe",
-      "pool": "FCEnSxyJfRSKsz6tASUENCsfGwKgkH6YuRn1AMmyHhZn",
-      "n_buyers": 6,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "72yxYmhLgDGwdyi2b9GjDynBB6VuG3kDxNKqDbzXh5bi",
-      "symbol": "WOW",
-      "pool": "LeZ2DH1y7bqzAghYbXqKB6fNxoBKqPSPihv3EmkLBRv",
-      "n_buyers": 7,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
-      "symbol": "TROLL",
-      "pool": "4w2cysotX6czaUGmmWg13hDpY4QEMG2CzeKYEQyK9Ama",
-      "n_buyers": 4,
-      "sources": [
-        "gecko_trending",
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-      "symbol": "Fartcoin",
-      "pool": "Bzc9NZfMqkXR6fz1DBph7BDf9BroyEf6pnzESP7v5iiw",
-      "n_buyers": 3,
-      "sources": [
-        "gecko_trending",
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump",
-      "symbol": "WOJAK",
-      "pool": "FDrY5i5kuadZ1ik8gPS26qjj9Rw9mpufXMegGC2HNSP7",
-      "n_buyers": 15,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "4MMQY9bwkxxTtsK3W227Q5ABT6yFY8Pmn9Ze7wmAXKY8",
-      "symbol": "ALLINU",
-      "pool": "4iVHkn5WhmGwrKb2fYFNPnTkqhwYTEEezvsju9YEBY76",
-      "n_buyers": 6,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "6AUURRdHb9TrfPHv9AMofa8NEVoZDXcsbWKcUBpFSRXs",
-      "symbol": "CYPHERCAT",
-      "pool": "4csHMs7d6ZYghbq6mS2o56BQ528eLjugQeFVhDjyWNS5",
-      "n_buyers": 9,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
-      "symbol": "ANSEM",
-      "pool": "6e7V9eegCHw997T72MxgwwJipZ6GJyZF8NvjkzT1rvpN",
-      "n_buyers": 6,
-      "sources": [
-        "gecko_trending",
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
-      "symbol": "ZCAT",
-      "pool": "GuPbekwP9MqB23CghhiMQZTaigPdUJooovo1neCErhM8",
-      "n_buyers": 8,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "Ce2gx9KGXJ6C9Mp5b5x1sn9Mg87JwEbrQby4Zqo3pump",
-      "symbol": "neet",
-      "pool": "5wNu5QhdpRGrL37ffcd6TMMqZugQgxwafgz477rShtHy",
-      "n_buyers": 1,
-      "sources": [
-        "gecko_trending",
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
-      "symbol": "USELESS",
-      "pool": "Q2sPHPdUWFMg7M7wwrQKLrn619cAucfRsmhVJffodSp",
-      "n_buyers": 9,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
-      "symbol": "POPCAT",
-      "pool": "FRhB8L7Y9Qq41qZXYLtC2nw8An1RJfLLxRF2x9RwLLMo",
-      "n_buyers": 2,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "4NCuDE737HY4EJ573iZM4zo7xszn1MWL6a2Xjp9wpump",
-      "symbol": "RETURN",
-      "pool": "Dx6E5EQ2Tav9ct2dSRnbe5KGPi2as5e39U5NBb2j1rGt",
-      "n_buyers": 14,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "AaEhFTX4naHSWSXz9TVe5QgLbtSLT8ZqYJGZzDDcoroh",
-      "symbol": "JUPCAT",
-      "pool": "BdFK8v9bVSe9pSXSdGZfL4pzjRpeSyfrkePGiM1cZEdt",
-      "n_buyers": 15,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "5dvXTZ5qwgafnHtwu3Ls3QrWx1U4LQsFeCuJgkk4QEC6",
-      "symbol": "EMBER",
-      "pool": "GbrDAq3RjcVWeroLDUwmnuQ8N5xaaKj2Rk2dJDg64CLY",
-      "n_buyers": 0,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "69LjZUUzxj3Cb3Fxeo1X4QpYEQTboApkhXTysPpbpump",
-      "symbol": "CODEC",
-      "pool": "HH4D2z7SkBtoS2DAwzs1XCwSRWYbk14KNueU1KhmZcEV",
-      "n_buyers": 3,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "DFQHUegJWE29Xu3BUxPezqi77uyHURRyxJpdtyvLpump",
-      "symbol": "PUMPCAT",
-      "pool": "6HLorrkY3vqPsyTZDFvTGTnwnZsLM343Jxw6XvEPTKRt",
-      "n_buyers": 2,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "J3NKxxXZcnNiMjKw9hYb2K4LUxgwB6t1FtPtQVsv3KFr",
-      "symbol": "SPX",
-      "pool": "9t1H1uDJ558iMPNkEPSN1fqkpC4XSPQ6cqSf6uEsTfTR",
-      "n_buyers": 5,
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "56nmo5iYxUDALE8wssyXZbKscoDaoisVfnxnCWCpump",
-      "symbol": "GOAF",
-      "pool": "8H2kDVp7yTjfas9QFYDCEoQxgFBvXzAhZJ9LCh13U9xc",
-      "n_buyers": 7,
-      "sources": [
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "1xdtu7y3LkkrVCAbm5KGKfYzq1qgKhxxk5AaJBqpump",
-      "symbol": "MNSRY",
-      "pool": "3ZQPHrpt5QSM1s4V2Ha8nYBgSSsrjLzuEHZeyZjw2af9",
-      "n_buyers": 2,
-      "sources": [
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "ZKT2c96kadjwSb6cDn3orSp7zU2B1QmpMTe7B9Fpump",
-      "symbol": "NTDA",
-      "pool": "4KhUNhhsBcUL6nJMGudT9xy1wa8sFncQzRPUZcNYj1gP",
-      "n_buyers": 9,
-      "sources": [
-        "pump_graduated"
-      ]
-    },
-    {
-      "ca": "84F1qoH8xGaWMuzUMFpCDMhB7X5YvPZFXguofyTpump",
-      "symbol": "PONYX",
-      "pool": "FkXffs3M1qZP1eb4U8BpDT5zoVy2aTJJqYHtXwz8uJAz",
-      "n_buyers": 12,
-      "sources": [
-        "pump_graduated"
-      ]
-    }
-  ],
-  "elapsed_s": 2173.81,
-  "source": "solana_rpc_7d",
-  "chain": "solana"
+  ]
 }

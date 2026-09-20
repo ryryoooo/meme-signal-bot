@@ -8,7 +8,7 @@ Pipeline (LIVE_TRADING=0, no box GMGN):
   2) Resolve pools (Dex / Gecko)
   3) getSignaturesForAddress over ~7d + getTransaction buyers (official RPC)
   4) Score multi-mint 7d activity; exclude hubs/CEX + stonkfun diggers
-  5) Write sol_smart_7d_active.jsonl + summary + optional watch merge
+  5) Union-merge into sol_smart_7d_active.jsonl (dedupe addr, keep best score; never shrink) + summary + watch merge
 
 Default RPC: https://api.mainnet-beta.solana.com (override SOLANA_RPC_URL)
 """
@@ -152,6 +152,45 @@ def direct_json(url, timeout=30.0):
     except Exception:
         data = extract_json(raw)
         return (data, None) if data is not None else (None, "parse_fail")
+
+
+def load_jsonl_rows(path):
+    """Load dict rows with address from a jsonl file."""
+    out = []
+    if not path.exists():
+        return out
+    for line in path.open(encoding="utf-8"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            o = json.loads(line)
+        except Exception:
+            continue
+        if isinstance(o, dict) and norm(o.get("address") or o.get("wallet")):
+            o = dict(o)
+            o["address"] = norm(o.get("address") or o.get("wallet"))
+            out.append(o)
+    return out
+
+def _row_rank(r):
+    return (float(r.get("score") or 0), int(r.get("n_cas") or 0), int(r.get("n_buys") or 0))
+
+def union_by_address(*row_lists):
+    """Dedupe by address; keep best score (then n_cas, n_buys). Never drops prior addrs."""
+    by = {}
+    for rows in row_lists:
+        for r in rows or []:
+            if not isinstance(r, dict):
+                continue
+            a = norm(r.get("address") or r.get("wallet"))
+            if not a:
+                continue
+            r = dict(r); r["address"] = a
+            prev = by.get(a)
+            if prev is None or _row_rank(r) > _row_rank(prev):
+                by[a] = r
+    return sorted(by.values(), key=_row_rank, reverse=True)
 
 def load_addrs(path, key="address"):
     out = set()
@@ -490,15 +529,26 @@ def write_outputs(by_wallet, known, cas, ca_stats, window_sec, min_cas, min_scor
         candidates.append(row)
     candidates.sort(key=lambda r: (r["score"], r["n_cas"], r["n_buys"]), reverse=True)
     OUT_DIR.mkdir(parents=True, exist_ok=True); STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with RAW_ALL.open("w", encoding="utf-8") as f:
-        for r in candidates: f.write(json.dumps(r, ensure_ascii=False)+"\n")
-    published = []
+    published_new = []
     for r in candidates:
-        if r["n_cas"] >= 2: published.append(r)
+        if r["n_cas"] >= 2: published_new.append(r)
         elif (r.get("best_early_rank") or 999) <= 8 and r["score"] >= min_score:
-            published.append(r)
+            published_new.append(r)
+    # Always union-merge with prior lists — never shrink on short/partial runs.
+    prior_published = load_jsonl_rows(OUT_JSONL)
+    prior_all = load_jsonl_rows(RAW_ALL)
+    n_cas_done = len(ca_stats)
+    healthy = (n_cas_done >= max(8, env_int("SOL7D_MERGE_MIN_CAS", 12))
+               and len(published_new) >= env_int("SOL7D_MERGE_MIN_WALLETS", 1))
+    published = union_by_address(prior_published, published_new)
+    candidates_merged = union_by_address(prior_all, candidates)
+    if not healthy:
+        log(f"thin/partial run cas_done={n_cas_done} new_pub={len(published_new)} — union-merge keep prior={len(prior_published)} → {len(published)}")
+    with RAW_ALL.open("w", encoding="utf-8") as f:
+        for r in candidates_merged: f.write(json.dumps(r, ensure_ascii=False)+"\n")
     with OUT_JSONL.open("w", encoding="utf-8") as f:
         for r in published: f.write(json.dumps(r, ensure_ascii=False)+"\n")
+    candidates = candidates_merged  # summary raw count = union
     watch_new = [r for r in published if r["n_cas"] >= 2 and r["score"] >= max(min_score, 18)][:top_watch]
     merged = watch_new
     if update_watch:
@@ -527,7 +577,7 @@ def write_outputs(by_wallet, known, cas, ca_stats, window_sec, min_cas, min_scor
     lines = [f"# Solana 7d active smart wallets (official RPC){tag} — {jst}", "",
              f"- RPC: `{RPC_URL}`", f"- Window: **{window_sec/86400:.0f} days**",
              f"- CAs scanned / done: **{len(cas)}** / **{len(ca_stats)}**",
-             f"- Excluded: **{len(known)}**", f"- Published: **{len(published)}** (raw {len(candidates)})",
+             f"- Excluded: **{len(known)}**", f"- Published: **{len(published)}** (this run {len(published_new)}, raw union {len(candidates)}; merge=union)",
              f"- Watch (merged): **{len(merged)}**", f"- RPC calls: **{_rpc_n[0]}** · 429s: **{_rpc_429[0]}**",
              f"- Elapsed: **{time.time()-t0:.1f}s**", "", "## CA scan", ""]
     for c in ca_stats[:30]:
@@ -542,12 +592,12 @@ def write_outputs(by_wallet, known, cas, ca_stats, window_sec, min_cas, min_scor
     OUT_MD.write_text("\n".join(lines)+"\n", encoding="utf-8")
     state = {"updated_at": now.isoformat().replace("+00:00","Z"), "partial": partial, "rpc": RPC_URL,
              "window_sec": window_sec, "n_cas": len(cas), "n_cas_done": len(ca_stats), "n_exclude": len(known),
-             "n_published": len(published), "n_candidates_all": len(candidates), "n_watch": len(merged),
+             "n_published": len(published), "n_published_run": len(published_new), "merge": "union_by_address", "healthy_run": healthy, "n_candidates_all": len(candidates), "n_watch": len(merged),
              "rpc_calls": _rpc_n[0], "rpc_429s": _rpc_429[0],
              "top": [{"address": r["address"], "score": r["score"], "n_cas": r["n_cas"], "symbols": r.get("symbols")} for r in published[:20]],
              "ca_stats": ca_stats, "elapsed_s": round(time.time()-t0, 2), "source": "solana_rpc_7d", "chain": "solana"}
     STATE_PATH.write_text(json.dumps(state, indent=2)+"\n", encoding="utf-8")
-    log(f"{'checkpoint' if partial else 'done'} published={len(published)} watch={len(merged)} cas={len(ca_stats)}/{len(cas)} rpc={_rpc_n[0]} 429={_rpc_429[0]} elapsed={time.time()-t0:.1f}s")
+    log(f"{'checkpoint' if partial else 'done'} published={len(published)} (run_new={len(published_new)}) watch={len(merged)} cas={len(ca_stats)}/{len(cas)} rpc={_rpc_n[0]} 429={_rpc_429[0]} elapsed={time.time()-t0:.1f}s")
     return state
 
 def hunt_once():
