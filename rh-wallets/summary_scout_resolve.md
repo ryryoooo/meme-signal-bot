@@ -1,20 +1,20 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-20T13:42:54.884649+00:00
-- Unique pairs: **2146/2451** (87.6%)
-- Trunc rows still unresolved: **480**
-- Methods: pair_cache=1 token_scoped=1 multi_union=0 mega=1 global=0 two_hit=0
-- Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=305
+- Updated (UTC): 2026-09-20T16:00:51.374412+00:00
+- Unique pairs: **2157/2461** (87.6%)
+- Trunc rows still unresolved: **479**
+- Methods: pair_cache=81 token_scoped=3 multi_union=0 mega=8 global=0 two_hit=0
+- Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=304
 
 ## Top unresolved blockers
 
-- `no_match`: 305
+- `no_match`: 304
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **305** (huge_pool≥1000 true-dead≈27, mid<500 still deepenable≈249)
+- no_match total: **304** (huge_pool≥1000 true-dead≈27, mid<500 still deepenable≈248)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
