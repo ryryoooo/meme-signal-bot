@@ -1,20 +1,21 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-20T16:43:01.240460+00:00
-- Unique pairs: **2149/2451** (87.7%)
-- Trunc rows still unresolved: **475**
-- Methods: pair_cache=2 token_scoped=1 multi_union=0 mega=2 global=0 two_hit=0
+- Updated (UTC): 2026-09-20T18:01:15.394746+00:00
+- Unique pairs: **2168/2469** (87.8%)
+- Trunc rows still unresolved: **480**
+- Methods: pair_cache=133 token_scoped=3 multi_union=0 mega=5 global=0 two_hit=0
 - Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=302
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=1 multi_match=0 no_match=300
 
 ## Top unresolved blockers
 
-- `no_match`: 302
+- `no_match`: 300
+- `api_fail`: 1
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **302** (huge_pool≥1000 true-dead≈27, mid<500 still deepenable≈245)
+- no_match total: **300** (huge_pool≥1000 true-dead≈27, mid<500 still deepenable≈243)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -36,7 +37,7 @@
 - `0x0f60|def6` reason=no_match tokens=2 union=272 tier=good
 - `0x0f72|4d3f` reason=no_match tokens=1 union=149 tier=good
 - `0x0f86|98de` reason=no_match tokens=4 union=608 tier=good
-- `0x1002|b2f5` reason=no_match tokens=2 union=3347 tier=elite
+- `0x1002|b2f5` reason=no_match tokens=3 union=3919 tier=elite
 - `0x110a|acfe` reason=no_match tokens=1 union=145 tier=good
 - `0x113f|ac20` reason=no_match tokens=1 union=248 tier=elite
 - `0x12c5|3470` reason=no_match tokens=1 union=311 tier=elite
