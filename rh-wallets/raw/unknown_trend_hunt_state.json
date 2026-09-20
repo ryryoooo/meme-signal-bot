@@ -1,59 +1,59 @@
 {
-  "updated_at": "2026-09-20T05:56:28.942009Z",
+  "updated_at": "2026-09-20T07:17:32.078323Z",
   "n_cas": 30,
-  "n_known": 11219,
-  "n_candidates": 1145,
+  "n_known": 11665,
+  "n_candidates": 62,
   "n_watch": 25,
   "top": [
     {
-      "address": "0x6a41697a5c1d725ba787dfb3903e1e0338c9b131",
-      "score": 180.167,
-      "n_cas": 10
+      "address": "0x832f3012d50b8c1356cea9f207e34930e10bf95c",
+      "score": 65.484,
+      "n_cas": 3
     },
     {
-      "address": "0x08d0c5049e4bc42102f22e6588c96374b923057c",
-      "score": 137.733,
-      "n_cas": 7
+      "address": "0x4337011463ef6bd863e47e7b5e743d2522261131",
+      "score": 64.255,
+      "n_cas": 3
     },
     {
-      "address": "0x6abea4998f9ef34ee1cda5715ccca0e4d4efb730",
-      "score": 121.065,
-      "n_cas": 6
+      "address": "0x4337050608d02173feea2e27ba65a1af0f948538",
+      "score": 63.612,
+      "n_cas": 3
     },
     {
-      "address": "0x0df6c565a49f8fcc02251836236f980d304a3930",
-      "score": 110.811,
-      "n_cas": 6
+      "address": "0xf79e28332aec70eaf819b184999447b5022be65d",
+      "score": 55.2,
+      "n_cas": 1
     },
     {
-      "address": "0x359b288eb3ab1fb4553b5424b96d62f33e6eb359",
-      "score": 106.906,
-      "n_cas": 5
+      "address": "0x8d10551fbb0da1eadf34b25210fe75f278fa9321",
+      "score": 52.379,
+      "n_cas": 2
     },
     {
-      "address": "0x1b36374d5a26c45726632162188f7162dcf39639",
-      "score": 98.116,
-      "n_cas": 5
+      "address": "0xfa2ac99add5c905e1ff6a90541012745f466ef05",
+      "score": 51.497,
+      "n_cas": 2
     },
     {
-      "address": "0x457c31f85b0c5760564676939e4fafb2e454b108",
-      "score": 96.729,
-      "n_cas": 5
+      "address": "0xf5b77b30ef47f56e4ab7d6d28fbe3e91f894b9a9",
+      "score": 51.223,
+      "n_cas": 2
     },
     {
-      "address": "0x05854d0c70d2f696fb3d9c0863100956b795e2ff",
-      "score": 96.547,
-      "n_cas": 5
+      "address": "0x52132dda5ca2fb972be372e683b2c691c6083bbd",
+      "score": 51.096,
+      "n_cas": 2
     },
     {
-      "address": "0x4e23424b3c635ec2cad284787467b1700517421d",
-      "score": 83.923,
-      "n_cas": 4
+      "address": "0x4ae8f9294dcf802d22af1ccb1e05e8fc7ac26bb2",
+      "score": 50.066,
+      "n_cas": 2
     },
     {
-      "address": "0x13c2e85715d8f6fcd48518eccd74ee1dc272ecb8",
-      "score": 82.663,
-      "n_cas": 4
+      "address": "0x616f72002f54c7386d3fb5093eeda78fe6983c4b",
+      "score": 49.803,
+      "n_cas": 2
     }
   ],
   "cas": [
@@ -67,13 +67,6 @@
     {
       "ca": "0xb6a906d2d95e862cf4fd43b9e30162aee19eed8d",
       "symbol": "ZFORGE",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
-      "symbol": "NVDA",
       "sources": [
         "gecko_trending"
       ]
@@ -108,23 +101,23 @@
       ]
     },
     {
-      "ca": "0xebd79ceada7a7798ee75727671581dda5a9e88e4",
-      "symbol": "VLAD",
+      "ca": "0xedbf91223639800bcd5756815caf908df3b890be",
+      "symbol": "PRIORS",
       "sources": [
         "gecko_trending",
         "notify_peak_2x"
       ]
     },
     {
-      "ca": "0xd17c81cb01d44cc6e822936e8f098960001b47d2",
-      "symbol": "HOODCATS",
+      "ca": "0x6b1ca8209a695b27835964c00ac398f5d4f87a22",
+      "symbol": "CEST",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0x6b1ca8209a695b27835964c00ac398f5d4f87a22",
-      "symbol": "CEST",
+      "ca": "0xd17c81cb01d44cc6e822936e8f098960001b47d2",
+      "symbol": "HOODCATS",
       "sources": [
         "gecko_trending"
       ]
@@ -137,8 +130,24 @@
       ]
     },
     {
-      "ca": "0xab093def657f15df31b33922a95e047add645b29",
-      "symbol": "SHROOM",
+      "ca": "0xebd79ceada7a7798ee75727671581dda5a9e88e4",
+      "symbol": "VLAD",
+      "sources": [
+        "gecko_trending",
+        "notify_peak_2x"
+      ]
+    },
+    {
+      "ca": "0x204652a8a7a14ff7ab5c3329462e5dae9caff60b",
+      "symbol": "NSTRAT",
+      "sources": [
+        "gecko_trending",
+        "notify_peak_2x"
+      ]
+    },
+    {
+      "ca": "0x42afa2124ca5a2b83898e46b2da9a190995b1e18",
+      "symbol": "SCHIFFY",
       "sources": [
         "gecko_trending"
       ]
@@ -165,8 +174,8 @@
       ]
     },
     {
-      "ca": "0x42afa2124ca5a2b83898e46b2da9a190995b1e18",
-      "symbol": "SCHIFFY",
+      "ca": "0xab093def657f15df31b33922a95e047add645b29",
+      "symbol": "SHROOM",
       "sources": [
         "gecko_trending"
       ]
@@ -174,13 +183,6 @@
     {
       "ca": "0x8eaa17be69ae9616cede4671e6d837bb89491e18",
       "symbol": "CPU",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
-      "symbol": "SUPER",
       "sources": [
         "gecko_trending"
       ]
@@ -194,6 +196,13 @@
       ]
     },
     {
+      "ca": "0xa92768863a55d8a0591709f7f5e594a249d36ea3",
+      "symbol": "ASKR",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x11b70d0243baf75e85ce03201a92b5b7c33beb59",
       "symbol": "ROBIN",
       "sources": [
@@ -203,20 +212,6 @@
     {
       "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
       "symbol": "HEDGE",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0x1e87e82a4aa577e5449c13e9ec7ba9535016e9b4",
-      "symbol": "BEORN",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0xa92768863a55d8a0591709f7f5e594a249d36ea3",
-      "symbol": "ASKR",
       "sources": [
         "gecko_trending"
       ]
@@ -250,8 +245,8 @@
       ]
     },
     {
-      "ca": "0xc4f730335fb9e439ca5552f7b52b8e638c4245b0",
-      "symbol": "NOTE",
+      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
+      "symbol": "SUPER",
       "sources": [
         "gecko_trending"
       ]
@@ -269,9 +264,16 @@
       "sources": [
         "gecko_trending"
       ]
+    },
+    {
+      "ca": "0x56910d4409f3a0c78c64dd8d0545ff0705389870",
+      "symbol": "Index",
+      "sources": [
+        "gecko_trending"
+      ]
     }
   ],
-  "elapsed_s": 53.16,
+  "elapsed_s": 56.0,
   "rpc_calls": 0,
   "rpc_429": 0
 }
