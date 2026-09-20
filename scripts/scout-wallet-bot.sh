@@ -172,7 +172,50 @@ ensure_sol_smart_signal_tick() {
 }
 
 ensure_sol_smart_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s sol7d=${SOL7D_EVERY_SEC}s dumpdip=${DUMPDIP_EVERY_SEC}s"
+
+# Solana paper trading ($100/book) — StonkFun + sol_smart notify channels
+ensure_sol_paper_tick() {
+  local tick="$ROOT/scripts/sol_paper_tick.sh"
+  local pidfile="$STATE/sol_paper_tick.pid"
+  local tick_log="$STATE/sol_paper_tick.log"
+  local lock="$STATE/sol_paper_tick.lock"
+  if [[ ! -x "$tick" ]]; then
+    log "sol_paper_tick missing: $tick"
+    return 0
+  fi
+  if [[ -f "$pidfile" ]]; then
+    local old
+    old=$(cat "$pidfile" 2>/dev/null || echo "")
+    if [[ "$old" =~ ^[0-9]+$ ]] && kill -0 "$old" 2>/dev/null; then
+      return 0
+    fi
+    rm -f "$pidfile"
+  fi
+  if pgrep -f '/scripts/sol_paper_tick\.sh' >/dev/null 2>&1; then
+    return 0
+  fi
+  if pgrep -f 'sol_paper_tick\.py' >/dev/null 2>&1; then
+    return 0
+  fi
+  SOL_PAPER_TICK_SEC="${SOL_PAPER_TICK_SEC:-90}" \
+  SOL_PAPER_BANKROLL_USD="${SOL_PAPER_BANKROLL_USD:-100}" \
+  SOL_PAPER_MAX_OPEN="${SOL_PAPER_MAX_OPEN:-3}" \
+  SOL_PAPER_DISCORD="${SOL_PAPER_DISCORD:-1}" \
+  SOL_PAPER_SEED_ON_START="${SOL_PAPER_SEED_ON_START:-1}" \
+  SOL_PAPER_STATE_DIR="$STATE" \
+  SOL_PAPER_TICK_LOG="$tick_log" \
+  SOL_PAPER_TICK_LOCK="$lock" \
+  SOL_PAPER_TICK_PID="$pidfile" \
+  LIVE_TRADING=0 \
+  GMGN_DISABLED=1 \
+  PAPER_MARK_HEARTBEAT=0 \
+    nohup bash "$tick" >>"$tick_log" 2>&1 &
+  echo $! > "$pidfile"
+  log "sol_paper_tick started pid=$! tick=${SOL_PAPER_TICK_SEC:-90}s bankroll=${SOL_PAPER_BANKROLL_USD:-100} max_open=${SOL_PAPER_MAX_OPEN:-3}"
+}
+
+ensure_sol_paper_tick
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s sol7d=${SOL7D_EVERY_SEC}s dumpdip=${DUMPDIP_EVERY_SEC}s sol_paper=${SOL_PAPER_TICK_SEC:-90}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -479,5 +522,6 @@ PYH
   ensure_signal_tick
   ensure_stonkfun_signal_tick
   ensure_sol_smart_signal_tick
+  ensure_sol_paper_tick
   sleep "$POLL_SEC"
 done

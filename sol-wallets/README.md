@@ -91,3 +91,28 @@ LIVE_TRADING=0 GMGN_DISABLED=1 SOLANA_RPC_URL=https://api.mainnet-beta.solana.co
 ```
 
 Daemon: `SOL7D_EVERY_SEC` in `scripts/scout-wallet-bot.sh` (default 3600). Separate from StonkFun / RH.
+
+## Paper trading（仮想 · 原資 $100/チャンネル）
+
+通知シグナルごとに独立した紙トレード帳簿（実注文なし · `LIVE_TRADING=0`）。
+残高・ポジション実況は **専用チャンネル** のみ。
+
+| 帳簿 | シグナル状態 | 帳簿ファイル | サマリー |
+|---|---|---|---|
+| StonkFun digger | `raw/stonkfun_signal_state.json` | `paper_stonkfun_book.json` | `summary_paper_stonkfun.md` |
+| Solana smart | `raw/sol_smart_signal_state.json` | `paper_sol_smart_book.json` | `summary_paper_sol_smart.md` |
+
+- Tick: `scripts/sol_paper_tick.py` / `scripts/sol_paper_tick.sh`（~90s、scout-wallet-bot が ensure）
+- ルール: サイズ 20%（n≥3→30%）· 同時最大 3 · 1 mint 1 本 · +100% 半分利確 · −40% ストップ
+- エントリー = 通知時 `alert_price_usd` · 値洗い DexScreener のみ（box GMGN なし）
+- **【紙実況】** → `DISCORD_SOL_PAPER_WEBHOOK_URL` のみ（StonkFun / Sol smart シグナルchへは残高投稿しない）
+- 実況タイミング: 起動announce · fill/close/milestone · ~20分 heartbeat（`SOL_PAPER_JIKEI_SEC`）
+- fills: `paper_stonkfun_fills.jsonl` / `paper_sol_smart_fills.jsonl`
+
+```bash
+# one-shot seed + opening 実況
+SOL_PAPER_TICK_ONCE=1 SOL_PAPER_SEED=1 SOL_PAPER_ANNOUNCE=1 bash scripts/sol_paper_tick.sh
+
+# daemon
+nohup bash scripts/sol_paper_tick.sh >>/home/box/.local/share/scout-wallet-bot/sol_paper_tick.log 2>&1 &
+```
