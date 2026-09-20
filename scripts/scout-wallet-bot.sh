@@ -21,6 +21,7 @@ TREND_HUNT_EVERY_SEC="${TREND_HUNT_EVERY_SEC:-900}"
 PNL_FILL_EVERY_SEC="${PNL_FILL_EVERY_SEC:-900}"
 STONKFUN_EVERY_SEC="${STONKFUN_EVERY_SEC:-1800}"
 SOL_SMART_EVERY_SEC="${SOL_SMART_EVERY_SEC:-1800}"
+SOL7D_EVERY_SEC="${SOL7D_EVERY_SEC:-3600}"
 AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
@@ -53,6 +54,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_pnl_fill" ]] || echo 0 > "$STATE/last_pnl_fill"
 [[ -f "$STATE/last_stonkfun" ]] || echo 0 > "$STATE/last_stonkfun"
 [[ -f "$STATE/last_sol_smart" ]] || echo 0 > "$STATE/last_sol_smart"
+[[ -f "$STATE/last_sol7d" ]] || echo 0 > "$STATE/last_sol7d"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -130,7 +132,7 @@ ensure_stonkfun_signal_tick() {
 }
 
 ensure_stonkfun_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s sol7d=${SOL7D_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -283,6 +285,18 @@ while true; do
     else
       result="sol_smart_hunt_failed"; log "sol_smart_hunt failed"
       echo "$now" > "$STATE/last_sol_smart"
+    fi
+  fi
+
+  # Solana 7d active smart wallets via official RPC (SEPARATE from stonkfun / gecko sol_smart)
+  last_s7=$(cat "$STATE/last_sol7d" 2>/dev/null || echo 0)
+  if (( now - last_s7 >= SOL7D_EVERY_SEC )); then
+    action="sol7d_hunt"
+    if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 SOLANA_RPC_URL="${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}" SOL7D_ONCE=1 timeout 2700 python3 scripts/hunt_sol_smart_7d.py --once ) >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_sol7d"; log "sol7d_hunt ok"
+    else
+      result="sol7d_hunt_failed"; log "sol7d_hunt failed"
+      echo "$now" > "$STATE/last_sol7d"
     fi
   fi
 

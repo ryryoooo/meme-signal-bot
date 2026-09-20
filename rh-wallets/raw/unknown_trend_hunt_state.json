@@ -1,58 +1,58 @@
 {
-  "updated_at": "2026-09-20T08:24:50.490695Z",
+  "updated_at": "2026-09-20T08:39:49.783464Z",
   "n_cas": 30,
-  "n_known": 11527,
-  "n_candidates": 172,
+  "n_known": 11545,
+  "n_candidates": 140,
   "n_watch": 25,
   "top": [
     {
       "address": "0x08d0c5049e4bc42102f22e6588c96374b923057c",
-      "score": 197.64,
+      "score": 196.297,
       "n_cas": 11
     },
     {
-      "address": "0x6a41697a5c1d725ba787dfb3903e1e0338c9b131",
-      "score": 152.325,
-      "n_cas": 8
+      "address": "0xe6fcd23aadf17190d933fd1c4ebe176e42092d85",
+      "score": 67.201,
+      "n_cas": 2
     },
     {
-      "address": "0x942b41d990133d8d9989bf3bb2f89f9aa1d127fd",
-      "score": 135.8,
-      "n_cas": 6
+      "address": "0x28371b5899296204991033a9bfc4e1cf07411443",
+      "score": 66.489,
+      "n_cas": 2
     },
     {
-      "address": "0x6abea4998f9ef34ee1cda5715ccca0e4d4efb730",
-      "score": 122.529,
-      "n_cas": 6
-    },
-    {
-      "address": "0x359b288eb3ab1fb4553b5424b96d62f33e6eb359",
-      "score": 109.801,
-      "n_cas": 5
-    },
-    {
-      "address": "0xc78304acdf1f0d62b51441a38e5c1bab78f03f7a",
-      "score": 99.261,
-      "n_cas": 5
-    },
-    {
-      "address": "0xfd2a475d7ce02ec077867d72177063b5c2ab01b6",
-      "score": 98.005,
-      "n_cas": 5
-    },
-    {
-      "address": "0x668001289b9da5a23840a6d4fa195d977f23bb3b",
-      "score": 96.71,
-      "n_cas": 5
-    },
-    {
-      "address": "0x11bc74e240c13f7067529b21dfb9933ff7fcb136",
-      "score": 87.4,
+      "address": "0xcd9ec8da5559763c7b08d33d833f210a4223439c",
+      "score": 63.683,
       "n_cas": 3
     },
     {
-      "address": "0x11445b5d1178de4e84e7ca0381b86b0699ab1360",
-      "score": 83.198,
+      "address": "0x8d68a2a8fa4d8a1710f18527cba7c9c715151ab0",
+      "score": 62.94,
+      "n_cas": 3
+    },
+    {
+      "address": "0xd71212dbbee6995e834dc0e732fa85b0b4212f1b",
+      "score": 62.521,
+      "n_cas": 3
+    },
+    {
+      "address": "0x134d468b0bcaea6df127916f951f7938c06a37c6",
+      "score": 62.029,
+      "n_cas": 3
+    },
+    {
+      "address": "0xf63e63a80a25611154c5d1c06e55fd763e0cfc19",
+      "score": 62.029,
+      "n_cas": 3
+    },
+    {
+      "address": "0xd71212029c174836ccf1cae90f4723d43d036223",
+      "score": 61.987,
+      "n_cas": 3
+    },
+    {
+      "address": "0xd71212934e832ca1d1adca7c6aab03642edd3279",
+      "score": 61.885,
       "n_cas": 3
     }
   ],
@@ -144,6 +144,13 @@
       ]
     },
     {
+      "ca": "0x8eaa17be69ae9616cede4671e6d837bb89491e18",
+      "symbol": "CPU",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x20024e485c0b22b42855589700721b28320a7777",
       "symbol": "PRISM",
       "sources": [
@@ -158,22 +165,8 @@
       ]
     },
     {
-      "ca": "0x8eaa17be69ae9616cede4671e6d837bb89491e18",
-      "symbol": "CPU",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
       "ca": "0x232cdfc415d10b673845d83dc02ba2eabe7e30d1",
       "symbol": "IF",
-      "sources": [
-        "gecko_trending"
-      ]
-    },
-    {
-      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
-      "symbol": "SUPER",
       "sources": [
         "gecko_trending"
       ]
@@ -201,15 +194,15 @@
       ]
     },
     {
-      "ca": "0x11b70d0243baf75e85ce03201a92b5b7c33beb59",
-      "symbol": "ROBIN",
+      "ca": "0xe8ffd7e24187f72afb08d75b1bb13088a989a791",
+      "symbol": "DELTA",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0xe8ffd7e24187f72afb08d75b1bb13088a989a791",
-      "symbol": "DELTA",
+      "ca": "0x11b70d0243baf75e85ce03201a92b5b7c33beb59",
+      "symbol": "ROBIN",
       "sources": [
         "gecko_trending"
       ]
@@ -229,15 +222,15 @@
       ]
     },
     {
-      "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
-      "symbol": "HEDGE",
+      "ca": "0x18e674231a58c239dc7daedcffe15ec3a24cff5c",
+      "symbol": "HOOKR",
       "sources": [
         "gecko_trending"
       ]
     },
     {
-      "ca": "0x18e674231a58c239dc7daedcffe15ec3a24cff5c",
-      "symbol": "HOOKR",
+      "ca": "0x7210afea4a4df412e9275a7153d091ce7612a55d",
+      "symbol": "SUPER",
       "sources": [
         "gecko_trending"
       ]
@@ -250,6 +243,13 @@
       ]
     },
     {
+      "ca": "0x3ba500f1ababbcf0f0247d06d1c56fd7e6c4c09d",
+      "symbol": "WORM",
+      "sources": [
+        "gecko_trending"
+      ]
+    },
+    {
       "ca": "0x56910d4409f3a0c78c64dd8d0545ff0705389870",
       "symbol": "Index",
       "sources": [
@@ -257,8 +257,8 @@
       ]
     },
     {
-      "ca": "0x3ba500f1ababbcf0f0247d06d1c56fd7e6c4c09d",
-      "symbol": "WORM",
+      "ca": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
+      "symbol": "HEDGE",
       "sources": [
         "gecko_trending"
       ]
@@ -271,7 +271,7 @@
       ]
     }
   ],
-  "elapsed_s": 65.72,
+  "elapsed_s": 55.22,
   "rpc_calls": 0,
   "rpc_429": 0
 }
