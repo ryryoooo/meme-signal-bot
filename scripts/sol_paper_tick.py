@@ -1,35 +1,32 @@
 #!/usr/bin/env python3
-"""Solana channel paper trading — $100 bankroll per notify channel.
+"""Solana channel paper trading — $100 bankroll × 4 books (2系統).
 
-Drives two independent books from local signal-state open_alerts:
-  1) StonkFun diggers  → sol-wallets/paper_stonkfun_book.json
-  2) Sol smart signals → sol-wallets/paper_sol_smart_book.json
+Drives four independent books from local signal-state open_alerts:
+  1) paper_stonkfun_agg      — StonkFun · 【攻撃】
+  2) paper_stonkfun_stable   — StonkFun · 【安定】
+  3) paper_sol_smart_agg     — Sol smart · 【攻撃】
+  4) paper_sol_smart_stable  — Sol smart · 【安定】
 
-Rules (meme constitution style):
+Rules (per profile, meme constitution style):
+  【攻撃】 size 30%/40%, TP1 1.25@50%, TP2 1.60→moon15%, stop 0.50, moon stop 0.25, max_open 4
+  【安定】 size 20%,     TP1 1.20@65%, TP2 1.40→moon10%, stop 0.60, moon stop 0.25, max_open 3
+
+Shared:
   - LIVE_TRADING=0 always; DexScreener marks only (no box GMGN / Super)
-  - Size ~20% (30% if n>=3) of bankroll, capped by cash
-  - One open per mint; max concurrent PAPER_MAX_OPEN (default 3)
-  - Entry = alert_price_usd at notify
-  - Exits (攻撃的ムーンバッグ): TP1 +25% sell 50%; TP2 +60% → leave 15% moonbag;
-    main stop −50% before moonbag; moonbag catastrophic −75% only; mark each tick
-  - Size default 30% (n≥3 → 40%); PAPER_MAX_OPEN 3–4; no add while moonbag on mint
+  - One open per mint; entry = alert_price_usd at notify
   - Discord 【紙実況】 ONLY via DISCORD_SOL_PAPER_WEBHOOK_URL
     (never StonkFun / Sol smart signal channels)
+  - Labels clearly 【攻撃】/【安定】 + channel
 
 Env (shared):
   SOL_PAPER_TICK_SEC=90
   SOL_PAPER_BANKROLL_USD=100
-  SOL_PAPER_MAX_OPEN=4
   SOL_PAPER_ALERT_MAX_AGE_SEC=21600
-  SOL_PAPER_DISCORD=1          # 【紙実況】 to DISCORD_SOL_PAPER_WEBHOOK_URL only
-  SOL_PAPER_JIKEI_SEC=1200     # heartbeat 実況 cadence (~20 min)
-  SOL_PAPER_SEED_ON_START=1    # open up to max_open from newest alerts if empty
-  PAPER_MARK_HEARTBEAT=0      # forced off (paper_trade mark spam)
-  # Aggressive moonbag (defaults applied in _apply_env_for_book):
-  # PAPER_SIZE_PCT_DEFAULT=30 PAPER_SIZE_PCT_STRONG=40
-  # PAPER_TP1_MULT=1.25 PAPER_TP1_SELL_PCT=0.50
-  # PAPER_TP2_MULT=1.60 PAPER_MOONBAG_PCT=0.15
-  # PAPER_STOP_MULT=0.50 PAPER_MOON_STOP_MULT=0.25
+  SOL_PAPER_DISCORD=1
+  SOL_PAPER_JIKEI_SEC=1200
+  SOL_PAPER_SEED_ON_START=1
+  PAPER_MARK_HEARTBEAT=0
+  # Profile knobs are applied per book each tick (not global shell defaults).
 """
 from __future__ import annotations
 
@@ -59,7 +56,6 @@ if str(os.environ.get("PAPER_MARK_HEARTBEAT") or "").strip() == "":
 
 INTERVAL = float(os.environ.get("SOL_PAPER_TICK_SEC") or "90")
 BANKROLL = float(os.environ.get("SOL_PAPER_BANKROLL_USD") or "100")
-MAX_OPEN = int(float(os.environ.get("SOL_PAPER_MAX_OPEN") or "4"))
 ALERT_MAX_AGE = float(os.environ.get("SOL_PAPER_ALERT_MAX_AGE_SEC") or str(6 * 3600))
 SEED_ON_START = str(os.environ.get("SOL_PAPER_SEED_ON_START") or "1").strip().lower() in (
     "1",
@@ -81,26 +77,134 @@ LOG_DIR = Path(
 )
 LOG_PATH = Path(os.environ.get("SOL_PAPER_TICK_LOG") or (LOG_DIR / "sol_paper_tick.log"))
 
-CHANNELS: list[dict[str, Any]] = [
+# --- dual profiles ---
+PROFILES: dict[str, dict[str, Any]] = {
+    "agg": {
+        "id": "agg",
+        "tag": "攻撃",
+        "label_jp": "攻撃的",
+        "max_open": 4,
+        "env": {
+            "PAPER_SIZE_PCT_DEFAULT": "30",
+            "PAPER_SIZE_PCT_STRONG": "40",
+            "PAPER_TP1_MULT": "1.25",
+            "PAPER_TP1_SELL_PCT": "0.50",
+            "PAPER_TP2_MULT": "1.60",
+            "PAPER_MOONBAG_PCT": "0.15",
+            "PAPER_STOP_MULT": "0.50",
+            "PAPER_MOON_STOP_MULT": "0.25",
+        },
+        "rules_short": (
+            "サイズ30%(n≥3→40%) / 同時最大4 / TP1+25%@50% / "
+            "TP2+60%→ムーン15% / ストップ-50% / ムーン破局-75%"
+        ),
+    },
+    "stable": {
+        "id": "stable",
+        "tag": "安定",
+        "label_jp": "安定",
+        "max_open": 3,
+        "env": {
+            "PAPER_SIZE_PCT_DEFAULT": "20",
+            "PAPER_SIZE_PCT_STRONG": "20",
+            "PAPER_TP1_MULT": "1.20",
+            "PAPER_TP1_SELL_PCT": "0.65",
+            "PAPER_TP2_MULT": "1.40",
+            "PAPER_MOONBAG_PCT": "0.10",
+            "PAPER_STOP_MULT": "0.60",
+            "PAPER_MOON_STOP_MULT": "0.25",
+        },
+        "rules_short": (
+            "サイズ20% / 同時最大3 / TP1+20%@65% / "
+            "TP2+40%→ムーン10% / ストップ-40% / ムーン破局-75%"
+        ),
+    },
+}
+
+SIGNAL_SOURCES: list[dict[str, Any]] = [
     {
-        "id": "stonkfun",
+        "signal_id": "stonkfun",
         "label": "StonkFun digger",
         "signal_state": SOL_DIR / "raw" / "stonkfun_signal_state.json",
-        "book": SOL_DIR / "paper_stonkfun_book.json",
-        "fills": SOL_DIR / "paper_stonkfun_fills.jsonl",
-        "summary": SOL_DIR / "summary_paper_stonkfun.md",
         "n_key": "digger_count",
+        "color_agg": 0xE74C3C,
+        "color_stable": 0x3498DB,
     },
     {
-        "id": "sol_smart",
+        "signal_id": "sol_smart",
         "label": "Solana smart",
         "signal_state": SOL_DIR / "raw" / "sol_smart_signal_state.json",
-        "book": SOL_DIR / "paper_sol_smart_book.json",
-        "fills": SOL_DIR / "paper_sol_smart_fills.jsonl",
-        "summary": SOL_DIR / "summary_paper_sol_smart.md",
         "n_key": "wallet_count",
+        "color_agg": 0x9B59B6,
+        "color_stable": 0x1ABC9C,
     },
 ]
+
+
+def _build_channels() -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for src in SIGNAL_SOURCES:
+        for pid, prof in PROFILES.items():
+            book_stem = f"paper_{src['signal_id']}_{pid}"
+            ch_id = f"{src['signal_id']}_{pid}"
+            color = src["color_agg"] if pid == "agg" else src["color_stable"]
+            out.append(
+                {
+                    "id": ch_id,
+                    "book_stem": book_stem,
+                    "label": f"{src['label']}【{prof['tag']}】",
+                    "signal_id": src["signal_id"],
+                    "signal_state": src["signal_state"],
+                    "book": SOL_DIR / f"{book_stem}_book.json",
+                    "fills": SOL_DIR / f"{book_stem}_fills.jsonl",
+                    "summary": SOL_DIR / f"summary_{book_stem}.md",
+                    "n_key": src["n_key"],
+                    "profile": prof,
+                    "profile_id": pid,
+                    "max_open": int(prof["max_open"]),
+                    "tag": prof["tag"],
+                    "color": color,
+                }
+            )
+    return out
+
+
+CHANNELS: list[dict[str, Any]] = _build_channels()
+
+
+def migrate_legacy_books() -> None:
+    """Rename pre-dual books (aggressive) → *_agg; leave stable fresh."""
+    for src in SIGNAL_SOURCES:
+        sid = src["signal_id"]
+        legacy_book = SOL_DIR / f"paper_{sid}_book.json"
+        legacy_fills = SOL_DIR / f"paper_{sid}_fills.jsonl"
+        legacy_sum = SOL_DIR / f"summary_paper_{sid}.md"
+        agg_book = SOL_DIR / f"paper_{sid}_agg_book.json"
+        agg_fills = SOL_DIR / f"paper_{sid}_agg_fills.jsonl"
+        agg_sum = SOL_DIR / f"summary_paper_{sid}_agg.md"
+        if legacy_book.exists() and not agg_book.exists():
+            legacy_book.replace(agg_book)
+            print(f"migrate book {legacy_book.name} → {agg_book.name}", flush=True)
+        if legacy_fills.exists() and not agg_fills.exists():
+            legacy_fills.replace(agg_fills)
+            print(f"migrate fills {legacy_fills.name} → {agg_fills.name}", flush=True)
+        if legacy_sum.exists() and not agg_sum.exists():
+            legacy_sum.replace(agg_sum)
+            print(f"migrate summary {legacy_sum.name} → {agg_sum.name}", flush=True)
+        if agg_book.exists():
+            try:
+                st = json.loads(agg_book.read_text(encoding="utf-8"))
+                if isinstance(st, dict):
+                    st["channel"] = f"{sid}_agg"
+                    st["profile"] = "agg"
+                    st["style"] = "攻撃"
+                    agg_book.write_text(
+                        json.dumps(st, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+            except Exception:
+                pass
+
 
 def _pos_flag(p: dict) -> str:
     st = p.get("status") or "open"
@@ -190,6 +294,10 @@ def _book_snapshot(ch: dict, st: dict | None = None) -> dict:
     return {
         "id": ch["id"],
         "label": ch["label"],
+        "tag": ch.get("tag") or "",
+        "profile_id": ch.get("profile_id") or "",
+        "max_open": int(ch.get("max_open") or 4),
+        "color": ch.get("color") or 0x3498DB,
         "bankroll": bankroll,
         "cash": cash,
         "equity": equity,
@@ -208,6 +316,16 @@ def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict
     total_cash = sum(s["cash"] for s in snaps)
     total_rpnl = sum(s["realized"] for s in snaps)
     total_u = sum(s["unreal"] for s in snaps)
+    agg = [s for s in snaps if s.get("profile_id") == "agg"]
+    stb = [s for s in snaps if s.get("profile_id") == "stable"]
+    def _sub(rows: list[dict]) -> str:
+        if not rows:
+            return "—"
+        eq = sum(r["equity"] for r in rows)
+        cash = sum(r["cash"] for r in rows)
+        rp = sum(r["realized"] for r in rows)
+        u = sum(r["unreal"] for r in rows)
+        return f"純資産 ${eq:.2f} · 現金 ${cash:.2f} · 実現 ${rp:+.2f} · 含み ${u:+.2f}"
     head_lines = [
         f"**理由:** {reason}",
         f"**時刻:** {jst}",
@@ -215,24 +333,28 @@ def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict
             f"**合算** 純資産 **${total_eq:.2f}** · 現金 ${total_cash:.2f} · "
             f"実現 ${total_rpnl:+.2f} · 含み ${total_u:+.2f}"
         ),
-        f"原資 ${BANKROLL:.0f}×2 · LIVE_TRADING=0 · 攻撃的ムーンバッグ · 実注文なし",
+        f"**【攻撃】** {_sub(agg)}",
+        f"**【安定】** {_sub(stb)}",
+        f"原資 ${BANKROLL:.0f}×4 · 2系統 · LIVE_TRADING=0 · 実注文なし",
     ]
     head_desc = chr(10).join(head_lines)
     if event_note:
         head_desc = event_note + chr(10) + chr(10) + head_desc
     embeds: list[dict] = [
         {
-            "title": "【紙実況】Solana 仮想トレード（攻撃的ムーンバッグ）",
+            "title": "【紙実況】Solana 仮想トレード（攻撃＋安定 2系統）",
             "description": head_desc[:1900],
             "color": 0xF1C40F,
             "footer": {"text": "DISCORD_SOL_PAPER only · signal ch へは投稿しない"},
         }
     ]
     for s in snaps:
+        mo = int(s.get("max_open") or 4)
+        tag = s.get("tag") or "?"
         body_lines = [
-            f"現金 **${s['cash']:.2f}** · 純資産 **${s['equity']:.2f}**",
+            f"系統 **【{tag}】** · 現金 **${s['cash']:.2f}** · 純資産 **${s['equity']:.2f}**",
             f"実現PnL **${s['realized']:+.2f}** · 含み **${s['unreal']:+.2f}**",
-            f"オープン **{len(s['active'])}/{MAX_OPEN}**",
+            f"オープン **{len(s['active'])}/{mo}**",
         ]
         if s["pos_lines"]:
             body_lines.append("")
@@ -242,9 +364,9 @@ def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict
             body_lines.append("· （ポジションなし）")
         embeds.append(
             {
-                "title": f"【紙】{s['label']}",
+                "title": f"【紙·{tag}】{s['label']}",
                 "description": chr(10).join(body_lines)[:1900],
-                "color": 0x3498DB if s["id"] == "stonkfun" else 0x9B59B6,
+                "color": int(s.get("color") or 0x3498DB),
                 "footer": {"text": f"{s['id']} · {jst}"},
             }
         )
@@ -379,9 +501,12 @@ def fetch_dex_price(ca: str, chain: str = CHAIN) -> dict:
     return out
 
 
-def empty_book(channel_id: str) -> dict:
+def empty_book(channel_id: str, *, profile_id: str | None = None) -> dict:
+    prof = PROFILES.get(profile_id or "") if profile_id else None
     return {
         "channel": channel_id,
+        "profile": profile_id,
+        "style": (prof or {}).get("tag"),
         "live_trading": 0,
         "bankroll_usd": BANKROLL,
         "paper": {},
@@ -393,16 +518,19 @@ def empty_book(channel_id: str) -> dict:
     }
 
 
-def load_book(path: Path, channel_id: str) -> dict:
+def load_book(path: Path, channel_id: str, *, profile_id: str | None = None) -> dict:
     if not path.exists():
-        return empty_book(channel_id)
+        return empty_book(channel_id, profile_id=profile_id)
     try:
         st = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
-        return empty_book(channel_id)
+        return empty_book(channel_id, profile_id=profile_id)
     if not isinstance(st, dict):
-        return empty_book(channel_id)
+        return empty_book(channel_id, profile_id=profile_id)
     st.setdefault("channel", channel_id)
+    if profile_id:
+        st["profile"] = profile_id
+        st["style"] = (PROFILES.get(profile_id) or {}).get("tag")
     st["live_trading"] = 0
     st.setdefault("paper_positions", [])
     st.setdefault("seen_alert_cas", [])
@@ -430,23 +558,18 @@ def load_signal_alerts(path: Path) -> list[dict]:
     return list(data.get("open_alerts") or [])
 
 
-def _apply_env_for_book() -> None:
+def _apply_env_for_book(ch: dict | None = None) -> None:
+    """Force profile knobs into env for this tick (overrides shell defaults)."""
     os.environ["LIVE_TRADING"] = "0"
     os.environ["PAPER_BANKROLL_USD"] = str(BANKROLL)
-    os.environ["PAPER_MAX_OPEN"] = str(MAX_OPEN)
     os.environ["PAPER_MAX_ENTRIES_WEEK"] = os.environ.get("PAPER_MAX_ENTRIES_WEEK") or "0"
     os.environ["PAPER_MAX_LOSSES_WEEK"] = os.environ.get("PAPER_MAX_LOSSES_WEEK") or "0"
-    if str(os.environ.get("PAPER_MARK_HEARTBEAT") or "").strip() == "":
-        os.environ["PAPER_MARK_HEARTBEAT"] = "0"
-    # Aggressive moonbag defaults (do not override if already set)
-    os.environ.setdefault("PAPER_SIZE_PCT_DEFAULT", "30")
-    os.environ.setdefault("PAPER_SIZE_PCT_STRONG", "40")
-    os.environ.setdefault("PAPER_TP1_MULT", "1.25")
-    os.environ.setdefault("PAPER_TP1_SELL_PCT", "0.50")
-    os.environ.setdefault("PAPER_TP2_MULT", "1.60")
-    os.environ.setdefault("PAPER_MOONBAG_PCT", "0.15")
-    os.environ.setdefault("PAPER_STOP_MULT", "0.50")
-    os.environ.setdefault("PAPER_MOON_STOP_MULT", "0.25")
+    os.environ["PAPER_MARK_HEARTBEAT"] = "0"
+    prof = (ch or {}).get("profile") or PROFILES["agg"]
+    max_open = int((ch or {}).get("max_open") or prof.get("max_open") or 4)
+    os.environ["PAPER_MAX_OPEN"] = str(max_open)
+    for k, v in (prof.get("env") or {}).items():
+        os.environ[k] = str(v)
 
 
 def active_cas(st: dict) -> set[str]:
@@ -467,6 +590,7 @@ def adopt_alerts(
     webhook: str | None,
     discord_post: Callable | None,
     seed: bool,
+    max_open: int,
 ) -> int:
     """Open paper longs from new (or seed) alerts. Returns opens count."""
     paper_mod.ensure_paper_state(st)
@@ -552,7 +676,7 @@ def adopt_alerts(
                 f"entry={a['_price']} n={n} age={a['_age']:.0f}s"
             )
             if seeding:
-                if opened >= MAX_OPEN:
+                if opened >= max_open:
                     break
             else:
                 # normal tick: at most one new open per channel per tick
@@ -564,7 +688,7 @@ def adopt_alerts(
     if seeding:
         st["seeded_at"] = datetime.now(timezone.utc).isoformat()
         # After seed fill, mark other in-window alerts seen so we don't burst later
-        if opened >= MAX_OPEN:
+        if opened >= max_open:
             for a in ranked:
                 if a["_age"] <= ALERT_MAX_AGE:
                     seen.add(a["_ca"])
@@ -628,7 +752,7 @@ def write_summary(ch: dict, st: dict) -> None:
         f"- 原資: **${bankroll:.2f}** · 現金 **${cash:.2f}** · 純資産 **${equity:.2f}**",
         f"- 実現PnL: **${realized:+.2f}** · 含み損益: **${unreal:+.2f}**",
         f"- 勝率: **{win_rate:.0f}%** ({wins}W/{losses}L · 決着{decided})",
-        f"- ルール: **攻撃的ムーンバッグ** サイズ30%(n≥3→40%) / 同時最大{MAX_OPEN} / 1mint1本 / TP1+25%で50% / TP2+60%→ムーン15% / ストップ-50% / ムーン袋破局-75%",
+        f"- ルール: **【{ch.get('tag') or '?'}】** {(ch.get('profile') or {}).get('rules_short') or ''}",
         f"- 価格: DexScreenerのみ（box GMGNなし）",
         f"- 帳簿: `{ch['book'].name}` · fills `{ch['fills'].name}`",
         f"- fills: " + (", ".join(f"{k}={v}" for k, v in sorted(fills_counts.items())) or "（なし）"),
@@ -668,9 +792,11 @@ def write_summary(ch: dict, st: dict) -> None:
 
 
 def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
-    _apply_env_for_book()
-    st = load_book(ch["book"], ch["id"])
+    _apply_env_for_book(ch)
+    st = load_book(ch["book"], ch["id"], profile_id=ch.get("profile_id"))
     st["bankroll_usd"] = BANKROLL
+    st["profile"] = ch.get("profile_id")
+    st["style"] = ch.get("tag")
     paper_mod.ensure_paper_state(st)
     # ensure bankroll matches config on fresh books
     paper = st["paper"]
@@ -690,6 +816,7 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
         webhook=None,
         discord_post=None,
         seed=need_seed,
+        max_open=int(ch.get("max_open") or 4),
     )
 
     before = {
@@ -724,19 +851,19 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
                 f"status={now_st} mult={p.get('last_mark_mult')}"
             )
             event_notes.append(
-                f"⛔ `{ch['id']}` ${p.get('symbol') or '?'} {now_st} · "
+                f"⛔ 【{ch.get('tag') or '?'}】`{ch['id']}` ${p.get('symbol') or '?'} {now_st} · "
                 f"{float(p.get('last_mark_mult') or 0):.2f}x · "
                 f"PnL ${float(p.get('realized_pnl_usd') or 0):+.2f}"
             )
         elif (not prev_moon) and now_moon:
             event_notes.append(
-                f"🚀 `{ch['id']}` ${p.get('symbol') or '?'} ムーン袋へ · "
+                f"🚀 【{ch.get('tag') or '?'}】`{ch['id']}` ${p.get('symbol') or '?'} ムーン袋へ · "
                 f"{float(p.get('last_mark_mult') or 0):.2f}x · "
                 f"残 ${float(p.get('remaining_usd') or 0):.2f}"
             )
         elif (not prev_tp1) and now_tp1 and not now_moon:
             event_notes.append(
-                f"🎯 `{ch['id']}` ${p.get('symbol') or '?'} TP1利確 · "
+                f"🎯 【{ch.get('tag') or '?'}】`{ch['id']}` ${p.get('symbol') or '?'} TP1利確 · "
                 f"{float(p.get('last_mark_mult') or 0):.2f}x"
             )
     st["tick_closed_cas"] = closed[-500:]
@@ -747,6 +874,9 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
     return {
         "id": ch["id"],
         "label": ch["label"],
+        "tag": ch.get("tag"),
+        "profile_id": ch.get("profile_id"),
+        "max_open": int(ch.get("max_open") or 4),
         "opened": opened,
         "active": active_n,
         "marked": stats.get("marked", 0),
@@ -783,9 +913,10 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
             eq_ms += int(r.get("equity_ms") or 0)
             all_notes.extend(r.get("event_notes") or [])
             if r.get("opened"):
-                all_notes.append(f"📥 `{r['id']}` 新規オープン +{r['opened']}")
+                all_notes.append(f"📥 【{r.get('tag') or '?'}】`{r['id']}` 新規オープン +{r['opened']}")
             log(
-                f"tick {r['id']}: open+={r['opened']} active={r['active']} "
+                f"tick {r['id']}【{r.get('tag') or '?'}】: open+={r['opened']} "
+                f"active={r['active']}/{r.get('max_open', '?')} "
                 f"marked={r['marked']} half={r['half']} tp2={r.get('tp2',0)} stop={r['stop']} "
                 f"cash=${r['cash']:.2f} eq=${r['equity']:.2f} "
                 f"rpnl=${r['realized']:+.2f} alerts={r['alerts']}"
@@ -801,7 +932,11 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
             post_jikkei(
                 "announce",
                 force=True,
-                event_note="🟢 紙トレード実況スタート（原資 $100×2 · 攻撃的ムーンバッグ）",
+                event_note=(
+                    "🟢 紙トレード 2系統スタート（原資 $100×4）\n"
+                    "【攻撃】30%/40% · TP1 1.25@50% · TP2 1.60→15% · stop 0.50 · max4\n"
+                    "【安定】20% · TP1 1.20@65% · TP2 1.40→10% · stop 0.60 · max3"
+                ),
             )
     elif all_notes or half_total or tp2_total or stop_total or opened_total or eq_ms:
         note = chr(10).join(all_notes[:8]) if all_notes else None
@@ -824,7 +959,7 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Solana dual-channel paper tick")
+    ap = argparse.ArgumentParser(description="Solana dual-profile paper tick (攻撃+安定 ×2 channels)")
     ap.add_argument("--once", action="store_true", help="Single tick then exit")
     ap.add_argument("--seed", action="store_true", help="Force seed from open_alerts")
     ap.add_argument("--announce", action="store_true", help="Force 【紙実況】 opening post")
@@ -834,9 +969,11 @@ def main() -> int:
     SOL_DIR.mkdir(parents=True, exist_ok=True)
     _restore_jikkei_clock()
     wh_ok = bool(paper_jikkei_webhook())
+    migrate_legacy_books()
     log(
-        f"start interval={INTERVAL}s bankroll=${BANKROLL:.0f} max_open={MAX_OPEN} "
-        f"jikkei={int(DISCORD_ON)} webhook={'ok' if wh_ok else 'missing'} "
+        f"start interval={INTERVAL}s bankroll=${BANKROLL:.0f} books={len(CHANNELS)} "
+        f"(agg max4 / stable max3) jikkei={int(DISCORD_ON)} "
+        f"webhook={'ok' if wh_ok else 'missing'} "
         f"jikkei_every={JIKEI_EVERY:.0f}s seed={int(SEED_ON_START)} LIVE_TRADING=0"
     )
 

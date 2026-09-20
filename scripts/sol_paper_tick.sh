@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Solana dual-channel paper trading ($100/book). LIVE_TRADING=0 always.
-# 【紙実況】 ONLY to DISCORD_SOL_PAPER_WEBHOOK_URL — never signal channels.
+# Solana dual-profile paper trading ($100 × 4 books: 攻撃+安定 × StonkFun/Sol smart).
+# LIVE_TRADING=0 always. 【紙実況】 ONLY to DISCORD_SOL_PAPER_WEBHOOK_URL.
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STATE_DIR="${SOL_PAPER_STATE_DIR:-/home/box/.local/share/scout-wallet-bot}"
@@ -47,23 +47,14 @@ export GMGN_MARKET=0
 export PAPER_MARK_HEARTBEAT="${PAPER_MARK_HEARTBEAT:-0}"
 export SOL_PAPER_TICK_SEC="${SOL_PAPER_TICK_SEC:-90}"
 export SOL_PAPER_BANKROLL_USD="${SOL_PAPER_BANKROLL_USD:-100}"
-export SOL_PAPER_MAX_OPEN="${SOL_PAPER_MAX_OPEN:-4}"
 export SOL_PAPER_DISCORD="${SOL_PAPER_DISCORD:-1}"
 export SOL_PAPER_JIKEI_SEC="${SOL_PAPER_JIKEI_SEC:-1200}"
 export SOL_PAPER_SEED_ON_START="${SOL_PAPER_SEED_ON_START:-1}"
-# Aggressive moonbag defaults
-export PAPER_SIZE_PCT_DEFAULT="${PAPER_SIZE_PCT_DEFAULT:-30}"
-export PAPER_SIZE_PCT_STRONG="${PAPER_SIZE_PCT_STRONG:-40}"
-export PAPER_TP1_MULT="${PAPER_TP1_MULT:-1.25}"
-export PAPER_TP1_SELL_PCT="${PAPER_TP1_SELL_PCT:-0.50}"
-export PAPER_TP2_MULT="${PAPER_TP2_MULT:-1.60}"
-export PAPER_MOONBAG_PCT="${PAPER_MOONBAG_PCT:-0.15}"
-export PAPER_STOP_MULT="${PAPER_STOP_MULT:-0.50}"
-export PAPER_MOON_STOP_MULT="${PAPER_MOON_STOP_MULT:-0.25}"
+# Profile knobs (攻撃/安定) are applied per-book inside sol_paper_tick.py — do not pin here.
 export SOL_PAPER_STATE_DIR="$STATE_DIR"
 export SOL_PAPER_TICK_LOG="$LOG"
 
-log "webhook_sol_paper=${_PAPER_WH_OK:-0} bankroll=${SOL_PAPER_BANKROLL_USD} tick=${SOL_PAPER_TICK_SEC}s jikkei=${SOL_PAPER_JIKEI_SEC}s"
+log "webhook_sol_paper=${_PAPER_WH_OK:-0} bankroll=${SOL_PAPER_BANKROLL_USD} tick=${SOL_PAPER_TICK_SEC}s jikkei=${SOL_PAPER_JIKEI_SEC}s dual_profile=1"
 
 if [[ ! -f "$PY" ]]; then
   log "missing $PY"
@@ -78,7 +69,7 @@ ARGS=()
 [[ "$SEED" == "1" ]] && ARGS+=(--seed)
 [[ "$ANNOUNCE" == "1" ]] && ARGS+=(--announce)
 
-log "start once=$ONCE seed=$SEED announce=$ANNOUNCE LIVE_TRADING=0"
+log "start once=$ONCE seed=$SEED announce=$ANNOUNCE LIVE_TRADING=0 books=4"
 if [[ "$ONCE" == "1" ]]; then
   python3 "$PY" "${ARGS[@]}" >>"$LOG" 2>&1
   rc=$?

@@ -92,22 +92,25 @@ LIVE_TRADING=0 GMGN_DISABLED=1 SOLANA_RPC_URL=https://api.mainnet-beta.solana.co
 
 Daemon: `SOL7D_EVERY_SEC` in `scripts/scout-wallet-bot.sh` (default 3600). Separate from StonkFun / RH.
 
-## Paper trading（仮想 · 原資 $100/チャンネル）
+## Paper trading（仮想 · 原資 $100 × 4帳簿 · 2系統）
 
-通知シグナルごとに独立した紙トレード帳簿（実注文なし · `LIVE_TRADING=0`）。
+通知シグナル × プロファイルで独立した紙トレード帳簿（実注文なし · `LIVE_TRADING=0`）。
 残高・ポジション実況は **専用チャンネル** のみ。
 
-| 帳簿 | シグナル状態 | 帳簿ファイル | サマリー |
-|---|---|---|---|
-| StonkFun digger | `raw/stonkfun_signal_state.json` | `paper_stonkfun_book.json` | `summary_paper_stonkfun.md` |
-| Solana smart | `raw/sol_smart_signal_state.json` | `paper_sol_smart_book.json` | `summary_paper_sol_smart.md` |
+| 帳簿 | 系統 | シグナル状態 | 帳簿ファイル | サマリー |
+|---|---|---|---|---|
+| StonkFun digger | 【攻撃】 | `raw/stonkfun_signal_state.json` | `paper_stonkfun_agg_book.json` | `summary_paper_stonkfun_agg.md` |
+| StonkFun digger | 【安定】 | same | `paper_stonkfun_stable_book.json` | `summary_paper_stonkfun_stable.md` |
+| Solana smart | 【攻撃】 | `raw/sol_smart_signal_state.json` | `paper_sol_smart_agg_book.json` | `summary_paper_sol_smart_agg.md` |
+| Solana smart | 【安定】 | same | `paper_sol_smart_stable_book.json` | `summary_paper_sol_smart_stable.md` |
 
 - Tick: `scripts/sol_paper_tick.py` / `scripts/sol_paper_tick.sh`（~90s、scout-wallet-bot が ensure）
-- ルール: **攻撃的ムーンバッグ** サイズ 30%（n≥3→40%）· 同時最大 4 · 1 mint 1 本 · TP1+25%で50%利確 · TP2+60%→ムーン袋15% · ストップ-50% · ムーン袋破局-75%のみ
+- **【攻撃】** サイズ 30%（n≥3→40%）· 同時最大 4 · TP1+25%@50% · TP2+60%→ムーン15% · ストップ-50% · ムーン破局-75%
+- **【安定】** サイズ 20% · 同時最大 3 · TP1+20%@65% · TP2+40%→ムーン10% · ストップ-40%（×0.60）· ムーン破局-75%
 - エントリー = 通知時 `alert_price_usd` · 値洗い DexScreener のみ（box GMGN なし）
-- **【紙実況】** → `DISCORD_SOL_PAPER_WEBHOOK_URL` のみ（StonkFun / Sol smart シグナルchへは残高投稿しない）
+- **【紙実況】** → `DISCORD_SOL_PAPER_WEBHOOK_URL` のみ（ラベル【攻撃】/【安定】· シグナルchへは残高投稿しない）
 - 実況タイミング: 起動announce · fill/close/milestone · ~20分 heartbeat（`SOL_PAPER_JIKEI_SEC`）
-- fills: `paper_stonkfun_fills.jsonl` / `paper_sol_smart_fills.jsonl`
+- fills: `paper_*_{agg,stable}_fills.jsonl`
 
 ```bash
 # one-shot seed + opening 実況

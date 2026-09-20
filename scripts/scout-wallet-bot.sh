@@ -199,27 +199,18 @@ ensure_sol_paper_tick() {
   fi
   SOL_PAPER_TICK_SEC="${SOL_PAPER_TICK_SEC:-90}" \
   SOL_PAPER_BANKROLL_USD="${SOL_PAPER_BANKROLL_USD:-100}" \
-  SOL_PAPER_MAX_OPEN="${SOL_PAPER_MAX_OPEN:-4}" \
   SOL_PAPER_DISCORD="${SOL_PAPER_DISCORD:-1}" \
   SOL_PAPER_SEED_ON_START="${SOL_PAPER_SEED_ON_START:-1}" \
   SOL_PAPER_STATE_DIR="$STATE" \
   SOL_PAPER_TICK_LOG="$tick_log" \
   SOL_PAPER_TICK_LOCK="$lock" \
   SOL_PAPER_TICK_PID="$pidfile" \
-    LIVE_TRADING=0 \
-  PAPER_SIZE_PCT_DEFAULT="${PAPER_SIZE_PCT_DEFAULT:-30}" \
-  PAPER_SIZE_PCT_STRONG="${PAPER_SIZE_PCT_STRONG:-40}" \
-  PAPER_TP1_MULT="${PAPER_TP1_MULT:-1.25}" \
-  PAPER_TP1_SELL_PCT="${PAPER_TP1_SELL_PCT:-0.50}" \
-  PAPER_TP2_MULT="${PAPER_TP2_MULT:-1.60}" \
-  PAPER_MOONBAG_PCT="${PAPER_MOONBAG_PCT:-0.15}" \
-  PAPER_STOP_MULT="${PAPER_STOP_MULT:-0.50}" \
-  PAPER_MOON_STOP_MULT="${PAPER_MOON_STOP_MULT:-0.25}" \
+  LIVE_TRADING=0 \
   GMGN_DISABLED=1 \
   PAPER_MARK_HEARTBEAT=0 \
     nohup bash "$tick" >>"$tick_log" 2>&1 &
   echo $! > "$pidfile"
-  log "sol_paper_tick started pid=$! tick=${SOL_PAPER_TICK_SEC:-90}s bankroll=${SOL_PAPER_BANKROLL_USD:-100} max_open=${SOL_PAPER_MAX_OPEN:-4}"
+  log "sol_paper_tick started pid=$! tick=${SOL_PAPER_TICK_SEC:-90}s bankroll=${SOL_PAPER_BANKROLL_USD:-100} books=4 dual_profile"
 }
 
 ensure_sol_paper_tick
