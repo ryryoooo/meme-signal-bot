@@ -1,0 +1,150 @@
+{
+  "mint": "tDaipedqjB6y4pzV2Mrgv44X1nd1pQGvVoHTZZB1aC4",
+  "symbol": "BOLD",
+  "buyers": [
+    {
+      "address": "AjkDC1KdkgPaFRtrCbeSh6B6dhVX2JM4o2XhPSs2qu4b",
+      "rank": 1,
+      "amount": 0.0,
+      "blockTime": 1789836724,
+      "sig": "3VijKWUftrPctj7jZSn7Dt7L7MFThEd1R9o5Met8T6qFKNxhfjBwc1sYnY8kM9Vax6Aw9rr9ZPU87Y8yabPPhune",
+      "delta_vs_seed_sec": -807
+    },
+    {
+      "address": "4Uha7WMSjkvbdVu4LQXsXQ7NExUUHCknyrHicKgovQsq",
+      "rank": 2,
+      "amount": 6562.45630200021,
+      "blockTime": 1789836725,
+      "sig": "21ojBdviyxaHkcVYasn2iB9MEPCPZ54MWNL3gE2hvjXVciKjhsRuHF44ifjkBE7V5qFyhHjt6g3imEiwa8djnesJ",
+      "delta_vs_seed_sec": -806
+    },
+    {
+      "address": "GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL",
+      "rank": 3,
+      "amount": 1706100.4151850045,
+      "blockTime": 1789836725,
+      "sig": "2YCjNtHMpwc9uVETvyymTjsqRdJLXmGhrvYbqFGMxd3ZBugPYVHV364mwCEpi28tVriVbXUMwjgEdrzSaGGDMKzL",
+      "delta_vs_seed_sec": -806
+    },
+    {
+      "address": "4XBqViD1XYF1qHrErrsXBzDrCapvP9fEFX4LPjXZi9YU",
+      "rank": 4,
+      "amount": 5.495125999999999,
+      "blockTime": 1789836725,
+      "sig": "9Chh6ZDbofi973iCiHSJcxcFbKp4yDgrU8ToqYwBTrukp7N8d1KuKc8Cbpgsp3nw54b8s2dCgvee8n96cv1RuCU",
+      "delta_vs_seed_sec": -806
+    },
+    {
+      "address": "AgmLJBMDCqWynYnQiPCuj9ewsNNsBJXyzoUhD9LJzN51",
+      "rank": 5,
+      "amount": 0.0,
+      "blockTime": 1789837531,
+      "sig": "2rTSr9RTEN9T7rBHNzLYKWrpHmexPXWqghQwn5hyN14MixZwESsebCyS1i4HrLDiYJPb1PaoYdMKwoHoTdpXfTvi",
+      "delta_vs_seed_sec": 0
+    },
+    {
+      "address": "6jfcw2AfayZN5jiTCArkVniebperunje4NRkbAS6CUYa",
+      "rank": 6,
+      "amount": 804205.960174,
+      "blockTime": 1789837528,
+      "sig": "3jTJSALRdFu69tuysYEuaXWQCNq596Q6jUKe9ZE9HBB1h1Hn3Uy2YUm6TS52Fwv4KSCmVYsit2GQNDpLSSkf9DmT",
+      "delta_vs_seed_sec": -3
+    },
+    {
+      "address": "ANLf6PaLuBZt3PoaQsqh1EcCR4AJ3Fvn6dcwjZuRHXfh",
+      "rank": 7,
+      "amount": 1898232.3713419996,
+      "blockTime": 1789837535,
+      "sig": "4MAVyT3EqWfggzHgPEtgUNoNXntx84K7ywcJrSPFtRkR9BQvpYYj8kti4xDyGTsa36n63dB4DNH42AoL8mZmTTmV",
+      "delta_vs_seed_sec": 4
+    },
+    {
+      "address": "BM9CcyErJcu2mjrFvUsRRrD3snGeHDDVirJLvL6EjvMN",
+      "rank": 8,
+      "amount": 203435.76077099994,
+      "blockTime": 1789837525,
+      "sig": "2TDVuCTg1Z1bonAWC758hBMzsDbNfR2PJ1M1GCBd6mZqVouDeTRxTBwaxsGriuoih5MMvmR6rDge4av7NqQojsax",
+      "delta_vs_seed_sec": -6
+    },
+    {
+      "address": "3caJWobNg5UFvxSmGunWvb8aB7ebG9mRMPPwAz7jgqWR",
+      "rank": 9,
+      "amount": 609753.5888089999,
+      "blockTime": 1789837524,
+      "sig": "4qwAvPa9s11vxKyXjsndwm7nn2bMcQ2HztKtw5rrrBTDL2BmcEiDLGJpSYL84phmGeBpmMcmKjkThLKtZkQiPQoy",
+      "delta_vs_seed_sec": -7
+    },
+    {
+      "address": "6NpcuEg18M8ckd4JYMfKf9dHEzjhcTe1QNrCyMjsQHim",
+      "rank": 10,
+      "amount": 2616647.7947480003,
+      "blockTime": 1789837540,
+      "sig": "2zGjSqy4R7eUhcMY2QxSUNNfQfr129tZRmeKiceV5fuASMGZCuppJnyT2qdMY5aXzQAq8ni2pk8UFvYZUSvetGpX",
+      "delta_vs_seed_sec": 9
+    },
+    {
+      "address": "5RBw9vkooHksD23qfsADAcNVVgXgVKwGZBhC7KQ21Nra",
+      "rank": 11,
+      "amount": 53420.30103000009,
+      "blockTime": 1789837540,
+      "sig": "56dqF6xSK3Qn5uQYQ2ozgPXSJ3NDHeiGv8B3uinPqXtTS2GEHLfkjUweDhPPTGGC3yx9Rafv2ycGhWxJZLagFsqY",
+      "delta_vs_seed_sec": 9
+    },
+    {
+      "address": "FUz8JHcME7pCBSwmwEm2KZyH9h1Vhpc7HKQL3PT5DxjQ",
+      "rank": 12,
+      "amount": 4276903.301952,
+      "blockTime": 1789837520,
+      "sig": "4N1MSfqzxoYZJX2n1AfEQ8tpQw6CFxexmoHh3Mmf53de4bYuXtEm9L1YxSFkAeXtwDzLNcuBf5ofSswLV743U8dh",
+      "delta_vs_seed_sec": -11
+    },
+    {
+      "address": "EKRYP9wZ8kKw8ixs5caSAGDeqUgpCjMdrKFznqbgVUJC",
+      "rank": 13,
+      "amount": 183288.38532100013,
+      "blockTime": 1789837542,
+      "sig": "2bX6AAENg91FD85i9cVb7L1u2pHQU2fvawFXeGx2ZF5z11Ap9D7QeFdm243ioW2987PqGrXU1cpBHRJgh3HLEZNA",
+      "delta_vs_seed_sec": 11
+    },
+    {
+      "address": "6wxfWfnirbjMhhztXP7AWFaBd2soFQNvEi4zJ88dYJXa",
+      "rank": 14,
+      "amount": 86032.81442200008,
+      "blockTime": 1789837543,
+      "sig": "2zZuiULdRswwEHkG3TaFJUdHbtytSaLJqmBwEyuMT86JobKZTDw51igVR8SrHEEcJUmuWyABAaSMc8PKB7nizmpX",
+      "delta_vs_seed_sec": 12
+    },
+    {
+      "address": "2oJG7vcGTeESAT1MiWwPnsgw2d3uTvtjiHYLr5s325oe",
+      "rank": 15,
+      "amount": 2162193.546575,
+      "blockTime": 1789837546,
+      "sig": "5QGncKxXUu2rbZyz4o7NqbHVNXk5PG48keJiauDdLaFVmfTN9RbPAFrHiYx4ns71eXWhtUUWsH4vsBKfDPJZFLmP",
+      "delta_vs_seed_sec": 15
+    },
+    {
+      "address": "73yvMWAASc4rGfbTimMRjycp6tY9WftcJYdWRW7eCKDb",
+      "rank": 16,
+      "amount": 691645.406457,
+      "blockTime": 1789837547,
+      "sig": "26dD1GnuqkHgyJP3W7P9S6XKqRMz3YKJs51EgUxBw7FUBGiQxgeL7qkSSwxnpXHKHNw67YF6LARqJ1YcjCxcb2wG",
+      "delta_vs_seed_sec": 16
+    },
+    {
+      "address": "FsdmXTU2RQ3YgpgeA37T9R4mcNS3QuiXZ4nhZBKExP2b",
+      "rank": 17,
+      "amount": 57185.39475300012,
+      "blockTime": 1789837548,
+      "sig": "4K8et4wDw5m8skLwRsv2jR7L6aXTUd8y3gQzWx7PDgH7RnwE3fSX3T37ThAtHfhhvrMFqkiPFXRTYxZHjjSJqH1W",
+      "delta_vs_seed_sec": 17
+    },
+    {
+      "address": "C96VCwWaeV8Xryrv1esKTWb8969cr3Dx68Y9KDqMaLBD",
+      "rank": 18,
+      "amount": 2562578.1620339993,
+      "blockTime": 1789837549,
+      "sig": "2HwPSwtazxK9eh8LFHaEGg3hRR8HjLspTjGBdEhS7dzGmaKSsMY7LFqpqfAQSSCaW7QAPatW8QcFJSjkwxYQAkcN",
+      "delta_vs_seed_sec": 18
+    }
+  ]
+}

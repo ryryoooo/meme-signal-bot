@@ -1,0 +1,14 @@
+{
+  "mint": "DUe1qheefigxhjboRqKkGWjSTeYivjLo6yq763redsRC",
+  "symbol": "DUe1qhee",
+  "buyers": [
+    {
+      "address": "AXmnRBrNtYYyyo82cLBBhnWJ7o1iqNLZbuEVpDB3V666",
+      "rank": 1,
+      "amount": 0.0,
+      "blockTime": 1789895301,
+      "sig": "4SHFuq8e2dMNFE74n37Vr5sybGGdGuyFtDUf2nPMX31qs5T2Mu5AdsWVfe5qZ769emm65pUBdEGZcPeZN6ERp49T",
+      "delta_vs_seed_sec": 86100
+    }
+  ]
+}

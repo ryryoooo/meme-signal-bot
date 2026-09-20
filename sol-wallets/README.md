@@ -77,3 +77,17 @@ LIVE_TRADING=0 GMGN_DISABLED=1 \
 Daemon interval: `DUMPDIP_EVERY_SEC` (default 3600) in `scripts/scout-wallet-bot.sh` — independent of early digger / sol7d hunts.
 Never merges into RH `wallets.jsonl`.
 
+## Solana 7d active smart wallets (official RPC)
+
+- `sol_smart_7d_active.jsonl` — multi-mint active wallets (`source=solana_rpc_7d`)
+- `summary_sol_smart_7d.md` — summary
+- `raw/sol_smart_7d_state.json` / `raw/sol_smart_7d_all.jsonl` / `raw/sol7d_pools/`
+- Quality merge into `watch_candidates_sol.jsonl`
+
+Hunt: `scripts/hunt_sol_smart_7d.py` (default RPC `https://api.mainnet-beta.solana.com`).
+
+```bash
+LIVE_TRADING=0 GMGN_DISABLED=1 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com   SOL7D_CA_CAP=48 SOL7D_TX_PER_CA=28 SOL7D_ONCE=1   python3 scripts/hunt_sol_smart_7d.py --once
+```
+
+Daemon: `SOL7D_EVERY_SEC` in `scripts/scout-wallet-bot.sh` (default 3600). Separate from StonkFun / RH.
