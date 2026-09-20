@@ -31,6 +31,7 @@ if [[ -f "$STATE/bot.pid" ]]; then
 fi
 exec 9>"$STATE/daemon.lock"
 flock -n 9 || exit 0
+echo $$ > "$STATE/bot.pid"
 log() {
   if [[ -f "$LOG" ]] && [[ $(stat -c%s "$LOG" 2>/dev/null || echo 0) -gt 1048576 ]]; then
     mv "$LOG" "$LOG.1"
