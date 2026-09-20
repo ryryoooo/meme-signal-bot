@@ -11,3 +11,4 @@ live_book_arc.jsonl
 live_state*.json
 live_book*.jsonl
 arc_swap/node_modules/
+rh-wallets/raw/wallets_pre_unknown_promote_*.jsonl

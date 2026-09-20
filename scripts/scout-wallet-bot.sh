@@ -159,23 +159,33 @@ while true; do
     fi
   fi
   # Unknown smart wallets from trending CAs (jina gecko/dex + free RH RPC; no GMGN)
+  # then analyze → promote only quality-gated active smart unknowns into wallets.jsonl
   last_th=$(cat "$STATE/last_trend_hunt" 2>/dev/null || echo 0)
   if (( now - last_th >= TREND_HUNT_EVERY_SEC )); then
     action="trend_unknown_hunt"
     if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 TREND_ONCE=1 timeout 480 python3 scripts/hunt_unknown_from_trend.py --once ) >> "$LOG" 2>&1; then
       echo "$now" > "$STATE/last_trend_hunt"; log "trend_unknown_hunt ok"
-      if ( cd "$ROOT" && git status --porcelain rh-wallets/unknown_trend_smart.jsonl rh-wallets/summary_unknown_trend_smart.md rh-wallets/watch_candidates_unknown.jsonl rh-wallets/raw/unknown_trend_hunt_state.json scripts/hunt_unknown_from_trend.py 2>/dev/null | grep -q . ); then
+      # Quality-gated promote (never dump full unknown list)
+      if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 PROMOTE_DRY_RUN=0 timeout 120 python3 scripts/promote_unknown_smart.py --apply ) >> "$LOG" 2>&1; then
+        log "promote_unknown_smart ok"
+      else
+        log "promote_unknown_smart failed"
+      fi
+      if ( cd "$ROOT" && git status --porcelain rh-wallets/unknown_trend_smart.jsonl rh-wallets/summary_unknown_trend_smart.md rh-wallets/watch_candidates_unknown.jsonl rh-wallets/raw/unknown_trend_hunt_state.json rh-wallets/wallets.jsonl rh-wallets/promote_unknown_log.jsonl rh-wallets/summary_promote_unknown.md scripts/hunt_unknown_from_trend.py scripts/promote_unknown_smart.py 2>/dev/null | grep -q . ); then
         ( cd "$ROOT" && \
           git add rh-wallets/unknown_trend_smart.jsonl rh-wallets/summary_unknown_trend_smart.md \
                   rh-wallets/watch_candidates_unknown.jsonl rh-wallets/raw/unknown_trend_hunt_state.json \
-                  scripts/hunt_unknown_from_trend.py scripts/scout-wallet-bot.sh && \
-          git commit -m "chore(onchain): unknown trend smart wallet hunt" && \
+                  rh-wallets/wallets.jsonl rh-wallets/promote_unknown_log.jsonl rh-wallets/summary_promote_unknown.md \
+                  rh-wallets/raw/wallets_pre_unknown_promote.jsonl \
+                  scripts/hunt_unknown_from_trend.py scripts/promote_unknown_smart.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(onchain): trend hunt + promote unknown smart" && \
           git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "trend_unknown_hunt commit/push fail"
       fi
     else
       result="trend_unknown_hunt_failed"; log "trend_unknown_hunt failed"
       echo "$now" > "$STATE/last_trend_hunt"
     fi
+  fi
 
   # GMGN only on GHA, tiny — never on box. Skip while resolve busy or post-429 cool.
   last_gv=$(cat "$STATE/last_gmgn_vet" 2>/dev/null || echo 0)

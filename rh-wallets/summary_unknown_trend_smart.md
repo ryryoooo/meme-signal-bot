@@ -49,5 +49,5 @@
 - Buyers from Gecko pool trades (`kind=buy`) via jina; optional RH RPC Transfer logs.
 - Excludes all rh-wallets / fomo / arc / scout seed addresses + USDG/WETH stables.
 - Hubs that hit ≥40% of scanned CAs in one run are dropped (router/bot-like).
-- `watch_candidates_unknown.jsonl` is staging only — do **not** dump into `wallets.jsonl` without a quality gate.
+- `watch_candidates_unknown.jsonl` is staging — promote via `scripts/promote_unknown_smart.py` after each trend_hunt (never dump full list).
 

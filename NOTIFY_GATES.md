@@ -104,6 +104,30 @@
 - If `FOMO_API_KEY` missing on box: tick still runs with FOMO off + GMGN off (safe no-hammer); GHA remains backup.
 
 
+
+## Unknown trend → promote (watchlist growth) — 2026-09-20
+
+**Do not dump** `unknown_trend_smart.jsonl` (200+) into `wallets.jsonl`. Each `trend_hunt` cycle (~900s):
+
+1. `scripts/hunt_unknown_from_trend.py` — stage unknowns (`unknown_trend_smart.jsonl` + top `watch_candidates_unknown.jsonl`)
+2. `scripts/promote_unknown_smart.py` — **analyze** then promote only passers
+
+### Quality gates (env)
+| Env | Default | Meaning |
+|-----|---------|---------|
+| `PROMOTE_MIN_SCORE` | 40 | hunt score floor |
+| `PROMOTE_MIN_CAS` | 2 | multi-CA preferred |
+| `PROMOTE_MIN_BUYS` | 2 | soft if n_cas≥3 |
+| `PROMOTE_MIN_VOL_USD` | 10 | soft dust |
+| `PROMOTE_ACTIVE_HOURS` | 72 | `last_seen` window |
+| `PROMOTE_MAX_PER_CYCLE` | 40 | hard cap per run |
+| `PROMOTE_MAX_CAS` | 10 | reject hub/bot-like |
+| `PROMOTE_POOL_EXTRA` | 30 | also scan top of unknown beyond candidates |
+| `PROMOTE_RPC_CHECK` | 0 | optional `eth_getCode` reject contracts |
+| `PROMOTE_DRY_RUN` | 0 | 1 = analyze only |
+
+Promoted rows tagged `unknown_trend` / `source=trend_hunt` / `pnl_pending` (GMGN vet later on GHA). Log: `rh-wallets/promote_unknown_log.jsonl` + `summary_promote_unknown.md`. Backup before write: `rh-wallets/raw/wallets_pre_unknown_promote.jsonl`.
+
 ## Free onchain path (box primary) — 2026-09-20
 
 **Zero FOMO / zero box GMGN.** Public RH RPC only.
