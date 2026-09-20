@@ -19,6 +19,7 @@ AUDIT_EVERY_SEC="${AUDIT_EVERY_SEC:-21600}"
 HUNT_EVERY_SEC="${HUNT_EVERY_SEC:-900}"
 TREND_HUNT_EVERY_SEC="${TREND_HUNT_EVERY_SEC:-900}"
 PNL_FILL_EVERY_SEC="${PNL_FILL_EVERY_SEC:-900}"
+STONKFUN_EVERY_SEC="${STONKFUN_EVERY_SEC:-1800}"
 AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
@@ -49,6 +50,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_onchain_hunt" ]] || echo 0 > "$STATE/last_onchain_hunt"
 [[ -f "$STATE/last_trend_hunt" ]] || echo 0 > "$STATE/last_trend_hunt"
 [[ -f "$STATE/last_pnl_fill" ]] || echo 0 > "$STATE/last_pnl_fill"
+[[ -f "$STATE/last_stonkfun" ]] || echo 0 > "$STATE/last_stonkfun"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -88,7 +90,7 @@ ensure_signal_tick() {
 }
 
 ensure_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -193,6 +195,25 @@ while true; do
     else
       result="trend_unknown_hunt_failed"; log "trend_unknown_hunt failed"
       echo "$now" > "$STATE/last_trend_hunt"
+    fi
+  fi
+
+  # StonkFun Solana digger hunt — free API + public RPC (separate from RH onchain tick)
+  last_sf=$(cat "$STATE/last_stonkfun" 2>/dev/null || echo 0)
+  if (( now - last_sf >= STONKFUN_EVERY_SEC )); then
+    action="stonkfun_diggers"
+    if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 STONK_ONCE=1 timeout 900 python3 scripts/hunt_stonkfun_diggers.py --once ) >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_stonkfun"; log "stonkfun_diggers ok"
+      if ( cd "$ROOT" && git status --porcelain sol-wallets/stonkfun_diggers.jsonl sol-wallets/summary_stonkfun_diggers.md sol-wallets/raw/stonkfun_hunt_state.json scripts/hunt_stonkfun_diggers.py 2>/dev/null | grep -q . ); then
+        ( cd "$ROOT" && \
+          git add sol-wallets/stonkfun_diggers.jsonl sol-wallets/summary_stonkfun_diggers.md \
+                  sol-wallets/raw/stonkfun_hunt_state.json scripts/hunt_stonkfun_diggers.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(sol): stonkfun digger hunt" && \
+          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "stonkfun_diggers commit/push fail"
+      fi
+    else
+      result="stonkfun_diggers_failed"; log "stonkfun_diggers failed"
+      echo "$now" > "$STATE/last_stonkfun"
     fi
   fi
 

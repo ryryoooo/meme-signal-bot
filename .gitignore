@@ -12,3 +12,4 @@ live_state*.json
 live_book*.jsonl
 arc_swap/node_modules/
 rh-wallets/raw/wallets_pre_unknown_promote_*.jsonl
+sol-wallets/raw/token_early/
