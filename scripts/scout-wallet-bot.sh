@@ -205,10 +205,8 @@ while true; do
       if ( cd "$ROOT" && git status --porcelain rh-wallets/wallets.jsonl rh-wallets/summary_onchain_pnl.md rh-wallets/pnl_fill_log.jsonl rh-wallets/raw/onchain_pnl_state.json rh-wallets/raw/wallets_pre_onchain_pnl.jsonl scripts/estimate_wallet_pnl_onchain.py 2>/dev/null | grep -q . ); then
         ( cd "$ROOT" && \
           git add rh-wallets/wallets.jsonl rh-wallets/summary_onchain_pnl.md rh-wallets/pnl_fill_log.jsonl \
-                  rh-wallets/raw/onchain_pnl_state.json rh-wallets/raw/wallets_pre_onchain_pnl.jsonl \
-                  scripts/estimate_wallet_pnl_onchain.py scripts/scout-wallet-bot.sh && \
-          git commit -m "chore(onchain): pnl est + weak field auto-fill" && \
-          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "onchain_pnl_fill commit/push fail"
+                  rh-wallets/raw/onchain_pnl_state.json rh-wallets/raw/wallets_pre_onchain_pnl.jsonl                   rh-wallets/summary_unknown_trend_pnl.md                   scripts/estimate_wallet_pnl_onchain.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(onchain): pnl est + weak field auto-fill" || true;           git stash push -u -m "daemon-pnl-push-tmp" -- . >/dev/null 2>&1 || true;           git pull --rebase origin main && git push origin HEAD:main;           st=$?; git stash pop >/dev/null 2>&1 || true; exit $st ) >> "$LOG" 2>&1 || log "onchain_pnl_fill commit/push fail"
       fi
     else
       result="onchain_pnl_fill_failed"; log "onchain_pnl_fill failed"
