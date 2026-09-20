@@ -35,10 +35,44 @@
 
 ## RH passthrough (never-stop notify)
 - `NOTIFY_PASSTHROUGH=1`（or `RH_NOTIFY_ALWAYS=1` when `CHAIN=robinhood`）
-- Post **all** watchlist buy overlaps to Discord; GMGN fail / safety fail / notify_gate fail do **not** block
+- Soft safety / soft `notify_market_gate_reasons` / Dex-empty handoff do **not** block
 - Still runs `safety_check` for card fields; prefers Dex `market_snapshot` when GMGN failed
 - Keeps `already_seen` duplicate skip; shorten via `COOLDOWN_SECONDS` (RH onchain default **300**; override to 900 if too noisy)
 - Live trading stays off (`LIVE_TRADING=0`)
+- **Does NOT override** hard gates below (honeypot / min volume) or `MIN_WALLETS`
+
+## HARD gates (passthrough-proof) — 2026-09-20
+
+User intent: 通知するトークンはハニーポット/詐欺を見極めて、ある程度出来高があるやつに限定。
+
+| Gate | Default | Behavior |
+|------|---------|----------|
+| `HARD_MARKET_GATES` | **1** | Enables hard min-volume (+ wiring). Soft `VOLUME_REQUIRED=0` no longer lets thin tape notify. |
+| `HONEYPOT_REQUIRE` | **1** | Prefer GoPlus `token_security` (RH `goplus_id=4663`). Cache TTL `GOPLUS_CACHE_TTL_SEC` (3600). |
+| `HARD_MIN_VOLUME_H24_USD` | **5000** | Hard 24h volume floor (softer than soft default 8000 for sparsity). |
+| `HARD_MIN_VOLUME_M5_USD` | **500** | Hard 5m volume floor. |
+| `HONEYPOT_TAX_MAX` | **0.10** | Buy or sell tax ≥10% → `high_tax`. |
+| `HONEYPOT_ZERO_SELL_BUYS` | **10** | Heuristic: buys_m5≥N & sells_m5=0 → `honeypot` when GoPlus unavailable. |
+
+### Honeypot / scam
+1. **GoPlus says honeypot / cannot_sell / high_tax / blacklisted** → always skip notify (even if `HONEYPOT_REQUIRE=0` for the explicit honeypot/high_tax hits).
+2. **API unavailable** (`goplus=skip`): if `HONEYPOT_REQUIRE=1` → heuristics; if `0` → fail-open (no hard fail from missing API).
+3. **Heuristics** (documented): Dex/GMGN labels with scam|honeypot|rug|blacklist → `scam_flag`; zero-sell tape; tax fields on safety.
+
+Hard reason tokens: `honeypot`, `high_tax`, `scam_flag`, `cannot_sell`, `volume_thin=…`, `volume_m5_thin=…`, `volume_na`, `volume_m5_na`.
+
+### Volume
+- Enforced via `notify_hard_gate_reasons(..., require_volume=True)` when Dex/Gecko numbers are present.
+- **and/or**: pass if `volume_h24 ≥ HARD_MIN_VOLUME_H24_USD` **OR** `volume_m5 ≥ HARD_MIN_VOLUME_M5_USD`; fail only when neither meets.
+- Soft Dex-empty on box can still dispatch GHA enrich; enrich itself re-checks hard volume + honeypot before Discord.
+- Honeypot hard-fail on box → **no enrich spam**.
+
+### Code paths
+- `bot.py` FOMO/GMGN notify loop
+- `scripts/onchain_signal_tick.py` (pre-enrich honeypot; pre-post volume)
+- `scripts/enrich_notify.py` (GHA)
+
+Keep constitution: `LIQ_REQUIRED=0`, `ANTI_SPIKE_REQUIRED=0`, `MIN_WALLETS=2`, priority 3+.
 
 
 ## Priority tier (2026-09-20)

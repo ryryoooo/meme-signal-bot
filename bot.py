@@ -2564,23 +2564,43 @@ def lp_from_goplus(info: dict) -> dict:
     return {"status": "pass", "reason": None, "locked_pct": locked, "top_unlocked": top_unlocked}
 
 
-def fetch_goplus(ca: str, chain: str) -> dict:
+# GoPlus token_security cache (ca+chain → (expires_ts, result))
+_GOPLUS_CACHE: dict[str, tuple[float, dict]] = {}
+_GOPLUS_CACHE_TTL_SEC = float(os.environ.get("GOPLUS_CACHE_TTL_SEC", "3600"))
+
+
+def fetch_goplus(ca: str, chain: str, *, use_cache: bool = True) -> dict:
+    """GoPlus token_security. Cached; status skip|pass|fail."""
     meta = CHAIN_META.get(chain, {})
     gid = meta.get("goplus_id")
+    ca_l = (ca or "").strip().lower()
+    cache_key = f"{gid or 'na'}:{ca_l}"
+    now = time.time()
+    if use_cache and cache_key in _GOPLUS_CACHE:
+        exp, cached = _GOPLUS_CACHE[cache_key]
+        if now < exp and isinstance(cached, dict):
+            return dict(cached)
     if not gid:
         print(f"goplus=skip (no chain id for {chain})")
-        return {"status": "skip", "reason": "no_chain_id"}
+        out = {"status": "skip", "reason": "no_chain_id"}
+        _GOPLUS_CACHE[cache_key] = (now + _GOPLUS_CACHE_TTL_SEC, out)
+        return dict(out)
     url = f"https://api.gopluslabs.io/api/v1/token_security/{gid}?contract_addresses={urllib.parse.quote(ca)}"
-    data = http_get_json(url)
+    data = http_get_json(url, timeout=12)
     if not isinstance(data, dict):
         print("goplus=skip (request failed)")
-        return {"status": "skip", "reason": "request_fail"}
+        out = {"status": "skip", "reason": "request_fail"}
+        # shorter TTL on transport fail so we retry sooner
+        _GOPLUS_CACHE[cache_key] = (now + min(120.0, _GOPLUS_CACHE_TTL_SEC), out)
+        return dict(out)
     code = data.get("code")
     result = data.get("result") or {}
-    info = result.get(ca.lower()) or result.get(ca) or {}
+    info = result.get(ca_l) or result.get(ca) or {}
     if code not in (0, 1, "0", "1") or not info:
         print(f"goplus=skip (code={code} empty={not bool(info)})")
-        return {"status": "skip", "reason": f"code={code}"}
+        out = {"status": "skip", "reason": f"code={code}"}
+        _GOPLUS_CACHE[cache_key] = (now + min(300.0, _GOPLUS_CACHE_TTL_SEC), out)
+        return dict(out)
 
     is_hp = str(info.get("is_honeypot") or "0") in ("1", "true", "True")
     cannot_sell = str(info.get("cannot_sell_all") or "0") in ("1", "true", "True")
@@ -2596,7 +2616,11 @@ def fetch_goplus(ca: str, chain: str) -> dict:
         buy_tax = buy_tax / 100.0
     if sell_tax > 1:
         sell_tax = sell_tax / 100.0
-    high_tax = buy_tax >= 0.10 or sell_tax >= 0.10
+    try:
+        tax_max = float(os.environ.get("HONEYPOT_TAX_MAX", "0.10"))
+    except (TypeError, ValueError):
+        tax_max = 0.10
+    high_tax = buy_tax >= tax_max or sell_tax >= tax_max
 
     reasons = []
     if is_hp:
@@ -2609,14 +2633,249 @@ def fetch_goplus(ca: str, chain: str) -> dict:
     if lp.get("status") == "fail" and lp.get("reason"):
         reasons.append(str(lp["reason"]))
     if reasons:
-        return {
+        out = {
             "status": "fail",
             "reason": ",".join(reasons),
             "buy_tax": buy_tax,
             "sell_tax": sell_tax,
+            "is_honeypot": is_hp,
+            "cannot_sell": cannot_sell,
             "lp": lp,
+            "raw_flags": {
+                "is_honeypot": info.get("is_honeypot"),
+                "cannot_sell_all": info.get("cannot_sell_all"),
+                "is_blacklisted": info.get("is_blacklisted"),
+                "is_in_dex": info.get("is_in_dex"),
+            },
         }
-    return {"status": "pass", "reason": None, "buy_tax": buy_tax, "sell_tax": sell_tax, "lp": lp}
+    else:
+        out = {
+            "status": "pass",
+            "reason": None,
+            "buy_tax": buy_tax,
+            "sell_tax": sell_tax,
+            "is_honeypot": False,
+            "cannot_sell": False,
+            "lp": lp,
+            "raw_flags": {
+                "is_honeypot": info.get("is_honeypot"),
+                "cannot_sell_all": info.get("cannot_sell_all"),
+                "is_blacklisted": info.get("is_blacklisted"),
+                "is_in_dex": info.get("is_in_dex"),
+            },
+        }
+    _GOPLUS_CACHE[cache_key] = (now + _GOPLUS_CACHE_TTL_SEC, out)
+    return dict(out)
+
+
+def _hard_volume_thresholds() -> tuple[float, float]:
+    """Hard volume floors (passthrough cannot override). Soft VOLUME_REQUIRED=0 still applies."""
+    try:
+        h24 = float(os.environ.get("HARD_MIN_VOLUME_H24_USD") or os.environ.get("MIN_VOLUME_H24_USD") or "5000")
+    except (TypeError, ValueError):
+        h24 = 5000.0
+    try:
+        m5 = float(os.environ.get("HARD_MIN_VOLUME_M5_USD") or os.environ.get("MIN_VOLUME_M5_USD") or "500")
+    except (TypeError, ValueError):
+        m5 = 500.0
+    return h24, m5
+
+
+def hard_volume_gate_reasons(safety: dict) -> list[str]:
+    """Min volume hard fails (and/or): pass if h24 OR m5 meets floor.
+
+    Reasons when neither meets: volume_thin / volume_m5_thin / volume_na / volume_m5_na.
+    """
+    min_h24, min_m5 = _hard_volume_thresholds()
+    vol = safety.get("volume_h24")
+    vol_m5 = safety.get("volume_m5")
+    h24_ok = False
+    m5_ok = False
+    h24_reason = None
+    m5_reason = None
+    if vol is None:
+        h24_reason = "volume_na"
+    else:
+        try:
+            if float(vol) >= min_h24:
+                h24_ok = True
+            else:
+                h24_reason = f"volume_thin={float(vol):.0f}<{min_h24:.0f}"
+        except (TypeError, ValueError):
+            h24_reason = "volume_na"
+    if vol_m5 is None:
+        m5_reason = "volume_m5_na"
+    else:
+        try:
+            if float(vol_m5) >= min_m5:
+                m5_ok = True
+            else:
+                m5_reason = f"volume_m5_thin={float(vol_m5):.0f}<{min_m5:.0f}"
+        except (TypeError, ValueError):
+            m5_reason = "volume_m5_na"
+    if h24_ok or m5_ok:
+        return []
+    return [r for r in (h24_reason, m5_reason) if r]
+
+
+def honeypot_heuristic_reasons(safety: dict) -> list[str]:
+    """When GoPlus unavailable: Dex labels / zero-sell tape / extreme tax fields on safety.
+
+    Documented heuristics (fail closed only on strong signals):
+    - Dex/GMGN labels containing scam|honeypot|rug|blacklist → scam_flag
+    - buys_m5 >= HONEYPOT_ZERO_SELL_BUYS (default 10) with sells_m5 == 0 → honeypot
+    - safety sell_tax/buy_tax >= HONEYPOT_TAX_MAX → high_tax
+    """
+    fails: list[str] = []
+    labels = safety.get("labels") or []
+    if isinstance(labels, str):
+        labels = [labels]
+    blob = " ".join(str(x).lower() for x in labels)
+    for flag in ("scam", "honeypot", "rug", "blacklist", "blacklisted"):
+        if flag in blob:
+            fails.append("scam_flag")
+            break
+    try:
+        zero_sell_buys = int(float(os.environ.get("HONEYPOT_ZERO_SELL_BUYS", "10")))
+    except (TypeError, ValueError):
+        zero_sell_buys = 10
+    bm = safety.get("buys_m5")
+    sm = safety.get("sells_m5")
+    try:
+        if bm is not None and sm is not None:
+            bi, si = int(bm), int(sm)
+            if bi >= zero_sell_buys and si == 0:
+                fails.append("honeypot")
+    except (TypeError, ValueError):
+        pass
+    try:
+        tax_max = float(os.environ.get("HONEYPOT_TAX_MAX", "0.10"))
+    except (TypeError, ValueError):
+        tax_max = 0.10
+    for key in ("sell_tax", "buy_tax"):
+        raw = safety.get(key)
+        if raw is None:
+            continue
+        try:
+            t = float(raw)
+            if t > 1:
+                t = t / 100.0
+            if t >= tax_max:
+                fails.append("high_tax")
+                break
+        except (TypeError, ValueError):
+            continue
+    # de-dupe preserve order
+    seen: set[str] = set()
+    out: list[str] = []
+    for r in fails:
+        if r not in seen:
+            seen.add(r)
+            out.append(r)
+    return out
+
+
+def honeypot_hard_reasons(ca: str, chain: str, safety: dict | None = None) -> list[str]:
+    """Hard honeypot / high_tax / scam rejects. GoPlus honeypot always blocks.
+
+    HONEYPOT_REQUIRE=1 (default): if GoPlus unavailable, fall back to heuristics.
+    HONEYPOT_REQUIRE=0: fail-open on API skip (still block if GoPlus explicitly says honeypot/high_tax).
+    """
+    safety = safety or {}
+    fails: list[str] = []
+    gp = fetch_goplus(ca, chain)
+    safety["_goplus"] = gp.get("status")
+    reason = str(gp.get("reason") or "")
+    if gp.get("status") == "fail" or gp.get("is_honeypot"):
+        # Always block explicit GoPlus honeypot / cannot_sell / high_tax (even if HONEYPOT_REQUIRE=0)
+        low = reason.lower()
+        if "honeypot" in low or gp.get("is_honeypot"):
+            fails.append("honeypot")
+        if "cannot_sell" in low or gp.get("cannot_sell"):
+            fails.append("cannot_sell")
+        if "high_tax" in low:
+            fails.append("high_tax")
+        # Blacklist from raw flags
+        raw = gp.get("raw_flags") or {}
+        if str(raw.get("is_blacklisted") or "0") in ("1", "true", "True"):
+            fails.append("scam_flag")
+    elif gp.get("status") == "skip":
+        if env_bool("HONEYPOT_REQUIRE", True):
+            fails.extend(honeypot_heuristic_reasons(safety))
+        # else fail-open on API unavailable
+    else:
+        # pass — still apply Dex scam label heuristic (cheap, no API)
+        for r in honeypot_heuristic_reasons(safety):
+            if r == "scam_flag":
+                fails.append(r)
+    # de-dupe
+    seen: set[str] = set()
+    out: list[str] = []
+    for r in fails:
+        if r not in seen:
+            seen.add(r)
+            out.append(r)
+    return out
+
+
+def notify_hard_gate_reasons(
+    safety: dict,
+    ca: str,
+    chain: str,
+    *,
+    require_volume: bool | None = None,
+) -> list[str]:
+    """HARD gates that NOTIFY_PASSTHROUGH cannot override.
+
+    - honeypot / high_tax / scam_flag / cannot_sell (GoPlus + heuristics)
+    - min volume h24/m5 when HARD_MARKET_GATES=1 and market nums present
+      (skip volume when Dex empty so GHA enrich can still run; honeypot still applies)
+
+    Knobs: HARD_MARKET_GATES (default 1), HONEYPOT_REQUIRE (default 1),
+    HARD_MIN_VOLUME_H24_USD (default 5000), HARD_MIN_VOLUME_M5_USD (default 500),
+    HONEYPOT_TAX_MAX (0.10), HONEYPOT_ZERO_SELL_BUYS (10), GOPLUS_CACHE_TTL_SEC.
+    """
+    fails: list[str] = []
+    fails.extend(honeypot_hard_reasons(ca, chain, safety))
+    hard_mkt = env_bool("HARD_MARKET_GATES", True)
+    if hard_mkt:
+        has_nums = any(
+            safety.get(k) is not None
+            for k in ("mcap_usd", "price_usd", "symbol_hint", "liq_usd", "volume_h24", "volume_m5")
+        )
+        fetch_failed = bool(safety.get("fetch_failed"))
+        if require_volume is None:
+            do_vol = has_nums and not fetch_failed
+        else:
+            do_vol = bool(require_volume)
+        if do_vol:
+            fails.extend(hard_volume_gate_reasons(safety))
+    # de-dupe
+    seen: set[str] = set()
+    out: list[str] = []
+    for r in fails:
+        if r not in seen:
+            seen.add(r)
+            out.append(r)
+    return out
+
+
+def is_hard_notify_reason(reason: str) -> bool:
+    """True if a soft market_fails token is also a hard block under passthrough."""
+    r = str(reason or "").lower()
+    if not r:
+        return False
+    hard_prefixes = (
+        "honeypot",
+        "high_tax",
+        "scam_flag",
+        "cannot_sell",
+        "volume_thin",
+        "volume_m5_thin",
+        "volume_na",
+        "volume_m5_na",
+    )
+    return any(r == p or r.startswith(p) for p in hard_prefixes)
 
 
 def heat_gate_reasons(safety: dict) -> list[str]:
@@ -3616,22 +3875,47 @@ def run_once(args: argparse.Namespace) -> int:
             wallet_quality_score(watch.get((w.get("address") or "").lower()) or {})
             for w in (s.get("wallets") or [])
         ]
+        # HARD gates (honeypot / volume) — NOTIFY_PASSTHROUGH cannot override
+        hard_fails = notify_hard_gate_reasons(safety, ca, chain)
+        if hard_fails:
+            reason = "hard_gate:" + ",".join(hard_fails)
+            print(f"skip {ca} {reason}", flush=True)
+            append_paper_log(
+                paper_path,
+                {
+                    **base_row,
+                    "posted": False,
+                    "reason": reason,
+                    "volume_h24": safety.get("volume_h24"),
+                    "volume_m5": safety.get("volume_m5"),
+                    "holders": safety.get("holder_count"),
+                    "wallet_scores": wallet_scores,
+                    "mcap": safety.get("mcap_usd"),
+                    "liq": safety.get("liq_usd"),
+                    "goplus": (safety.get("_goplus") if isinstance(safety, dict) else None),
+                },
+            )
+            seen.add(s["key"])
+            skipped += 1
+            continue
         market_fails = notify_market_gate_reasons(safety, total_usd, wallet_scores)
+        # Soft fails already covered by hard_gate are ignored; remaining soft may passthrough
+        soft_fails = [r for r in market_fails if not is_hard_notify_reason(r)]
         print(
-            f"notify_gates ca={ca[:10]}… fails={market_fails or ['ok']} "
+            f"notify_gates ca={ca[:10]}… hard=ok soft={soft_fails or ['ok']} "
             f"vol={safety.get('volume_h24')} holders={safety.get('holder_count')} "
             f"cluster={total_usd:.0f} q={wallet_scores}",
             flush=True,
         )
-        if market_fails:
+        if soft_fails:
             if passthrough:
-                pt_reasons.extend(market_fails)
+                pt_reasons.extend(soft_fails)
                 print(
-                    f"passthrough ignore notify_gate ca={ca[:10]}… fails={market_fails}",
+                    f"passthrough ignore notify_gate ca={ca[:10]}… fails={soft_fails}",
                     flush=True,
                 )
             else:
-                reason = "notify_gate:" + ",".join(market_fails)
+                reason = "notify_gate:" + ",".join(soft_fails)
                 print(f"skip {ca} {reason}", flush=True)
                 append_paper_log(
                     paper_path,
@@ -3649,7 +3933,7 @@ def run_once(args: argparse.Namespace) -> int:
                 if post_skip and skip_notices < MAX_SKIP_NOTICES_PER_RUN:
                     try:
                         safety_skip = dict(safety)
-                        safety_skip["reasons"] = market_fails
+                        safety_skip["reasons"] = soft_fails
                         safety_skip["jp"] = "見送り（" + "・".join(
                             (
                                 "出来高薄い" if str(r).startswith("volume") else
@@ -3658,7 +3942,7 @@ def run_once(args: argparse.Namespace) -> int:
                                 "財布の質不足" if str(r).startswith("quality") else
                                 "検査NG"
                             )
-                            for r in market_fails
+                            for r in soft_fails
                         ) + "）"
                         discord_webhook(webhook, embeds=[build_skip_embed(s, safety_skip, chain)])
                         skip_notices += 1

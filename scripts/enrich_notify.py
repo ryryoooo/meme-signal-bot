@@ -26,6 +26,10 @@ os.environ.setdefault("GMGN_DISABLED", "1")
 os.environ.setdefault("GMGN_MARKET", "0")
 os.environ.setdefault("NOTIFY_MARKET_SOURCE", "dex")
 os.environ.setdefault("NOTIFY_PASSTHROUGH", "1")
+os.environ.setdefault("HARD_MARKET_GATES", "1")
+os.environ.setdefault("HONEYPOT_REQUIRE", "1")
+os.environ.setdefault("HARD_MIN_VOLUME_H24_USD", "5000")
+os.environ.setdefault("HARD_MIN_VOLUME_M5_USD", "500")
 os.environ.setdefault("CHAIN", "robinhood")
 os.environ.setdefault("MIN_WALLETS", "2")
 os.environ.setdefault("PRIORITY_NOTIFY", "1")
@@ -335,6 +339,35 @@ def main() -> int:
     prev = safety.get("jp") or f"通過（{src_label}）"
     if "GHA enrich" not in prev:
         safety["jp"] = f"{prev}（GHA enrich）" if ("通過" in prev or "Dex" in prev or "Gecko" in prev) else f"通過（{src_label}・GHA enrich）"
+
+    # HARD gates — honeypot / volume; NOTIFY_PASSTHROUGH cannot override
+    hard_fails = bot_mod.notify_hard_gate_reasons(safety, ca, chain, require_volume=True)
+    if hard_fails:
+        _log(f"skip hard_gate ca={ca[:12]}… fails={hard_fails} (no Discord / no spam)")
+        try:
+            paper_path = Path(os.environ.get("PAPER_LOG_PATH") or str(ROOT / "paper_log.jsonl"))
+            bot_mod.append_paper_log(
+                paper_path,
+                {
+                    "ca": ca,
+                    "symbol": safety.get("symbol_hint"),
+                    "n": len(wallets),
+                    "total_usd": sum(float(w.get("usd") or 0) for w in wallets),
+                    "key": seen_key,
+                    "chain": chain,
+                    "source": "gha_enrich",
+                    "source_mode": "gha_enrich",
+                    "posted": False,
+                    "reason": "hard_gate:" + ",".join(hard_fails),
+                    "volume_h24": safety.get("volume_h24"),
+                    "volume_m5": safety.get("volume_m5"),
+                    "mcap": safety.get("mcap_usd"),
+                    "liq": safety.get("liq_usd"),
+                },
+            )
+        except Exception:
+            pass
+        return 0
 
     signal = {
         "ca": ca,

@@ -423,6 +423,13 @@ export_onchain_env() {
   export MIN_MCAP_USD="${MIN_MCAP_USD:-1500}"
   export MIN_TRADE_USD="${MIN_TRADE_USD:-40}"
   export WINDOW_SECONDS="${WINDOW_SECONDS:-1200}"
+  # HARD gates — passthrough cannot override (honeypot + min volume)
+  export HARD_MARKET_GATES="${HARD_MARKET_GATES:-1}"
+  export HONEYPOT_REQUIRE="${HONEYPOT_REQUIRE:-1}"
+  export HARD_MIN_VOLUME_H24_USD="${HARD_MIN_VOLUME_H24_USD:-5000}"
+  export HARD_MIN_VOLUME_M5_USD="${HARD_MIN_VOLUME_M5_USD:-500}"
+  export HONEYPOT_TAX_MAX="${HONEYPOT_TAX_MAX:-0.10}"
+  export GOPLUS_CACHE_TTL_SEC="${GOPLUS_CACHE_TTL_SEC:-3600}"
 }
 
 run_onchain_once() {

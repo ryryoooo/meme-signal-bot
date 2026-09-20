@@ -49,6 +49,10 @@ os.environ.setdefault("GMGN_DISABLED", "1")
 os.environ.setdefault("GMGN_SMARTMONEY", "0")
 os.environ.setdefault("FOMO_ENABLED", "0")
 os.environ.setdefault("NOTIFY_PASSTHROUGH", "1")
+os.environ.setdefault("HARD_MARKET_GATES", "1")
+os.environ.setdefault("HONEYPOT_REQUIRE", "1")
+os.environ.setdefault("HARD_MIN_VOLUME_H24_USD", "5000")
+os.environ.setdefault("HARD_MIN_VOLUME_M5_USD", "500")
 os.environ.setdefault("RH_NOTIFY_ALWAYS", "1")
 os.environ.setdefault("PAPER_TRADING", "0")
 os.environ.setdefault("DROP_WEAK_WALLETS", "0")
@@ -528,6 +532,33 @@ def post_signals(
             f"vol24={safety.get('volume_h24')} fetch_failed={safety.get('fetch_failed')}"
         )
 
+        # HARD honeypot/scam (no volume yet) — blocks Discord AND enrich spam
+        hp_fails = bot_mod.notify_hard_gate_reasons(
+            safety, ca, chain, require_volume=False
+        )
+        if hp_fails:
+            log(f"skip hard_gate (pre-enrich) ca={ca[:12]}… fails={hp_fails}")
+            seen.add(s["key"])
+            skipped += 1
+            try:
+                bot_mod.append_paper_log(
+                    paper_path,
+                    {
+                        "ca": ca,
+                        "n": s["n"],
+                        "total_usd": total_usd,
+                        "key": s["key"],
+                        "chain": chain,
+                        "source": "onchain",
+                        "source_mode": "onchain_watch",
+                        "posted": False,
+                        "reason": "hard_gate:" + ",".join(hp_fails),
+                    },
+                )
+            except Exception:
+                pass
+            continue
+
         # Dex empty / CF-429 on box → do NOT post empty (—) card; GHA enrich posts full card
         if not _dex_has_usable_nums(safety):
             ok_disp = dispatch_enrich_notify(
@@ -586,11 +617,43 @@ def post_signals(
             bot_mod.wallet_quality_score(watch.get((w.get("address") or "").lower()) or {})
             for w in s["wallets"]
         ]
+        # HARD volume (+ re-check honeypot) — passthrough cannot override
+        hard_fails = bot_mod.notify_hard_gate_reasons(
+            safety, ca, chain, require_volume=True
+        )
+        if hard_fails:
+            log(f"skip hard_gate ca={ca[:12]}… fails={hard_fails}")
+            seen.add(s["key"])
+            skipped += 1
+            try:
+                bot_mod.append_paper_log(
+                    paper_path,
+                    {
+                        "ca": ca,
+                        "symbol": safety.get("symbol_hint"),
+                        "n": s["n"],
+                        "total_usd": total_usd,
+                        "key": s["key"],
+                        "chain": chain,
+                        "source": "onchain",
+                        "source_mode": "onchain_watch",
+                        "posted": False,
+                        "reason": "hard_gate:" + ",".join(hard_fails),
+                        "volume_h24": safety.get("volume_h24"),
+                        "volume_m5": safety.get("volume_m5"),
+                        "mcap": safety.get("mcap_usd"),
+                        "liq": safety.get("liq_usd"),
+                    },
+                )
+            except Exception:
+                pass
+            continue
         market_fails = bot_mod.notify_market_gate_reasons(safety, total_usd, wallet_scores)
-        if market_fails:
+        soft_fails = [r for r in market_fails if not bot_mod.is_hard_notify_reason(r)]
+        if soft_fails:
             if passthrough:
-                pt_reasons.extend(market_fails)
-                log(f"passthrough ignore gates ca={ca[:12]}… fails={market_fails}")
+                pt_reasons.extend(soft_fails)
+                log(f"passthrough ignore gates ca={ca[:12]}… fails={soft_fails}")
             else:
                 seen.add(s["key"])
                 skipped += 1
