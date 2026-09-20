@@ -90,6 +90,44 @@ ensure_signal_tick() {
 }
 
 ensure_signal_tick
+
+# StonkFun digger Discord (dedicated channel; never RH DISCORD_WEBHOOK_URL)
+ensure_stonkfun_signal_tick() {
+  local tick="$ROOT/scripts/stonkfun_signal_tick.sh"
+  local pidfile="$STATE/stonkfun_signal_tick.pid"
+  local tick_log="$STATE/stonkfun_signal_tick.log"
+  local lock="$STATE/stonkfun_signal_tick.lock"
+  if [[ ! -x "$tick" ]]; then
+    log "stonkfun_signal_tick missing: $tick"
+    return 0
+  fi
+  if [[ -f "$pidfile" ]]; then
+    local old
+    old=$(cat "$pidfile" 2>/dev/null || echo "")
+    if [[ "$old" =~ ^[0-9]+$ ]] && kill -0 "$old" 2>/dev/null; then
+      return 0
+    fi
+    rm -f "$pidfile"
+  fi
+  if pgrep -f '/scripts/stonkfun_signal_tick\.sh' >/dev/null 2>&1; then
+    return 0
+  fi
+  if pgrep -f 'stonkfun_signal_tick\.py' >/dev/null 2>&1; then
+    return 0
+  fi
+  STONKFUN_POLL_SECONDS="${STONKFUN_POLL_SECONDS:-20}" \
+  STONKFUN_TICK_STATE_DIR="$STATE" \
+  STONKFUN_TICK_LOG="$tick_log" \
+  STONKFUN_TICK_LOCK="$lock" \
+  STONKFUN_TICK_PID="$pidfile" \
+  LIVE_TRADING=0 \
+  GMGN_DISABLED=1 \
+    nohup bash "$tick" >>"$tick_log" 2>&1 &
+  echo $! > "$pidfile"
+  log "stonkfun_signal_tick started pid=$! poll=${STONKFUN_POLL_SECONDS:-20}s webhook=dedicated_only"
+}
+
+ensure_stonkfun_signal_tick
 log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
