@@ -16,8 +16,9 @@ Env:
   GMGN_VET_CAP=8
   GMGN_VET_SLEEP_SEC=12
   GMGN_VET_COOLDOWN_HOURS=6
-  GMGN_VET_PRIORITY=elite   # elite|pending_wr|all
+  GMGN_VET_PRIORITY=elite   # elite|pending_wr|pnl_pending|all
                              # elite = scout_elite + scout_pending_WR (+ themaran/985)
+                             # pnl_pending = unknown_trend / pnl_pending tags (promoted unknowns)
   GMGN_PORTFOLIO_PERIOD=30d  # 30d (default) or 7d — 7d writes *_7d fields only
 """
 from __future__ import annotations
@@ -176,6 +177,7 @@ def main() -> int:
             if has_wr:
                 continue
         pending_wr = "scout_pending_wr" in tags_l
+        pnl_pend = "pnl_pending" in tags_l or "unknown_trend" in tags_l
         if priority in ("elite", "pending_wr"):
             if not (elite or pending_wr or scoutish):
                 # still allow themaran/985 with high pnl missing wr
@@ -184,6 +186,13 @@ def main() -> int:
             if priority == "pending_wr" and not (pending_wr or elite or scoutish):
                 if "themaran" not in tags and "985monitor" not in tags:
                     continue
+        elif priority in ("pnl_pending", "unknown_trend"):
+            # Promoted unknowns: only fill wallets still tagged pnl_pending / unknown_trend
+            if not pnl_pend:
+                continue
+            # Prefer null realized_pnl even if partial WR somehow present
+            if not period_7d and o.get("realized_pnl_usd") is not None and has_wr:
+                continue
         ok_at = parse_ts((st.get("ok") or {}).get(a))
         fail_at = parse_ts((st.get("fail") or {}).get(a))
         if ok_at and ok_at > cool_before:
@@ -217,11 +226,14 @@ def main() -> int:
             )
         else:
             # Prefer elite + scout_pending_WR first (steady WR fill)
+            # pnl_pending / unknown_trend get a large boost when that priority is set
             score = (
                 elite_n * 10
                 + hits
                 + (80 if elite else 0)
                 + (60 if pending_wr or scoutish else 0)
+                + (200 if priority in ("pnl_pending", "unknown_trend") and pnl_pend else 0)
+                + (40 if pnl_pend and priority == "all" else 0)
                 + min(20.0, buy / 200.0)
                 + min(30.0, pnl / 1e5)
             )
@@ -304,6 +316,9 @@ def main() -> int:
             # clear pending WR once filled (30d)
             if row.get("win_rate") is not None:
                 tags = [t for t in tags if str(t).lower() != "scout_pending_wr"]
+            # clear pnl_pending once realized PnL is known
+            if row.get("realized_pnl_usd") is not None:
+                tags = [t for t in tags if str(t).lower() != "pnl_pending"]
         row["tags"] = tags
         by[a] = row
         merged += 1

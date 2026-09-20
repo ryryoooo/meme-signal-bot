@@ -16,7 +16,7 @@ on:
         required: false
         default: "20"
       priority:
-        description: "elite|pending_wr|all (elite prefers scout_elite + scout_pending_WR)"
+        description: "elite|pending_wr|pnl_pending|all (pnl_pending = unknown_trend promoted)"
         required: false
         default: "elite"
       period:
