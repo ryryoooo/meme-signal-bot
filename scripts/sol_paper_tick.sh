@@ -48,7 +48,7 @@ export PAPER_MARK_HEARTBEAT="${PAPER_MARK_HEARTBEAT:-0}"
 export SOL_PAPER_TICK_SEC="${SOL_PAPER_TICK_SEC:-90}"
 export SOL_PAPER_BANKROLL_USD="${SOL_PAPER_BANKROLL_USD:-100}"
 export SOL_PAPER_DISCORD="${SOL_PAPER_DISCORD:-1}"
-export SOL_PAPER_JIKEI_SEC="${SOL_PAPER_JIKEI_SEC:-1200}"
+export SOL_PAPER_JIKEI_SEC="${SOL_PAPER_JIKEI_SEC:-300}"
 export SOL_PAPER_SEED_ON_START="${SOL_PAPER_SEED_ON_START:-1}"
 # Profile knobs (攻撃/安定) are applied per-book inside sol_paper_tick.py — do not pin here.
 export SOL_PAPER_STATE_DIR="$STATE_DIR"
@@ -64,12 +64,14 @@ fi
 ONCE="${SOL_PAPER_TICK_ONCE:-0}"
 SEED="${SOL_PAPER_SEED:-0}"
 ANNOUNCE="${SOL_PAPER_ANNOUNCE:-0}"
+JIKEI="${SOL_PAPER_FORCE_JIKEI:-0}"
 ARGS=()
 [[ "$ONCE" == "1" ]] && ARGS+=(--once)
 [[ "$SEED" == "1" ]] && ARGS+=(--seed)
 [[ "$ANNOUNCE" == "1" ]] && ARGS+=(--announce)
+[[ "$JIKEI" == "1" ]] && ARGS+=(--jikkei)
 
-log "start once=$ONCE seed=$SEED announce=$ANNOUNCE LIVE_TRADING=0 books=4"
+log "start once=$ONCE seed=$SEED announce=$ANNOUNCE jikkei=$JIKEI LIVE_TRADING=0 books=4"
 if [[ "$ONCE" == "1" ]]; then
   python3 "$PY" "${ARGS[@]}" >>"$LOG" 2>&1
   rc=$?

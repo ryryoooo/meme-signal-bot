@@ -23,7 +23,7 @@ Env (shared):
   SOL_PAPER_BANKROLL_USD=100
   SOL_PAPER_ALERT_MAX_AGE_SEC=21600
   SOL_PAPER_DISCORD=1
-  SOL_PAPER_JIKEI_SEC=1200
+  SOL_PAPER_JIKEI_SEC=300
   SOL_PAPER_SEED_ON_START=1
   PAPER_MARK_HEARTBEAT=0
   # Profile knobs are applied per book each tick (not global shell defaults).
@@ -67,7 +67,7 @@ DISCORD_ON = str(os.environ.get("SOL_PAPER_DISCORD") or "1").strip().lower() in 
     "true",
     "yes",
 )
-JIKEI_EVERY = float(os.environ.get("SOL_PAPER_JIKEI_SEC") or "1200")
+JIKEI_EVERY = float(os.environ.get("SOL_PAPER_JIKEI_SEC") or "300")
 SUMMARY_EVERY = float(os.environ.get("SOL_PAPER_SUMMARY_SEC") or "300")
 
 SOL_DIR = ROOT / "sol-wallets"
@@ -218,7 +218,7 @@ def _pos_flag(p: dict) -> str:
 _price_cache: dict[str, tuple[float, dict]] = {}
 _PRICE_TTL = 12.0
 _last_jikkei_at = 0.0
-_EVENT_GAP = float(os.environ.get("SOL_PAPER_EVENT_GAP_SEC") or "20")
+_EVENT_GAP = float(os.environ.get("SOL_PAPER_EVENT_GAP_SEC") or "0")
 _last_event_post = 0.0
 
 
@@ -309,7 +309,71 @@ def _book_snapshot(ch: dict, st: dict | None = None) -> dict:
     }
 
 
-def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict]:
+EVENT_COLORS = {
+    "open": 0x3498DB,
+    "tp1": 0x2ECC71,
+    "tp2": 0x9B59B6,
+    "moonbag": 0xF1C40F,
+    "stop": 0xE74C3C,
+    "moon_stop": 0xC0392B,
+    "milestone": 0x1ABC9C,
+}
+
+EVENT_TITLES = {
+    "open": "📥 【紙】新規オープン",
+    "tp1": "🎯 【紙】TP1 利確",
+    "tp2": "🚀 【紙】TP2 → ムーン袋",
+    "moonbag": "🌙 【紙】ムーン袋",
+    "stop": "⛔ 【紙】ストップ",
+    "moon_stop": "☄️ 【紙】ムーン袋ストップ",
+    "milestone": "🏁 【紙】純資産マイルストーン",
+}
+
+
+def build_event_embed(ev: dict) -> dict:
+    """Clear JP event embed: symbol / mult / cash / equity / profile / channel."""
+    kind = str(ev.get("kind") or "open")
+    tag = ev.get("tag") or "?"
+    ch_id = ev.get("channel") or "?"
+    label = ev.get("label") or ch_id
+    sym = ev.get("symbol") or "?"
+    mult = float(ev.get("mult") or 0)
+    cash = float(ev.get("cash") or 0)
+    equity = float(ev.get("equity") or 0)
+    rem = ev.get("remaining")
+    pnl = ev.get("pnl")
+    size = ev.get("size_pct")
+    notional = ev.get("notional")
+    lines = [
+        f"**銘柄** `${sym}` · **系統** 【{tag}】",
+        f"**チャネル** `{ch_id}` · {label}",
+    ]
+    if mult:
+        lines.append(f"**倍率** **{mult:.2f}x**")
+    if size is not None:
+        lines.append(f"**サイズ** {float(size):.0f}% · 投下 ${float(notional or 0):.2f}")
+    if rem is not None:
+        lines.append(f"**残ポジ** ${float(rem):.2f}")
+    if pnl is not None:
+        lines.append(f"**実現PnL** ${float(pnl):+.2f}")
+    lines.append(f"**現金** ${cash:.2f} · **純資産** ${equity:.2f}")
+    note = ev.get("note")
+    if note:
+        lines.append(str(note))
+    jst = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
+    return {
+        "title": EVENT_TITLES.get(kind, f"【紙】{kind}"),
+        "description": chr(10).join(lines)[:1900],
+        "color": int(EVENT_COLORS.get(kind, 0x95A5A6)),
+        "footer": {"text": f"DISCORD_SOL_PAPER only · {jst}"},
+    }
+
+
+def build_jikkei_embeds(
+    reason: str,
+    event_note: str | None = None,
+    events: list[dict] | None = None,
+) -> list[dict]:
     jst = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
     snaps = [_book_snapshot(ch) for ch in CHANNELS]
     total_eq = sum(s["equity"] for s in snaps)
@@ -336,18 +400,23 @@ def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict
         f"**【攻撃】** {_sub(agg)}",
         f"**【安定】** {_sub(stb)}",
         f"原資 ${BANKROLL:.0f}×4 · 2系統 · LIVE_TRADING=0 · 実注文なし",
+        f"残高実況ピッチ {JIKEI_EVERY:.0f}s",
     ]
     head_desc = chr(10).join(head_lines)
     if event_note:
         head_desc = event_note + chr(10) + chr(10) + head_desc
-    embeds: list[dict] = [
+    embeds: list[dict] = []
+    # Event embeds first (most visible), then status head + books
+    for ev in (events or [])[:6]:
+        embeds.append(build_event_embed(ev))
+    embeds.append(
         {
             "title": "【紙実況】Solana 仮想トレード（攻撃＋安定 2系統）",
             "description": head_desc[:1900],
             "color": 0xF1C40F,
             "footer": {"text": "DISCORD_SOL_PAPER only · signal ch へは投稿しない"},
         }
-    ]
+    )
     for s in snaps:
         mo = int(s.get("max_open") or 4)
         tag = s.get("tag") or "?"
@@ -370,10 +439,16 @@ def build_jikkei_embeds(reason: str, event_note: str | None = None) -> list[dict
                 "footer": {"text": f"{s['id']} · {jst}"},
             }
         )
-    return embeds
+    return embeds[:10]  # Discord max 10 embeds
 
 
-def post_jikkei(reason: str, *, force: bool = False, event_note: str | None = None) -> bool:
+def post_jikkei(
+    reason: str,
+    *,
+    force: bool = False,
+    event_note: str | None = None,
+    events: list[dict] | None = None,
+) -> bool:
     """Post 【紙実況】 to DISCORD_SOL_PAPER_WEBHOOK_URL only."""
     global _last_jikkei_at, _last_event_post
     url = paper_jikkei_webhook()
@@ -381,20 +456,29 @@ def post_jikkei(reason: str, *, force: bool = False, event_note: str | None = No
         log("jikkei skip: DISCORD_SOL_PAPER_WEBHOOK_URL missing")
         return False
     now = time.time()
-    is_event = reason.startswith("event:") or reason in ("open", "half", "tp1", "tp2", "stop", "seed", "announce")
+    is_event = bool(events) or reason.startswith("event:") or reason in (
+        "open",
+        "half",
+        "tp1",
+        "tp2",
+        "stop",
+        "moonbag",
+        "seed",
+        "announce",
+    )
     if not force:
-        if is_event:
-            if now - _last_event_post < _EVENT_GAP and reason != "announce":
+        if is_event and reason != "announce":
+            if _EVENT_GAP > 0 and now - _last_event_post < _EVENT_GAP:
                 return False
         else:
             if now - _last_jikkei_at < JIKEI_EVERY:
                 return False
-    embeds = build_jikkei_embeds(reason, event_note=event_note)
+    embeds = build_jikkei_embeds(reason, event_note=event_note, events=events)
     try:
         _discord_post_raw(url, embeds=embeds)
         if is_event:
             _last_event_post = now
-        if reason in ("heartbeat", "announce", "seed") or not is_event:
+        if reason in ("heartbeat", "announce", "seed", "status") or not is_event:
             _last_jikkei_at = now
         # persist last post time
         try:
@@ -415,10 +499,10 @@ def post_jikkei(reason: str, *, force: bool = False, event_note: str | None = No
             )
         except OSError:
             pass
-        log(f"jikkei posted reason={reason}")
+        log(f"jikkei posted reason={reason} events={len(events or [])}")
         return True
     except Exception as e:
-        log(f"jikkei fail: {type(e).__name__}")
+        log(f"jikkei fail: {type(e).__name__}: {e}")
         return False
 
 
@@ -591,8 +675,13 @@ def adopt_alerts(
     discord_post: Callable | None,
     seed: bool,
     max_open: int,
-) -> int:
-    """Open paper longs from new (or seed) alerts. Returns opens count."""
+    ch: dict | None = None,
+) -> tuple[int, list[dict]]:
+    """Open paper longs from new (or seed) alerts.
+
+    Returns (opens_count, event dicts). discord_post is intentionally unused here —
+    all Discord goes through post_jikkei on DISCORD_SOL_PAPER_WEBHOOK_URL only.
+    """
     paper_mod.ensure_paper_state(st)
     seen = set(x.lower() for x in (st.get("seen_alert_cas") or []) if x)
     closed = set(x.lower() for x in (st.get("tick_closed_cas") or []) if x)
@@ -631,6 +720,7 @@ def adopt_alerts(
                 seen.add(a["_ca"])
 
     opened = 0
+    open_events: list[dict] = []
     seeding = bool(seed and not st.get("seeded_at"))
     for a in ranked:
         ca = a["_ca"]
@@ -671,6 +761,24 @@ def adopt_alerts(
         if pos:
             held.add(ca)
             opened += 1
+            paper = st.get("paper") or {}
+            ch_meta = ch or {}
+            open_events.append(
+                {
+                    "kind": "open",
+                    "symbol": a.get("symbol") or pos.get("symbol"),
+                    "mult": 1.0,
+                    "cash": float(paper.get("cash_usd") or 0),
+                    "equity": float(paper.get("equity_usd") or 0),
+                    "channel": st.get("channel") or ch_meta.get("id"),
+                    "tag": ch_meta.get("tag") or st.get("style") or "?",
+                    "label": ch_meta.get("label") or st.get("channel"),
+                    "size_pct": pos.get("size_pct"),
+                    "notional": pos.get("notional_usd"),
+                    "remaining": pos.get("remaining_usd"),
+                    "note": f"entry ${float(a['_price']):.8g} · n={n}",
+                }
+            )
             log(
                 f"open [{st.get('channel')}] {a.get('symbol') or '?'} {ca[:10]}… "
                 f"entry={a['_price']} n={n} age={a['_age']:.0f}s"
@@ -693,7 +801,7 @@ def adopt_alerts(
                 if a["_age"] <= ALERT_MAX_AGE:
                     seen.add(a["_ca"])
             st["seen_alert_cas"] = list(seen)[-2000:]
-    return opened
+    return opened, open_events
 
 
 def write_summary(ch: dict, st: dict) -> None:
@@ -806,17 +914,18 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
             paper["equity_usd"] = BANKROLL
 
     alerts = load_signal_alerts(ch["signal_state"])
-    # Never pass signal-channel webhooks into paper_trade — 実況は別経路
+    # Never pass signal-channel webhooks into paper_trade — 実況は post_jikkei のみ
     need_seed = force_seed or (SEED_ON_START and not st.get("seeded_at"))
-    opened = adopt_alerts(
+    opened, open_events = adopt_alerts(
         st,
         alerts,
         fills=ch["fills"],
         n_key=ch["n_key"],
         webhook=None,
-        discord_post=None,
+        discord_post=None,  # intentional: route all via post_jikkei
         seed=need_seed,
         max_open=int(ch.get("max_open") or 4),
+        ch=ch,
     )
 
     before = {
@@ -824,6 +933,7 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
             p.get("status"),
             bool(p.get("half_taken") or p.get("tp1_taken")),
             bool(p.get("moonbag")),
+            bool(p.get("tp2_taken")),
         )
         for p in (st.get("paper_positions") or [])
     }
@@ -833,39 +943,79 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
         CHAIN,
         lambda ca, _ch: fetch_dex_price(ca, CHAIN),
         webhook=None,
-        discord_post=None,
+        discord_post=None,  # intentional: route all via post_jikkei
     )
     closed = list(st.get("tick_closed_cas") or [])
+    events: list[dict] = list(open_events)
     event_notes: list[str] = []
+    paper = st.get("paper") or {}
+    cash_now = float(paper.get("cash_usd") or 0)
+    eq_now = float(paper.get("equity_usd") or 0)
+    tag = ch.get("tag") or "?"
     for p in st.get("paper_positions") or []:
         ca = (p.get("ca") or "").lower()
-        prev_st, prev_tp1, prev_moon = before.get(ca, (None, False, False))
+        prev_st, prev_tp1, prev_moon, prev_tp2 = before.get(
+            ca, (None, False, False, False)
+        )
         now_st = p.get("status")
         now_tp1 = bool(p.get("half_taken") or p.get("tp1_taken"))
+        now_tp2 = bool(p.get("tp2_taken"))
         now_moon = bool(p.get("moonbag") or now_st == "moonbag")
+        mult = float(p.get("last_mark_mult") or 0)
+        sym = p.get("symbol") or "?"
+        rem = float(p.get("remaining_usd") or 0)
+        pnl = float(p.get("realized_pnl_usd") or 0)
+        base_ev = {
+            "symbol": sym,
+            "mult": mult,
+            "cash": cash_now,
+            "equity": eq_now,
+            "channel": ch["id"],
+            "tag": tag,
+            "label": ch.get("label") or ch["id"],
+            "remaining": rem,
+            "pnl": pnl,
+        }
         if prev_st in paper_mod.ACTIVE_STATUSES and now_st in ("stopped", "closed", "done"):
             if ca and ca not in closed:
                 closed.append(ca)
+            kind = "moon_stop" if (prev_moon or prev_tp2) else "stop"
             log(
-                f"exit [{ch['id']}] {p.get('symbol')} {ca[:10]}… "
-                f"status={now_st} mult={p.get('last_mark_mult')}"
+                f"exit [{ch['id']}] {sym} {ca[:10]}… "
+                f"status={now_st} mult={mult}"
             )
+            ev = {**base_ev, "kind": kind}
+            events.append(ev)
             event_notes.append(
-                f"⛔ 【{ch.get('tag') or '?'}】`{ch['id']}` ${p.get('symbol') or '?'} {now_st} · "
-                f"{float(p.get('last_mark_mult') or 0):.2f}x · "
-                f"PnL ${float(p.get('realized_pnl_usd') or 0):+.2f}"
+                f"{'☄️' if kind == 'moon_stop' else '⛔'} 【{tag}】`{ch['id']}` "
+                f"${sym} {kind} · {mult:.2f}x · PnL ${pnl:+.2f}"
             )
-        elif (not prev_moon) and now_moon:
+        elif (not prev_tp2) and now_tp2:
+            ev = {**base_ev, "kind": "tp2", "note": "TP2達成 → ムーン袋へ"}
+            events.append(ev)
             event_notes.append(
-                f"🚀 【{ch.get('tag') or '?'}】`{ch['id']}` ${p.get('symbol') or '?'} ムーン袋へ · "
-                f"{float(p.get('last_mark_mult') or 0):.2f}x · "
-                f"残 ${float(p.get('remaining_usd') or 0):.2f}"
+                f"🚀 【{tag}】`{ch['id']}` ${sym} TP2→ムーン · {mult:.2f}x · 残 ${rem:.2f}"
+            )
+        elif (not prev_moon) and now_moon and not now_tp2:
+            ev = {**base_ev, "kind": "moonbag"}
+            events.append(ev)
+            event_notes.append(
+                f"🌙 【{tag}】`{ch['id']}` ${sym} ムーン袋 · {mult:.2f}x · 残 ${rem:.2f}"
             )
         elif (not prev_tp1) and now_tp1 and not now_moon:
+            ev = {**base_ev, "kind": "tp1"}
+            events.append(ev)
             event_notes.append(
-                f"🎯 【{ch.get('tag') or '?'}】`{ch['id']}` ${p.get('symbol') or '?'} TP1利確 · "
-                f"{float(p.get('last_mark_mult') or 0):.2f}x"
+                f"🎯 【{tag}】`{ch['id']}` ${sym} TP1利確 · {mult:.2f}x · 残 ${rem:.2f}"
             )
+    # refresh cash/equity on open events after marks (equity may have updated)
+    paper = st.get("paper") or {}
+    cash_now = float(paper.get("cash_usd") or 0)
+    eq_now = float(paper.get("equity_usd") or 0)
+    for ev in events:
+        if ev.get("kind") == "open":
+            ev["cash"] = cash_now
+            ev["equity"] = eq_now
     st["tick_closed_cas"] = closed[-500:]
     save_book(ch["book"], st)
     write_summary(ch, st)
@@ -889,11 +1039,17 @@ def tick_channel(ch: dict, *, force_seed: bool = False) -> dict:
         "realized": float(paper.get("realized_pnl_usd") or 0),
         "alerts": len(alerts),
         "event_notes": event_notes,
+        "events": events,
         "equity_ms": int(stats.get("equity_ms") or 0),
     }
 
 
-def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
+def run_once(
+    *,
+    force_seed: bool = False,
+    announce: bool = False,
+    force_jikkei: bool = False,
+) -> int:
     if str(os.environ.get("LIVE_TRADING") or "0").strip() not in ("0", "", "false", "no"):
         log("REFUSE: LIVE_TRADING must be 0")
         return 2
@@ -901,19 +1057,20 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
     os.environ["PAPER_MARK_HEARTBEAT"] = os.environ.get("PAPER_MARK_HEARTBEAT") or "0"
     results = []
     all_notes: list[str] = []
-    opened_total = half_total = tp2_total = stop_total = eq_ms = 0
+    all_events: list[dict] = []
+    opened_total = half_total = tp1_total = tp2_total = stop_total = eq_ms = 0
     for ch in CHANNELS:
         try:
             r = tick_channel(ch, force_seed=force_seed)
             results.append(r)
             opened_total += int(r.get("opened") or 0)
             half_total += int(r.get("half") or 0)
+            tp1_total += int(r.get("tp1") or 0)
             tp2_total += int(r.get("tp2") or 0)
             stop_total += int(r.get("stop") or 0)
             eq_ms += int(r.get("equity_ms") or 0)
             all_notes.extend(r.get("event_notes") or [])
-            if r.get("opened"):
-                all_notes.append(f"📥 【{r.get('tag') or '?'}】`{r['id']}` 新規オープン +{r['opened']}")
+            all_events.extend(r.get("events") or [])
             log(
                 f"tick {r['id']}【{r.get('tag') or '?'}】: open+={r['opened']} "
                 f"active={r['active']}/{r.get('max_open', '?')} "
@@ -924,37 +1081,65 @@ def run_once(*, force_seed: bool = False, announce: bool = False) -> int:
         except Exception as e:
             log(f"tick fail {ch['id']}: {type(e).__name__}: {e}")
 
+    note = chr(10).join(all_notes[:8]) if all_notes else None
+    has_fill = bool(
+        all_events
+        or half_total
+        or tp1_total
+        or tp2_total
+        or stop_total
+        or opened_total
+        or eq_ms
+    )
+
     if announce:
-        # skip duplicate opening if we just posted announce <90s ago (restart race)
-        if (time.time() - _last_jikkei_at) < 90:
+        if (time.time() - _last_jikkei_at) < 90 and not has_fill and not force_jikkei:
             log("announce skip: recent jikkei already posted")
         else:
+            ann = (
+                "🟢 紙トレード 2系統スタート（原資 $100×4）"
+                + chr(10)
+                + "【攻撃】30%/40% · TP1 1.25@50% · TP2 1.60→15% · stop 0.50 · max4"
+                + chr(10)
+                + "【安定】20% · TP1 1.20@65% · TP2 1.40→10% · stop 0.60 · max3"
+            )
+            if note:
+                ann = ann + chr(10) + chr(10) + note
             post_jikkei(
                 "announce",
                 force=True,
-                event_note=(
-                    "🟢 紙トレード 2系統スタート（原資 $100×4）\n"
-                    "【攻撃】30%/40% · TP1 1.25@50% · TP2 1.60→15% · stop 0.50 · max4\n"
-                    "【安定】20% · TP1 1.20@65% · TP2 1.40→10% · stop 0.60 · max3"
-                ),
+                event_note=ann,
+                events=all_events or None,
             )
-    elif all_notes or half_total or tp2_total or stop_total or opened_total or eq_ms:
-        note = chr(10).join(all_notes[:8]) if all_notes else None
+    elif has_fill:
         reason = "event:fill"
         if stop_total:
             reason = "event:stop"
         elif tp2_total:
             reason = "event:tp2"
-        elif half_total:
+        elif tp1_total or half_total:
             reason = "event:tp1"
         elif opened_total:
             reason = "event:open"
         elif eq_ms:
             reason = "event:milestone"
-        post_jikkei(reason, event_note=note)
+        if force_jikkei:
+            note = (
+                "📊 強制【紙実況】＋約定イベント"
+                + ((chr(10) + note) if note else "")
+            )
+        post_jikkei(reason, force=True, event_note=note, events=all_events or None)
+    elif force_jikkei:
+        post_jikkei(
+            "status",
+            force=True,
+            event_note="📊 強制【紙実況】全4帳簿スナップショット",
+        )
     else:
         post_jikkei("heartbeat")
     return 0
+
+
 
 
 
@@ -963,6 +1148,11 @@ def main() -> int:
     ap.add_argument("--once", action="store_true", help="Single tick then exit")
     ap.add_argument("--seed", action="store_true", help="Force seed from open_alerts")
     ap.add_argument("--announce", action="store_true", help="Force 【紙実況】 opening post")
+    ap.add_argument(
+        "--jikkei",
+        action="store_true",
+        help="Force full 【紙実況】 status of all 4 books to DISCORD_SOL_PAPER_WEBHOOK_URL",
+    )
     args = ap.parse_args()
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -978,7 +1168,7 @@ def main() -> int:
     )
 
     if args.once:
-        return run_once(force_seed=args.seed, announce=args.announce)
+        return run_once(force_seed=args.seed, announce=args.announce, force_jikkei=args.jikkei)
 
     # Opening 実況 once per process start
     first = True
@@ -987,9 +1177,11 @@ def main() -> int:
         run_once(
             force_seed=args.seed and first,
             announce=first or args.announce,
+            force_jikkei=args.jikkei and first,
         )
         args.seed = False
         args.announce = False
+        args.jikkei = False
         first = False
         elapsed = time.time() - t0
         time.sleep(max(1.0, INTERVAL - elapsed))
