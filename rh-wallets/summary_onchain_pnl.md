@@ -1,24 +1,24 @@
 # On-chain PnL estimates (Gecko trades via jina; no box GMGN)
 
-- Updated: **2026-09-20 16:09 JST**
-- Targets attempted: **95**
-- With trade hits: **80**
-- Estimates (non-null): **80**
+- Updated: **2026-09-20 16:11 JST**
+- Targets attempted: **40**
+- With trade hits: **24**
+- Estimates (non-null): **24**
 
 ## Estimate buckets (`realized_pnl_usd_est` — honest estimate)
 
 | bucket | count |
 |--------|------:|
-| positive (>) | **41** |
-| negative (<) | **19** |
-| zero (~0) | **20** |
-| still null / no trades | **15** |
+| positive (>) | **1** |
+| negative (<) | **11** |
+| zero (~0) | **12** |
+| still null / no trades | **16** |
 
-- Promoted to `realized_pnl_usd` (quality gate): **39**
-- `pass_pnl` set: **39**
-- `pnl_pending` cleared: **39**
-- Weak fields filled (label/n_trades/wr/last_active): **365**
-- Unique CAs fetched: **30** (rpc_429=0)
+- Promoted to `realized_pnl_usd` (quality gate): **0**
+- `pass_pnl` set: **0**
+- `pnl_pending` cleared: **0**
+- Weak fields filled (label/n_trades/wr/last_active): **40**
+- Unique CAs fetched: **25** (rpc_429=0)
 
 ## Notes
 
