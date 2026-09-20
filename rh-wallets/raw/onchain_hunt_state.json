@@ -1,216 +1,216 @@
 {
-  "head": 67790507,
-  "start": 67789708,
+  "head": 67799531,
+  "start": 67798732,
   "scanned": 800,
-  "total_txs": 7152,
-  "senders": 2966,
-  "candidates": 1178,
-  "hot": 128,
-  "receipts": 900,
-  "rpc_calls": 1701,
-  "errors_429": 232,
-  "elapsed_s": 274.98,
+  "total_txs": 5065,
+  "senders": 2026,
+  "candidates": 791,
+  "hot": 115,
+  "receipts": 838,
+  "rpc_calls": 1639,
+  "errors_429": 281,
+  "elapsed_s": 274.24,
   "top20": [
     {
-      "address": "0x097ba31b7acffd75b909fc7bef2e55424d2dacdc",
-      "score": 79.0,
-      "tx_count": 8,
-      "unique_tokens": 4,
+      "address": "0xb27c000af781f4d4a6daf099dfd558694da2aeb1",
+      "score": 152.0,
+      "tx_count": 10,
+      "unique_tokens": 10,
+      "buy_shaped_txs": 10,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799516
+    },
+    {
+      "address": "0x046c58b10eef3b19154da71955815f05c0010a8a",
+      "score": 97.0,
+      "tx_count": 14,
+      "unique_tokens": 5,
       "buy_shaped_txs": 5,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790331
+      "last_block": 67799274
     },
     {
-      "address": "0xf407871e7dc2e7ba2edc8d2d69218e4ea13f26ec",
-      "score": 72.0,
+      "address": "0xba618977fe27a4d86663867d258491e953644da1",
+      "score": 83.0,
       "tx_count": 6,
-      "unique_tokens": 4,
+      "unique_tokens": 5,
+      "buy_shaped_txs": 5,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799472
+    },
+    {
+      "address": "0x18dff957ab3fb5f5742dd67ee298b101464e7bf9",
+      "score": 65.0,
+      "tx_count": 6,
+      "unique_tokens": 3,
+      "buy_shaped_txs": 5,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799381
+    },
+    {
+      "address": "0x1132a53eeed9e9bcaef8e7556ece2ca2267f58ac",
+      "score": 61.0,
+      "tx_count": 6,
+      "unique_tokens": 3,
+      "buy_shaped_txs": 3,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799268
+    },
+    {
+      "address": "0x8b216cc896f32bcabca3649ca918d532f72010ef",
+      "score": 59.0,
+      "tx_count": 6,
+      "unique_tokens": 3,
+      "buy_shaped_txs": 3,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799502
+    },
+    {
+      "address": "0x04b189d4b4b106c0aa43a4b2007f715232e57b00",
+      "score": 57.0,
+      "tx_count": 5,
+      "unique_tokens": 3,
+      "buy_shaped_txs": 3,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799172
+    },
+    {
+      "address": "0x7af2fda13652abb00e02d1bc655fb3884498ac30",
+      "score": 80.0,
+      "tx_count": 8,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 6,
+      "good_ca_overlap": 1,
+      "in_watch": false,
+      "last_block": 67798990
+    },
+    {
+      "address": "0x3286dd336a9fdf00b1b6f7d960c4440dc5a52009",
+      "score": 79.0,
+      "tx_count": 12,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 7,
+      "good_ca_overlap": 0,
+      "in_watch": false,
+      "last_block": 67799509
+    },
+    {
+      "address": "0xdf81c79f05a96af3d19f2f22d7679d7846f262f8",
+      "score": 68.0,
+      "tx_count": 9,
+      "unique_tokens": 2,
       "buy_shaped_txs": 4,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790235
-    },
-    {
-      "address": "0xd19750949328a577a0eb8157bf6defd82ee302b4",
-      "score": 52.0,
-      "tx_count": 5,
-      "unique_tokens": 3,
-      "buy_shaped_txs": 2,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67790285
-    },
-    {
-      "address": "0x9f2f29f7a40a133c7abddc2a82715baa429546c6",
-      "score": 52.0,
-      "tx_count": 5,
-      "unique_tokens": 3,
-      "buy_shaped_txs": 2,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67790210
+      "last_block": 67799240
     },
     {
       "address": "0x338a3b6b0eabc0efdd1aea33e81e57c102158d8c",
-      "score": 116.5,
-      "tx_count": 66,
+      "score": 119.0,
+      "tx_count": 68,
       "unique_tokens": 2,
       "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790498
+      "last_block": 67799526
     },
     {
-      "address": "0x10d25727a579e16eb11a73265506e88eb011784b",
-      "score": 48.0,
-      "tx_count": 6,
-      "unique_tokens": 2,
-      "buy_shaped_txs": 2,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67790268
-    },
-    {
-      "address": "0xfd93dba5a43f0f276657fe0371b9e8031677cdb1",
-      "score": 48.0,
-      "tx_count": 6,
-      "unique_tokens": 2,
-      "buy_shaped_txs": 2,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67789868
-    },
-    {
-      "address": "0xdd17e9208f1172b360e8e677843811fdebf60671",
+      "address": "0x4ede1e93e24aa6466a376bdfd538c3a7f902f211",
       "score": 44.0,
       "tx_count": 5,
       "unique_tokens": 2,
       "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67789971
+      "last_block": 67799504
     },
     {
-      "address": "0xb648b79acbe74828926fdd015594b65944b257bd",
-      "score": 42.0,
+      "address": "0xa2e5f895953592895665ceb468d65d260d74eebf",
+      "score": 40.0,
       "tx_count": 4,
       "unique_tokens": 2,
       "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790145
+      "last_block": 67799338
     },
     {
-      "address": "0xb42522dc545a7b8106f34ed400618eefc051b89c",
-      "score": 94.0,
-      "tx_count": 12,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 12,
+      "address": "0x629b9796c288e6fec8de8239e13cc9a5f51f03f6",
+      "score": 40.0,
+      "tx_count": 4,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790427
+      "last_block": 67799286
     },
     {
-      "address": "0x15a006e8f7f02a730c81bf0ba88f25e21b2f297b",
-      "score": 58.0,
-      "tx_count": 13,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 4,
+      "address": "0x2a5a8f4243f669c1c31df524adbf7f72b4d231ad",
+      "score": 38.0,
+      "tx_count": 3,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790482
+      "last_block": 67799463
     },
     {
-      "address": "0x0fbd8620d29012a60689ccabda7d269d492db4e7",
-      "score": 56.0,
-      "tx_count": 12,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 4,
+      "address": "0x66705faaa2067e7e8ab46db39de9c67e8a4b6857",
+      "score": 38.0,
+      "tx_count": 3,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790391
+      "last_block": 67799396
     },
     {
-      "address": "0xf70da97812cb96acdf810712aa562db8dfa3dbef",
-      "score": 83.0,
-      "tx_count": 25,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
+      "address": "0xfdd4c876dc8dff7fbf305aa5933617f0fddb5049",
+      "score": 38.0,
+      "tx_count": 3,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790446
+      "last_block": 67799348
     },
     {
-      "address": "0x88b2139cb2557da2b60096b24628cc0f6ed669eb",
-      "score": 35.0,
-      "tx_count": 7,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
+      "address": "0x409a9cf1f7d7c0167653efd760c6c36ac078fdc2",
+      "score": 38.0,
+      "tx_count": 3,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790488
+      "last_block": 67799344
     },
     {
-      "address": "0x2b38ecb45370d73aa816426d9eb2de0dc0650dd5",
-      "score": 35.0,
-      "tx_count": 7,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
+      "address": "0x141b4102b22457d397ebeb69fa6ea052f604c9b1",
+      "score": 38.0,
+      "tx_count": 3,
+      "unique_tokens": 2,
+      "buy_shaped_txs": 2,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790486
+      "last_block": 67799313
     },
     {
-      "address": "0x4bc1f4b5d6d8059b3aa2b8f318d1a53430d4c2a5",
-      "score": 33.0,
+      "address": "0xd4e3f654c2a4b4bb778e712feb214e87d35b0f2d",
+      "score": 39.0,
       "tx_count": 6,
-      "unique_tokens": 1,
+      "unique_tokens": 2,
       "buy_shaped_txs": 1,
       "good_ca_overlap": 0,
       "in_watch": false,
-      "last_block": 67790284
-    },
-    {
-      "address": "0x1ed497c019385347ed2a4e1e253c983f76c2102b",
-      "score": 33.0,
-      "tx_count": 6,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67790234
-    },
-    {
-      "address": "0x58b423e28c07d2c7af97c35017b343ac227cf01a",
-      "score": 33.0,
-      "tx_count": 6,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67790133
-    },
-    {
-      "address": "0xeb0fb059c41fe45ef8019046eef59c7aa4128781",
-      "score": 33.0,
-      "tx_count": 6,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67789979
-    },
-    {
-      "address": "0x02ac7f439680c865d45a1339fce4564e75aa74da",
-      "score": 31.0,
-      "tx_count": 5,
-      "unique_tokens": 1,
-      "buy_shaped_txs": 1,
-      "good_ca_overlap": 0,
-      "in_watch": false,
-      "last_block": 67790389
+      "last_block": 67798926
     }
   ],
-  "updated_at": "2026-09-20T08:23:44.648307+00:00"
+  "updated_at": "2026-09-20T08:38:54.446294+00:00"
 }
