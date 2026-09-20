@@ -22,6 +22,7 @@ PNL_FILL_EVERY_SEC="${PNL_FILL_EVERY_SEC:-900}"
 STONKFUN_EVERY_SEC="${STONKFUN_EVERY_SEC:-1800}"
 SOL_SMART_EVERY_SEC="${SOL_SMART_EVERY_SEC:-1800}"
 SOL7D_EVERY_SEC="${SOL7D_EVERY_SEC:-3600}"
+DUMPDIP_EVERY_SEC="${DUMPDIP_EVERY_SEC:-3600}"
 AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
@@ -55,6 +56,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_stonkfun" ]] || echo 0 > "$STATE/last_stonkfun"
 [[ -f "$STATE/last_sol_smart" ]] || echo 0 > "$STATE/last_sol_smart"
 [[ -f "$STATE/last_sol7d" ]] || echo 0 > "$STATE/last_sol7d"
+[[ -f "$STATE/last_dumpdip" ]] || echo 0 > "$STATE/last_dumpdip"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -132,7 +134,7 @@ ensure_stonkfun_signal_tick() {
 }
 
 ensure_stonkfun_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s sol7d=${SOL7D_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s pnl_fill=${PNL_FILL_EVERY_SEC}s stonkfun=${STONKFUN_EVERY_SEC}s sol_smart=${SOL_SMART_EVERY_SEC}s sol7d=${SOL7D_EVERY_SEC}s dumpdip=${DUMPDIP_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -299,6 +301,31 @@ while true; do
       echo "$now" > "$STATE/last_sol7d"
     fi
   fi
+
+  # Dump-dip smart wallets (pre_grad_dip + post_grad_dip) — SEPARATE from early diggers
+  last_dd=$(cat "$STATE/last_dumpdip" 2>/dev/null || echo 0)
+  if (( now - last_dd >= DUMPDIP_EVERY_SEC )); then
+    action="dumpdip_hunt"
+    if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 \
+      SOLANA_RPC_URL="${DUMPDIP_RPC_URL:-${SOLANA_RPC_URL:-https://solana-rpc.publicnode.com}}" \
+      SOLANA_RPC_FALLBACK="${SOLANA_RPC_FALLBACK:-https://api.mainnet-beta.solana.com}" \
+      DUMPDIP_ONCE=1 timeout 2700 python3 scripts/hunt_sol_dump_dip.py --once ) >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_dumpdip"; log "dumpdip_hunt ok"
+      if ( cd "$ROOT" && git status --porcelain sol-wallets/sol_dump_dip_smart.jsonl sol-wallets/summary_sol_dump_dip.md sol-wallets/watch_candidates_sol.jsonl sol-wallets/raw/dump_dip_state.json scripts/hunt_sol_dump_dip.py 2>/dev/null | grep -q . ); then
+        ( cd "$ROOT" && \
+          git add sol-wallets/sol_dump_dip_smart.jsonl sol-wallets/summary_sol_dump_dip.md \
+                  sol-wallets/watch_candidates_sol.jsonl sol-wallets/raw/dump_dip_state.json \
+                  sol-wallets/raw/dump_dip_all.jsonl sol-wallets/raw/dump_dip \
+                  sol-wallets/README.md scripts/hunt_sol_dump_dip.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(sol): dump-dip smart wallet hunt (pre+post grad)" && \
+          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "dumpdip_hunt commit/push fail"
+      fi
+    else
+      result="dumpdip_hunt_failed"; log "dumpdip_hunt failed"
+      echo "$now" > "$STATE/last_dumpdip"
+    fi
+  fi
+
 
   # On-chain PnL estimate + weak-field auto-fill (no box GMGN)
   last_pnl=$(cat "$STATE/last_pnl_fill" 2>/dev/null || echo 0)

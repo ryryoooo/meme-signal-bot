@@ -1,0 +1,71 @@
+{
+  "mint": "DUe1qheefigxhjboRqKkGWjSTeYivjLo6yq763redsRC",
+  "windows": [
+    {
+      "peak_ts": 1789884912,
+      "trough_ts": 1789893912,
+      "peak_px": 1.0,
+      "trough_px": 0.6901999999999999,
+      "dump_pct": 0.3098,
+      "bounce_px": 1.5171000000000001,
+      "bounce_ts": 1789895712,
+      "bounce_pct": 0.5171,
+      "dip_start": 1789888512,
+      "dip_end": 1789895112,
+      "synthetic": true
+    }
+  ],
+  "buyers": [
+    {
+      "address": "CzYQ2kFnBxsNEt9Zy34vQ3n5fSDhvA4o4XaTnq1rLvyr",
+      "mint": "DUe1qheefigxhjboRqKkGWjSTeYivjLo6yq763redsRC",
+      "amount": 0.0,
+      "blockTime": 1789893912,
+      "sig": "4ZgXeU1XiP8pM3L5hps7XdL2xFFSqZKpPD5M4EYxyg4GoAXj59WXDuYHv5zD6nP6asfosNtVibhPh2SovZ6kLvdb",
+      "venue": "raydium",
+      "stage": "post_grad_dip",
+      "entry_px": 3.926512810853718e-06,
+      "trough_px": 0.6901999999999999,
+      "bounce_px": 1.5171000000000001,
+      "dump_pct": 0.3098,
+      "mult_est": 1.3,
+      "profitable": true,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "AXmnRBrNtYYyyo82cLBBhnWJ7o1iqNLZbuEVpDB3V666",
+      "mint": "DUe1qheefigxhjboRqKkGWjSTeYivjLo6yq763redsRC",
+      "amount": 0.0,
+      "blockTime": 1789893912,
+      "sig": "2QrkDPUcmdetRbZvzrratTFfiPM9UH3N28SBihd56drqMxn2GpWGbvQ7BAjjhjbNBVAc1r23HLrfkaCTk4kgMtU7",
+      "venue": "pump_amm",
+      "stage": "post_grad_dip",
+      "entry_px": 3.926512810853718e-06,
+      "trough_px": 0.6901999999999999,
+      "bounce_px": 1.5171000000000001,
+      "dump_pct": 0.3098,
+      "mult_est": 1.3,
+      "profitable": true,
+      "near_trough": true,
+      "synthetic_window": true
+    },
+    {
+      "address": "9G4AvVvNwCmdQoGK5LTVhgYMk9BAPCUCarVpeoow9oZc",
+      "mint": "DUe1qheefigxhjboRqKkGWjSTeYivjLo6yq763redsRC",
+      "amount": 1471.657924,
+      "blockTime": 1789893911,
+      "sig": "565uD6SdmEbC193fu8ckBWWVvktCwCg5yizH68t5JppEPwad3XxtEoyq3f72hwzYbHCfeLbqhgZAKEQ8G4s9bSmw",
+      "venue": "raydium",
+      "stage": "post_grad_dip",
+      "entry_px": 3.926512810853718e-06,
+      "trough_px": 0.6901999999999999,
+      "bounce_px": 1.5171000000000001,
+      "dump_pct": 0.3098,
+      "mult_est": 1.3,
+      "profitable": true,
+      "near_trough": true,
+      "synthetic_window": true
+    }
+  ]
+}

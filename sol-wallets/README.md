@@ -51,3 +51,29 @@ Daemon interval: `SOL_SMART_EVERY_SEC` (default 1800) in `scripts/scout-wallet-b
 
 Excludes hubs/CEX/routers and (by default) addresses already on `stonkfun_diggers.jsonl` so the two lists stay distinct. **Never** merges into RH `wallets.jsonl` or StonkFun Discord.
 
+## Dump-dip smart wallets (pre + post graduation)
+
+Wallets that profit by **buying dips after dumps** — complementary to early-curve diggers.
+
+Stages (tagged per entry / wallet):
+- `pre_grad_dip` — dip buys on bonding curves (LaunchLab / pump.fun curve) before graduation
+- `post_grad_dip` — dip buys after graduation (Raydium / Jupiter / pump AMM), e.g. WOJAK-style
+
+Outputs:
+- `sol_dump_dip_smart.jsonl` — scored multi-mint dump-dip wallets (`source=dump_dip`)
+- `summary_sol_dump_dip.md` — human summary
+- `raw/dump_dip_state.json` / `raw/dump_dip_all.jsonl` / `raw/dump_dip/`
+- Quality-gated merge into `watch_candidates_sol.jsonl` with tag `dump_dip` (does not overwrite stonkfun early-only)
+
+Hunt: `scripts/hunt_sol_dump_dip.py` (reuses `raw/seed_74pB` entry mints when present; Dex/Gecko OHLCV dump windows; official/publicnode RPC)
+
+```bash
+LIVE_TRADING=0 GMGN_DISABLED=1 \
+  SOLANA_RPC_URL=https://solana-rpc.publicnode.com \
+  DUMPDIP_CA_CAP=28 DUMPDIP_DUMP_PCT=0.35 DUMPDIP_ONCE=1 \
+  python3 scripts/hunt_sol_dump_dip.py --once
+```
+
+Daemon interval: `DUMPDIP_EVERY_SEC` (default 3600) in `scripts/scout-wallet-bot.sh` — independent of early digger / sol7d hunts.
+Never merges into RH `wallets.jsonl`.
+

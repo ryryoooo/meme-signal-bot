@@ -1,0 +1,20 @@
+{
+  "mint": "BBosJLw8ZzoATiEyywiifx7AgmrD2Cm3XjFWbhbRhChy",
+  "windows": [
+    {
+      "peak_ts": 1789827866,
+      "trough_ts": 1789835066,
+      "peak_px": 1.0,
+      "trough_px": 0.5,
+      "dump_pct": 0.5,
+      "bounce_px": 1.2,
+      "bounce_ts": 1789842266,
+      "bounce_pct": 1.4,
+      "dip_start": 1789831466,
+      "dip_end": 1789836866,
+      "synthetic": true,
+      "from_seed": true
+    }
+  ],
+  "buyers": []
+}

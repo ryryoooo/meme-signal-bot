@@ -1,0 +1,30 @@
+{
+  "mint": "tipp4C4Jnpft26HC9VXNjUPidojZqxXf8nzKvrKf5BS",
+  "windows": [
+    {
+      "peak_ts": 1789840800,
+      "trough_ts": 1789845300,
+      "peak_px": 0.002877356176884928,
+      "trough_px": 0.00026233519680681134,
+      "dump_pct": 0.9088,
+      "bounce_px": 0.0029004385852705217,
+      "bounce_ts": 1789848900,
+      "bounce_pct": 10.0562,
+      "dip_start": 1789840800,
+      "dip_end": 1789850700
+    },
+    {
+      "peak_ts": 1789846200,
+      "trough_ts": 1789884900,
+      "peak_px": 0.0014323741367516182,
+      "trough_px": 0.00030220955082623093,
+      "dump_pct": 0.789,
+      "bounce_px": 0.00046996688682663274,
+      "bounce_ts": 1789887600,
+      "bounce_pct": 0.5551,
+      "dip_start": 1789877700,
+      "dip_end": 1789890300
+    }
+  ],
+  "buyers": []
+}

@@ -1,0 +1,262 @@
+{
+  "updated_at": "2026-09-20T09:26:47Z",
+  "n_published": 81,
+  "n_raw": 81,
+  "n_pre_grad": 10,
+  "n_pre_only": 4,
+  "n_post_grad": 77,
+  "n_both": 6,
+  "n_watch": 36,
+  "rescored_from_cache": true,
+  "top": [
+    {
+      "address": "GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL",
+      "score": 88.743,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT",
+        "HABB",
+        "PEEPO",
+        "PEEPEE",
+        "BOLD"
+      ]
+    },
+    {
+      "address": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+      "score": 82.0,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "4vTN6Cco",
+        "8BTv8DqB",
+        "9eu5qyTG",
+        "AXnapHhQ",
+        "CrFZVK5t",
+        "D1Tzodub",
+        "FoXDxdtP",
+        "G6ZA8mLU",
+        "GxbJ3XSC",
+        "GzzSzH4u",
+        "Z1gDxGt3"
+      ]
+    },
+    {
+      "address": "Cu2PXdAtCRDLVUzqjM9eNaVCGaSK95iaQCTB1aLP2k6o",
+      "score": 79.9,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "4vTN6Cco",
+        "8BTv8DqB",
+        "9eu5qyTG",
+        "AXnapHhQ",
+        "FoXDxdtP",
+        "PEEPO",
+        "GxbJ3XSC",
+        "Z1gDxGt3"
+      ]
+    },
+    {
+      "address": "BUVVqR4bWRHVtpZJio5QTsadmTwoyWfFocNAE1phvxoZ",
+      "score": 79.9,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "8BTv8DqB",
+        "AXnapHhQ",
+        "D1Tzodub",
+        "G6ZA8mLU",
+        "PEEPO",
+        "GxbJ3XSC",
+        "GzzSzH4u",
+        "Z1gDxGt3"
+      ]
+    },
+    {
+      "address": "5CEbueQnq1Ym2uSSx2xXds3jQAqT1BDnkA59RZobSPAG",
+      "score": 59.15,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT",
+        "PEEPO",
+        "BOLD"
+      ]
+    },
+    {
+      "address": "AiGGmZTav9Z9iSNPXrjEJvMNJVPRiXJQGkS8v12wxDge",
+      "score": 55.9,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "AXnapHhQ",
+        "CrFZVK5t",
+        "PEEPO",
+        "GxbJ3XSC"
+      ]
+    },
+    {
+      "address": "686a4Zgq4XqeaizFaVxonua5WbTr4q1XbLzeMFuCrK2L",
+      "score": 55.9,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "AXnapHhQ",
+        "CrFZVK5t",
+        "D1Tzodub",
+        "PEEPO"
+      ]
+    },
+    {
+      "address": "C1Bo2QzRtBfycrntT4viQ6bDMjfBhuzzTp3inwzUybif",
+      "score": 38.9,
+      "stages": [
+        "post_grad_dip",
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "PEEPEE",
+        "Z1gDxGt3"
+      ]
+    },
+    {
+      "address": "AfjtYaMoqAdcL3LH6qRdNX1YYX281gfgtfMeVnHY51Y9",
+      "score": 34.0,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "4vTN6Cco",
+        "CrFZVK5t",
+        "D1Tzodub"
+      ]
+    },
+    {
+      "address": "7QoTjc15WNqZnRqBnR6ie81XSbfUDHz4bRbcqKxuuAGu",
+      "score": 34.0,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "AXnapHhQ",
+        "CrFZVK5t",
+        "D1Tzodub"
+      ]
+    },
+    {
+      "address": "93w4QjcqJBxB9wBi8Z8fGdw2XfiJe1B6GcVdzjaqHBUB",
+      "score": 34.0,
+      "stages": [
+        "pre_grad_dip"
+      ],
+      "symbols": [
+        "D1Tzodub",
+        "GzzSzH4u",
+        "Z1gDxGt3"
+      ]
+    },
+    {
+      "address": "D8chPhbyAV9fvDovJva9J3hbBNM4wxxN5kKLT9yXyqRX",
+      "score": 28.707,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "BOLD"
+      ]
+    },
+    {
+      "address": "EDi13D18VWxG27LTsFKNHWzwXy9HGVMZjLRHv225YPCB",
+      "score": 28.668,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "6meJ3FqrKzDubYKpQEpnRctHwQcpUiKgm6M4ceQBNUnr",
+      "score": 28.668,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "5FnE3q4tcDkEjRGuHgcxoBLXoZjWXDE5xEpJyneHDc9g",
+      "score": 28.668,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "J4YzTJtkYiauC6rgb8Js1E6vnDdgza11xiMTeW8FDzGn",
+      "score": 28.668,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "JCFpfkrCAoovfRtkAdCde2TvPZHCmQgK5mm8Hc2LKWMZ",
+      "score": 28.668,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "3QcYGRe8cbvMZJuUohNsm685ksDjXpzwXko5WaTMHBmr",
+      "score": 28.668,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "89q3zEgHzuPSYkrSq1TANDqP7HJMLAnxxXtCJGEnVqB4",
+      "score": 28.467,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    },
+    {
+      "address": "7iWnBRRhBCiNXXPhqiGzvvBkKrvFSWqqmxRyu9VyYBxE",
+      "score": 28.467,
+      "stages": [
+        "post_grad_dip"
+      ],
+      "symbols": [
+        "VRCAT"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+2026-09-20T09:12:53Z dumpdip RPC=https://solana-rpc.publicnode.com fallback=https://api.mainnet-beta.solana.com dump_pct=0.35 ca_cap=22
+2026-09-20T09:12:53Z dumpdip exclude_addrs=34
+2026-09-20T09:12:53Z dumpdip seed mints reused=38
+2026-09-20T09:14:24Z dumpdip cas=22
+2026-09-20T09:14:24Z dumpdip   CA#1 BtFegYSV BtFegYSVBRxy… hot=24.0 stage=post_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#2 WOJAK DUe1qheefigx… hot=24.0 stage=post_grad_dip src=seed_74pB,dex_search_WOJAK
+2026-09-20T09:14:24Z dumpdip   CA#3 4vTN6Cco 4vTN6CcoFHr6… hot=20.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#4 GzzSzH4u GzzSzH4ueap9… hot=18.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#5 2Ek943F8 2Ek943F8zqj2… hot=18.0 stage=post_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#6 Stryker is the giant wild-looking cat ready to c G9QZfEPHtZrU… hot=17.6 stage=post_grad_dip src=dex_boosts,gecko_trending,pump_fun
+2026-09-20T09:14:24Z dumpdip   CA#7 FoXDxdtP FoXDxdtPgFAz… hot=16.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#8 Z1gDxGt3 Z1gDxGt3XGmD… hot=16.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#9 8BTv8DqB 8BTv8DqBAB94… hot=16.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#10 9eu5qyTG 9eu5qyTGEXKR… hot=16.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#11 tDaipedq tDaipedqjB6y… hot=16.0 stage=post_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip   CA#12 88ToUJM9 88ToUJM97oxk… hot=16.0 stage=pre_grad_dip src=seed_74pB
+2026-09-20T09:14:24Z dumpdip [1/22] BtFegYSV BtFegYSVBRxy… stage_hint=post_grad_dip
+2026-09-20T09:14:46Z dumpdip   windows=1 best_dump=50% pool=G5SG3RkWycHm
+2026-09-20T09:14:49Z dumpdip   buyers=0 profitable=0
+2026-09-20T09:14:49Z dumpdip [2/22] WOJAK DUe1qheefigx… stage_hint=post_grad_dip
+2026-09-20T09:15:12Z dumpdip   windows=1 best_dump=31% pool=BWh4RGBiantA
+2026-09-20T09:15:25Z dumpdip   buyers=3 profitable=3
+2026-09-20T09:15:25Z dumpdip [3/22] 4vTN6Cco 4vTN6CcoFHr6… stage_hint=pre_grad_dip
+2026-09-20T09:15:43Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:15:54Z dumpdip   buyers=22 profitable=0
+2026-09-20T09:15:54Z dumpdip [4/22] GzzSzH4u GzzSzH4ueap9… stage_hint=pre_grad_dip
+2026-09-20T09:16:12Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:16:24Z dumpdip   buyers=18 profitable=0
+2026-09-20T09:16:24Z dumpdip [5/22] 2Ek943F8 2Ek943F8zqj2… stage_hint=post_grad_dip
+2026-09-20T09:16:43Z dumpdip   windows=2 best_dump=91% pool=3egtwzBHVtoh
+2026-09-20T09:16:56Z dumpdip   buyers=10 profitable=10
+2026-09-20T09:16:56Z dumpdip [6/22] Stryker is the giant wild-looking cat ready to c G9QZfEPHtZrU… stage_hint=post_grad_dip
+2026-09-20T09:17:23Z dumpdip   windows=3 best_dump=84% pool=EyeeG5fzZEig
+2026-09-20T09:17:35Z dumpdip   buyers=13 profitable=13
+2026-09-20T09:17:35Z dumpdip [7/22] FoXDxdtP FoXDxdtPgFAz… stage_hint=pre_grad_dip
+2026-09-20T09:17:48Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:18:00Z dumpdip   buyers=22 profitable=0
+2026-09-20T09:18:00Z dumpdip [8/22] Z1gDxGt3 Z1gDxGt3XGmD… stage_hint=pre_grad_dip
+2026-09-20T09:18:18Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:18:32Z dumpdip   buyers=22 profitable=0
+2026-09-20T09:18:32Z dumpdip [9/22] 8BTv8DqB 8BTv8DqBAB94… stage_hint=pre_grad_dip
+2026-09-20T09:18:41Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:18:53Z dumpdip   buyers=17 profitable=0
+2026-09-20T09:18:53Z dumpdip [10/22] 9eu5qyTG 9eu5qyTGEXKR… stage_hint=pre_grad_dip
+2026-09-20T09:19:01Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:19:14Z dumpdip   buyers=23 profitable=0
+2026-09-20T09:19:14Z dumpdip [11/22] tDaipedq tDaipedqjB6y… stage_hint=post_grad_dip
+2026-09-20T09:19:33Z dumpdip   windows=1 best_dump=85% pool=2UC5VpUMKU1V
+2026-09-20T09:19:44Z dumpdip   buyers=16 profitable=16
+2026-09-20T09:19:44Z dumpdip [12/22] 88ToUJM9 88ToUJM97oxk… stage_hint=pre_grad_dip
+2026-09-20T09:20:12Z dumpdip   windows=1 best_dump=50% pool=8gJXY4pwiZ81
+2026-09-20T09:20:23Z dumpdip   buyers=12 profitable=12
+2026-09-20T09:20:23Z dumpdip [13/22] CrFZVK5t CrFZVK5tMowp… stage_hint=pre_grad_dip
+2026-09-20T09:20:33Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:20:45Z dumpdip   buyers=27 profitable=0
+2026-09-20T09:20:45Z dumpdip [14/22] TIPPED tipp4C4Jnpft… stage_hint=post_grad_dip
+2026-09-20T09:21:12Z dumpdip   windows=2 best_dump=91% pool=CJieB7FUMhEF
+2026-09-20T09:21:14Z dumpdip   buyers=0 profitable=0
+2026-09-20T09:21:14Z dumpdip [15/22] Tokens turns pump creator fees into free AI toke C3b3fpyRWsJf… stage_hint=post_grad_dip
+2026-09-20T09:21:41Z dumpdip   windows=2 best_dump=92% pool=Cc1EFpiwYod6
+2026-09-20T09:21:53Z dumpdip   buyers=8 profitable=8
+2026-09-20T09:21:53Z dumpdip [16/22] G6ZA8mLU G6ZA8mLUqaBc… stage_hint=pre_grad_dip
+2026-09-20T09:22:11Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:22:24Z dumpdip   buyers=22 profitable=0
+2026-09-20T09:22:24Z dumpdip [17/22] D1Tzodub D1TzodubgUF6… stage_hint=pre_grad_dip
+2026-09-20T09:22:37Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:22:48Z dumpdip   buyers=19 profitable=0
+2026-09-20T09:22:48Z dumpdip [18/22] AXnapHhQ AXnapHhQ6Gj5… stage_hint=pre_grad_dip
+2026-09-20T09:22:57Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:23:10Z dumpdip   buyers=21 profitable=0
+2026-09-20T09:23:10Z dumpdip [19/22] GJWu1rjX GJWu1rjX47Zx… stage_hint=post_grad_dip
+2026-09-20T09:23:37Z dumpdip   windows=1 best_dump=50% pool=7u3BpSbSXUcG
+2026-09-20T09:23:51Z dumpdip   buyers=22 profitable=22
+2026-09-20T09:23:51Z dumpdip [20/22] GBopV3ML GBopV3ML3DBZ… stage_hint=post_grad_dip
+2026-09-20T09:24:13Z dumpdip   windows=1 best_dump=50% pool=BqUTCJL5bGsF
+2026-09-20T09:24:25Z dumpdip   buyers=21 profitable=21
+2026-09-20T09:24:25Z dumpdip [21/22] GxbJ3XSC GxbJ3XSCzzoh… stage_hint=pre_grad_dip
+2026-09-20T09:24:43Z dumpdip   windows=1 best_dump=50% pool=-
+2026-09-20T09:24:55Z dumpdip   buyers=22 profitable=0
+2026-09-20T09:24:55Z dumpdip [22/22] BBosJLw8 BBosJLw8ZzoA… stage_hint=post_grad_dip
+2026-09-20T09:25:14Z dumpdip   windows=1 best_dump=50% pool=D36wVDrA9GXu
+2026-09-20T09:25:17Z dumpdip   buyers=0 profitable=0
+2026-09-20T09:25:53Z dumpdip done published=78 pre=7 post=78 both=7 watch=33 rpc=777 429=0 elapsed=780.2s
