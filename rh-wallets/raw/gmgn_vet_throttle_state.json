@@ -8,11 +8,11 @@
     "0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b": "2026-09-19T20:04:12.553926+00:00"
   },
   "fail": {},
-  "last_rate_limit_at": "2026-09-19T20:25:23.032522+00:00",
-  "last_run_at": "2026-09-19T20:25:23.060113+00:00",
+  "last_rate_limit_at": "2026-09-20T05:13:01.712140+00:00",
+  "last_run_at": "2026-09-20T05:13:01.750342+00:00",
   "last_calls": 1,
   "last_vetted": 0,
   "last_err": "rate_limited",
-  "last_period": "7d",
+  "last_period": "30d",
   "last_wr_gained": 0
 }
