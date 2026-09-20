@@ -1,167 +1,183 @@
 {
-  "updated_at": "2026-09-20T08:26:05.857188Z",
+  "updated_at": "2026-09-20T10:25:44.463007Z",
   "n_cas": 25,
-  "n_exclude": 62,
-  "n_candidates": 182,
-  "n_candidates_all": 1024,
+  "n_exclude": 67,
+  "n_candidates": 179,
+  "n_candidates_all": 1117,
   "n_watch": 25,
   "top": [
     {
       "address": "MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X",
-      "score": 181.444,
+      "score": 198.444,
+      "n_cas": 7,
+      "symbols": [
+        "JEANPHIL",
+        "STONK",
+        "FLEX",
+        "PAID",
+        "CALI",
+        "ANSEM",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "Em8J3gBWapfVBGVhVipwQnLrqCvnWBnLajw6XFsFECPF",
+      "score": 184.744,
       "n_cas": 6,
       "symbols": [
         "JEANPHIL",
         "STONK",
-        "DONATED",
-        "TROLL",
-        "ANSEM",
-        "EMBER"
-      ]
-    },
-    {
-      "address": "F7p3dFrjRTbtRp8FRF6qHLomXbKRBzpvBLjtQcfcgmNe",
-      "score": 172.853,
-      "n_cas": 6,
-      "symbols": [
-        "TROLL",
-        "Fartcoin",
-        "ANSEM",
-        "ZCAT",
-        "MOO",
-        "EMBER"
-      ]
-    },
-    {
-      "address": "LionX7R69tL1EEcpRkJ9jRuwV7bi4jFoKmZZnxiVK6y",
-      "score": 157.314,
-      "n_cas": 7,
-      "symbols": [
-        "TIPPED",
-        "CATE",
-        "Annoyed",
-        "TROLL",
-        "Fartcoin",
-        "ZCAT",
-        "POPCAT"
-      ]
-    },
-    {
-      "address": "FUEL3Te8gvaohxwQMapfMTeJVHh2z1BL9fvTCcHZeYEh",
-      "score": 154.808,
-      "n_cas": 7,
-      "symbols": [
-        "CATE",
         "FLEX",
-        "PAID",
-        "TROLL",
-        "WOJAK",
-        "ANSEM",
-        "EMBER"
-      ]
-    },
-    {
-      "address": "2tgUbS9UMoQD6GkDZBiqKYCURnGrSb6ocYwRABrSJUvY",
-      "score": 150.213,
-      "n_cas": 6,
-      "symbols": [
-        "JEANPHIL",
-        "TIPPED",
-        "TIGRINO",
-        "DONATED",
-        "Annoyed",
-        "MOO"
-      ]
-    },
-    {
-      "address": "FkaLnX17cXZGyeu3kZGdHCNdFMJJzBrPPYVvd18B3MZp",
-      "score": 138.944,
-      "n_cas": 3,
-      "symbols": [
-        "Fartcoin",
-        "USELESS",
-        "POPCAT"
-      ]
-    },
-    {
-      "address": "4XBqViD1XYF1qHrErrsXBzDrCapvP9fEFX4LPjXZi9YU",
-      "score": 138.877,
-      "n_cas": 6,
-      "symbols": [
-        "TIPPED",
-        "CATE",
-        "CARDS",
-        "ANSEM",
-        "ZCAT",
-        "USELESS"
-      ]
-    },
-    {
-      "address": "6Qt8a3Y6B4nekSRQ1p2e5yqP5bSCbE6HzUTdWwdfYXmR",
-      "score": 138.573,
-      "n_cas": 6,
-      "symbols": [
-        "TIPPED",
-        "DONATED",
-        "Annoyed",
+        "FEELSGOOD",
         "CALI",
-        "TROLL",
         "WOJAK"
       ]
     },
     {
-      "address": "9ZQuCDRBDvDNsgaDe593dRHnyGgEYaisXF4VYMrZDLBa",
-      "score": 136.342,
-      "n_cas": 6,
-      "symbols": [
-        "FLEX",
-        "PAID",
-        "TIGRINO",
-        "DONATED",
-        "ZCAT",
-        "EMBER"
-      ]
-    },
-    {
-      "address": "UUAhspPgUdGuXUnokmxERH1VvNGNh1ouN3mfcbfV8yd",
-      "score": 130.896,
-      "n_cas": 5,
+      "address": "4XBqViD1XYF1qHrErrsXBzDrCapvP9fEFX4LPjXZi9YU",
+      "score": 162.685,
+      "n_cas": 7,
       "symbols": [
         "CATE",
-        "Fartcoin",
+        "PAID",
+        "WOJAK",
+        "ANSEM",
         "ZCAT",
-        "POPCAT",
+        "USELESS",
         "EMBER"
       ]
     },
     {
-      "address": "gtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd",
-      "score": 130.673,
-      "n_cas": 5,
+      "address": "GxDC9e7SP9mzhDo4re5HbpLa2RW7gB9DtmThx4i4pXSq",
+      "score": 155.867,
+      "n_cas": 7,
       "symbols": [
-        "JEANPHIL",
-        "DONATED",
-        "Fartcoin",
+        "STONK",
+        "FLEX",
+        "PAID",
+        "Tokens",
+        "WOJAK",
         "ANSEM",
         "ZCAT"
       ]
     },
     {
-      "address": "DYP7RvYsGymhRUL9DyAQZeZZU1XjCTp796tPGYQKTM2V",
-      "score": 130.281,
+      "address": "98v4eo7Ngh1USvQdwX1wqQUamoMBYt84eC73zQtbJV3k",
+      "score": 154.784,
+      "n_cas": 7,
+      "symbols": [
+        "TIPPED",
+        "FLEX",
+        "PAID",
+        "Tokens",
+        "CALI",
+        "TROLL",
+        "ANSEM"
+      ]
+    },
+    {
+      "address": "F7p3dFrjRTbtRp8FRF6qHLomXbKRBzpvBLjtQcfcgmNe",
+      "score": 154.219,
       "n_cas": 6,
       "symbols": [
-        "Stryker",
+        "JEANPHIL",
+        "FEELSGOOD",
+        "TROLL",
+        "CYPHERCAT",
+        "ZCAT",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "78Bo7xxGWBEvqbh3VMKvkFG4Z63cXKSJ2LCEXAanhN7a",
+      "score": 149.728,
+      "n_cas": 6,
+      "symbols": [
+        "STONK",
+        "CATE",
+        "PAID",
+        "ANSEM",
+        "USELESS",
+        "EMBER"
+      ]
+    },
+    {
+      "address": "R32xAccFis3YzBzGwZ1C4QkGiehLxSao7gDmErA3kjk",
+      "score": 145.742,
+      "n_cas": 6,
+      "symbols": [
+        "STONK",
+        "FLEX",
+        "PAID",
+        "Tokens",
+        "WOJAK",
+        "ANSEM"
+      ]
+    },
+    {
+      "address": "HuTshmtwcQkWBLzgW3m4uwcmik7Lmz4YFpYcTqMJpXiP",
+      "score": 138.317,
+      "n_cas": 6,
+      "symbols": [
+        "TIPPED",
+        "PAID",
+        "Tokens",
         "TIGRINO",
-        "Annoyed",
+        "WOJAK",
+        "Annoyed"
+      ]
+    },
+    {
+      "address": "LionX7R69tL1EEcpRkJ9jRuwV7bi4jFoKmZZnxiVK6y",
+      "score": 132.723,
+      "n_cas": 5,
+      "symbols": [
+        "TIPPED",
+        "PAID",
+        "ANSEM",
+        "USELESS",
+        "Annoyed"
+      ]
+    },
+    {
+      "address": "DrUUtuGgQmLJcBrJ36nKHpufmw1XqA6ztYTSz55v4bHL",
+      "score": 129.242,
+      "n_cas": 5,
+      "symbols": [
+        "JEANPHIL",
+        "STONK",
+        "PAID",
         "CALI",
-        "MOO",
-        "JUPCAT"
+        "ANSEM"
+      ]
+    },
+    {
+      "address": "kEFiAX3jo5NmemysQov342TZ9mGh6yp92GDRjhA8XDf",
+      "score": 128.398,
+      "n_cas": 5,
+      "symbols": [
+        "JEANPHIL",
+        "TIPPED",
+        "FLEX",
+        "Tokens",
+        "Annoyed"
+      ]
+    },
+    {
+      "address": "FUEL3Te8gvaohxwQMapfMTeJVHh2z1BL9fvTCcHZeYEh",
+      "score": 126.33,
+      "n_cas": 5,
+      "symbols": [
+        "TIPPED",
+        "STONK",
+        "PAID",
+        "ANSEM",
+        "EMBER"
       ]
     },
     {
       "address": "CreQJ2t94QK5dsxUZGXfPJ8Nx7wA9LHr5chxjSMkbNft",
-      "score": 124.444,
+      "score": 120.444,
       "n_cas": 2,
       "symbols": [
         "Fartcoin",
@@ -169,27 +185,15 @@
       ]
     },
     {
-      "address": "shakRDxyKwaBbduqZTZt8Q4etTALbDLnAANStv9TLH3",
-      "score": 121.761,
+      "address": "9EwQoN74Hzw747EM7wB3WtvgAdRGH1czaPtbqZj1qDj4",
+      "score": 117.281,
       "n_cas": 5,
       "symbols": [
-        "CATE",
-        "ANSEM",
-        "ZCAT",
-        "USELESS",
-        "EMBER"
-      ]
-    },
-    {
-      "address": "GLiCiNEnku3pQsmkVkRvnDLbfUN9BWbsrPDWLdPaADng",
-      "score": 121.195,
-      "n_cas": 5,
-      "symbols": [
-        "CATE",
-        "TROLL",
-        "ANSEM",
-        "ZCAT",
-        "POPCAT"
+        "STONK",
+        "FLEX",
+        "PAID",
+        "CALI",
+        "Fartcoin"
       ]
     }
   ],
@@ -198,9 +202,10 @@
       "ca": "GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump",
       "symbol": "JEANPHIL",
       "sources": [
-        "gecko_trending"
+        "gecko_trending",
+        "pump_graduated"
       ],
-      "hot": 860.4756958667091
+      "hot": 1309.3723257113388
     },
     {
       "ca": "tipp4C4Jnpft26HC9VXNjUPidojZqxXf8nzKvrKf5BS",
@@ -208,7 +213,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 200.208135545051
+      "hot": 196.49760179285698
     },
     {
       "ca": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
@@ -216,7 +221,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 150.238947703988
+      "hot": 150.274374959513
     },
     {
       "ca": "Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump",
@@ -225,7 +230,7 @@
         "gecko_trending",
         "pump_graduated"
       ],
-      "hot": 116.37709842060299
+      "hot": 119.636962818704
     },
     {
       "ca": "fvHLJUwsynVHJrssbZ8MLNyku9jt2izUspbBD4Spump",
@@ -233,7 +238,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 96.8716891127475
+      "hot": 94.5272342343024
     },
     {
       "ca": "98kfF7rmsg1QDUEoCqNE7g7M1FdrTt92TEp2CLzypump",
@@ -241,17 +246,16 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 94.1320283006659
+      "hot": 85.9389660069011
     },
     {
       "ca": "C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump",
       "symbol": "Tokens",
       "sources": [
         "gecko_trending",
-        "dex_boosts",
-        "pump_graduated"
+        "dex_boosts"
       ],
-      "hot": 93.68105151242801
+      "hot": 61.456891622544205
     },
     {
       "ca": "G9QZfEPHtZrUF1arcUFvZgYn6zSQLZdvcjCuyhKrpump",
@@ -261,31 +265,7 @@
         "dex_boosts",
         "pump_graduated"
       ],
-      "hot": 60.72746632251069
-    },
-    {
-      "ca": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
-      "symbol": "CARDS",
-      "sources": [
-        "gecko_trending"
-      ],
-      "hot": 59.6895036522663
-    },
-    {
-      "ca": "91ryaCo5yGpYZM3bs6GUPs97VWJQj7RozBmqPULgpump",
-      "symbol": "TIGRINO",
-      "sources": [
-        "gecko_trending"
-      ],
-      "hot": 48.126132879816396
-    },
-    {
-      "ca": "HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT",
-      "symbol": "FEELSGOOD",
-      "sources": [
-        "gecko_trending"
-      ],
-      "hot": 44.7677215607066
+      "hot": 58.7452264644433
     },
     {
       "ca": "CBLgLg4rjkqqwXuZjR1WAqWet2vR68Vne32J2bFLpump",
@@ -293,15 +273,31 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 43.0184572573896
+      "hot": 55.451759652171
     },
     {
-      "ca": "EBsK6LyH8ZCF6aq2uD4fTkFHuPzA1DLUE7fLjMyJpump",
-      "symbol": "Annoyed",
+      "ca": "CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp",
+      "symbol": "CARDS",
       "sources": [
         "gecko_trending"
       ],
-      "hot": 42.3357585490972
+      "hot": 48.0709008469833
+    },
+    {
+      "ca": "91ryaCo5yGpYZM3bs6GUPs97VWJQj7RozBmqPULgpump",
+      "symbol": "TIGRINO",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 46.441969917486304
+    },
+    {
+      "ca": "HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT",
+      "symbol": "FEELSGOOD",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 44.2830914397071
     },
     {
       "ca": "8k4sBtEeK4pf26noKqApv8NBTnuSJcbdwpKYknk5PbAA",
@@ -309,7 +305,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 35.900970758377795
+      "hot": 39.473003609444305
     },
     {
       "ca": "5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2",
@@ -317,7 +313,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 32.0080288558848
+      "hot": 32.1925801241824
     },
     {
       "ca": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
@@ -326,7 +322,15 @@
         "gecko_trending",
         "pump_graduated"
       ],
-      "hot": 29.1143446065462
+      "hot": 30.365269062780097
+    },
+    {
+      "ca": "6AUURRdHb9TrfPHv9AMofa8NEVoZDXcsbWKcUBpFSRXs",
+      "symbol": "CYPHERCAT",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 30.0744816899248
     },
     {
       "ca": "8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump",
@@ -334,7 +338,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 28.7256693104437
+      "hot": 28.664165664964703
     },
     {
       "ca": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
@@ -343,7 +347,7 @@
         "gecko_trending",
         "pump_graduated"
       ],
-      "hot": 27.289512425431198
+      "hot": 27.6429171903664
     },
     {
       "ca": "HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR",
@@ -351,7 +355,7 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 26.7018392493298
+      "hot": 27.5138611495016
     },
     {
       "ca": "Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk",
@@ -359,7 +363,23 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 22.9855009925577
+      "hot": 22.4761532636054
+    },
+    {
+      "ca": "AaEhFTX4naHSWSXz9TVe5QgLbtSLT8ZqYJGZzDDcoroh",
+      "symbol": "JUPCAT",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 21.27613002686762
+    },
+    {
+      "ca": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+      "symbol": "POPCAT",
+      "sources": [
+        "gecko_trending"
+      ],
+      "hot": 20.5720794120603
     },
     {
       "ca": "4NCuDE737HY4EJ573iZM4zo7xszn1MWL6a2Xjp9wpump",
@@ -370,20 +390,12 @@
       "hot": 19.972758782775678
     },
     {
-      "ca": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
-      "symbol": "POPCAT",
+      "ca": "EBsK6LyH8ZCF6aq2uD4fTkFHuPzA1DLUE7fLjMyJpump",
+      "symbol": "Annoyed",
       "sources": [
         "gecko_trending"
       ],
-      "hot": 19.1477840764732
-    },
-    {
-      "ca": "CAKJYWCH5A8KhXnxojiYCNcYF6oUYuYHQm2ctixipump",
-      "symbol": "MOO",
-      "sources": [
-        "gecko_trending"
-      ],
-      "hot": 18.639621289800303
+      "hot": 19.6626445836269
     },
     {
       "ca": "5dvXTZ5qwgafnHtwu3Ls3QrWx1U4LQsFeCuJgkk4QEC6",
@@ -391,18 +403,10 @@
       "sources": [
         "gecko_trending"
       ],
-      "hot": 18.542152877881
-    },
-    {
-      "ca": "AaEhFTX4naHSWSXz9TVe5QgLbtSLT8ZqYJGZzDDcoroh",
-      "symbol": "JUPCAT",
-      "sources": [
-        "gecko_trending"
-      ],
-      "hot": 18.18875286919134
+      "hot": 18.665177150870502
     }
   ],
-  "elapsed_s": 45.02,
+  "elapsed_s": 41.86,
   "source": "solana_trend",
   "chain": "solana"
 }

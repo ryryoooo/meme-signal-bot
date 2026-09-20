@@ -1,46 +1,46 @@
-# Solana-wide smart unknown wallets — 2026-09-20 17:26 JST
+# Solana-wide smart unknown wallets — 2026-09-20 19:25 JST
 
 - Trending/graduating CAs scanned: **25**
-- Excluded (hubs + stonkfun diggers): **62**
-- Unknown candidates (published): **182** (full dump 1024 in raw/)
+- Excluded (hubs + stonkfun diggers): **67**
+- Unknown candidates (published): **179** (full dump 1117 in raw/)
 - Watch candidates (quality gate): **25** (not Discord-wired)
-- Elapsed: **45.0s**
+- Elapsed: **41.9s**
 
 ## CA sources (top)
 
-- `JEANPHIL` `GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump` hot=860.5 src=gecko_trending
-- `TIPPED` `tipp4C4Jnpft26HC9VXNjUPidojZqxXf8nzKvrKf5BS` hot=200.2 src=gecko_trending
-- `STONK` `6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx` hot=150.2 src=gecko_trending
-- `CATE` `Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump` hot=116.4 src=gecko_trending,pump_graduated
-- `FLEX` `fvHLJUwsynVHJrssbZ8MLNyku9jt2izUspbBD4Spump` hot=96.9 src=gecko_trending
-- `PAID` `98kfF7rmsg1QDUEoCqNE7g7M1FdrTt92TEp2CLzypump` hot=94.1 src=gecko_trending
-- `Tokens` `C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump` hot=93.7 src=gecko_trending,dex_boosts,pump_graduated
-- `Stryker` `G9QZfEPHtZrUF1arcUFvZgYn6zSQLZdvcjCuyhKrpump` hot=60.7 src=gecko_trending,dex_boosts,pump_graduated
-- `CARDS` `CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp` hot=59.7 src=gecko_trending
-- `TIGRINO` `91ryaCo5yGpYZM3bs6GUPs97VWJQj7RozBmqPULgpump` hot=48.1 src=gecko_trending
-- `FEELSGOOD` `HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT` hot=44.8 src=gecko_trending
-- `DONATED` `CBLgLg4rjkqqwXuZjR1WAqWet2vR68Vne32J2bFLpump` hot=43.0 src=gecko_trending
-- `Annoyed` `EBsK6LyH8ZCF6aq2uD4fTkFHuPzA1DLUE7fLjMyJpump` hot=42.3 src=gecko_trending
-- `CALI` `8k4sBtEeK4pf26noKqApv8NBTnuSJcbdwpKYknk5PbAA` hot=35.9 src=gecko_trending
-- `TROLL` `5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2` hot=32.0 src=gecko_trending
-- `Fartcoin` `9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump` hot=29.1 src=gecko_trending,pump_graduated
+- `JEANPHIL` `GTBxUiw6wJdmmkCGZgRHLyYxqu1vG4KtRpeox6yDpump` hot=1309.4 src=gecko_trending,pump_graduated
+- `TIPPED` `tipp4C4Jnpft26HC9VXNjUPidojZqxXf8nzKvrKf5BS` hot=196.5 src=gecko_trending
+- `STONK` `6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx` hot=150.3 src=gecko_trending
+- `CATE` `Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump` hot=119.6 src=gecko_trending,pump_graduated
+- `FLEX` `fvHLJUwsynVHJrssbZ8MLNyku9jt2izUspbBD4Spump` hot=94.5 src=gecko_trending
+- `PAID` `98kfF7rmsg1QDUEoCqNE7g7M1FdrTt92TEp2CLzypump` hot=85.9 src=gecko_trending
+- `Tokens` `C3b3fpyRWsJf3bo6vay2vo1bQ7CezwumZwTrP82Lpump` hot=61.5 src=gecko_trending,dex_boosts
+- `Stryker` `G9QZfEPHtZrUF1arcUFvZgYn6zSQLZdvcjCuyhKrpump` hot=58.7 src=gecko_trending,dex_boosts,pump_graduated
+- `DONATED` `CBLgLg4rjkqqwXuZjR1WAqWet2vR68Vne32J2bFLpump` hot=55.5 src=gecko_trending
+- `CARDS` `CARDSccUMFKoPRZxt5vt3ksUbxEFEcnZ3H2pd3dKxYjp` hot=48.1 src=gecko_trending
+- `TIGRINO` `91ryaCo5yGpYZM3bs6GUPs97VWJQj7RozBmqPULgpump` hot=46.4 src=gecko_trending
+- `FEELSGOOD` `HgcxVs6kJhPAaGqnPNGaa7zYgNT49hJrLufiqcNMuYZT` hot=44.3 src=gecko_trending
+- `CALI` `8k4sBtEeK4pf26noKqApv8NBTnuSJcbdwpKYknk5PbAA` hot=39.5 src=gecko_trending
+- `TROLL` `5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2` hot=32.2 src=gecko_trending
+- `Fartcoin` `9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump` hot=30.4 src=gecko_trending,pump_graduated
+- `CYPHERCAT` `6AUURRdHb9TrfPHv9AMofa8NEVoZDXcsbWKcUBpFSRXs` hot=30.1 src=gecko_trending
 - `WOJAK` `8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump` hot=28.7 src=gecko_trending
-- `ANSEM` `9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump` hot=27.3 src=gecko_trending,pump_graduated
-- `ZCAT` `HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR` hot=26.7 src=gecko_trending
-- `USELESS` `Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk` hot=23.0 src=gecko_trending
+- `ANSEM` `9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump` hot=27.6 src=gecko_trending,pump_graduated
+- `ZCAT` `HcRLc9VDgjLeK154xDawfb1dmVJ98DoSqcwTHGqiDeJR` hot=27.5 src=gecko_trending
+- `USELESS` `Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk` hot=22.5 src=gecko_trending
 
 ## Top 10 unknown addresses
 
-1. `MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X` score=181.444 n_cas=6 buys=10 vol=$31375.9 syms=JEANPHIL,STONK,DONATED,TROLL,ANSEM,EMBER
-2. `F7p3dFrjRTbtRp8FRF6qHLomXbKRBzpvBLjtQcfcgmNe` score=172.853 n_cas=6 buys=10 vol=$5463.5 syms=TROLL,Fartcoin,ANSEM,ZCAT,MOO,EMBER
-3. `LionX7R69tL1EEcpRkJ9jRuwV7bi4jFoKmZZnxiVK6y` score=157.314 n_cas=7 buys=14 vol=$2.5 syms=TIPPED,CATE,Annoyed,TROLL,Fartcoin,ZCAT,POPCAT
-4. `FUEL3Te8gvaohxwQMapfMTeJVHh2z1BL9fvTCcHZeYEh` score=154.808 n_cas=7 buys=16 vol=$19.4 syms=CATE,FLEX,PAID,TROLL,WOJAK,ANSEM,EMBER
-5. `2tgUbS9UMoQD6GkDZBiqKYCURnGrSb6ocYwRABrSJUvY` score=150.213 n_cas=6 buys=20 vol=$1388.4 syms=JEANPHIL,TIPPED,TIGRINO,DONATED,Annoyed,MOO
-6. `FkaLnX17cXZGyeu3kZGdHCNdFMJJzBrPPYVvd18B3MZp` score=138.944 n_cas=3 buys=38 vol=$21613.3 syms=Fartcoin,USELESS,POPCAT
-7. `4XBqViD1XYF1qHrErrsXBzDrCapvP9fEFX4LPjXZi9YU` score=138.877 n_cas=6 buys=8 vol=$319.9 syms=TIPPED,CATE,CARDS,ANSEM,ZCAT,USELESS
-8. `6Qt8a3Y6B4nekSRQ1p2e5yqP5bSCbE6HzUTdWwdfYXmR` score=138.573 n_cas=6 buys=20 vol=$13.2 syms=TIPPED,DONATED,Annoyed,CALI,TROLL,WOJAK
-9. `9ZQuCDRBDvDNsgaDe593dRHnyGgEYaisXF4VYMrZDLBa` score=136.342 n_cas=6 buys=10 vol=$871.6 syms=FLEX,PAID,TIGRINO,DONATED,ZCAT,EMBER
-10. `UUAhspPgUdGuXUnokmxERH1VvNGNh1ouN3mfcbfV8yd` score=130.896 n_cas=5 buys=10 vol=$2231.3 syms=CATE,Fartcoin,ZCAT,POPCAT,EMBER
+1. `MriyaNN8TMp6qRWjfr723PK7xgQK7yCt7Kg2v2PQu7X` score=198.444 n_cas=7 buys=15 vol=$18046.8 syms=JEANPHIL,STONK,FLEX,PAID,CALI,ANSEM,EMBER
+2. `Em8J3gBWapfVBGVhVipwQnLrqCvnWBnLajw6XFsFECPF` score=184.744 n_cas=6 buys=9 vol=$10494.2 syms=JEANPHIL,STONK,FLEX,FEELSGOOD,CALI,WOJAK
+3. `4XBqViD1XYF1qHrErrsXBzDrCapvP9fEFX4LPjXZi9YU` score=162.685 n_cas=7 buys=15 vol=$843.3 syms=CATE,PAID,WOJAK,ANSEM,ZCAT,USELESS,EMBER
+4. `GxDC9e7SP9mzhDo4re5HbpLa2RW7gB9DtmThx4i4pXSq` score=155.867 n_cas=7 buys=10 vol=$516.0 syms=STONK,FLEX,PAID,Tokens,WOJAK,ANSEM,ZCAT
+5. `98v4eo7Ngh1USvQdwX1wqQUamoMBYt84eC73zQtbJV3k` score=154.784 n_cas=7 buys=17 vol=$159.1 syms=TIPPED,FLEX,PAID,Tokens,CALI,TROLL,ANSEM
+6. `F7p3dFrjRTbtRp8FRF6qHLomXbKRBzpvBLjtQcfcgmNe` score=154.219 n_cas=6 buys=12 vol=$3567.3 syms=JEANPHIL,FEELSGOOD,TROLL,CYPHERCAT,ZCAT,EMBER
+7. `78Bo7xxGWBEvqbh3VMKvkFG4Z63cXKSJ2LCEXAanhN7a` score=149.728 n_cas=6 buys=44 vol=$131.0 syms=STONK,CATE,PAID,ANSEM,USELESS,EMBER
+8. `R32xAccFis3YzBzGwZ1C4QkGiehLxSao7gDmErA3kjk` score=145.742 n_cas=6 buys=29 vol=$403.5 syms=STONK,FLEX,PAID,Tokens,WOJAK,ANSEM
+9. `HuTshmtwcQkWBLzgW3m4uwcmik7Lmz4YFpYcTqMJpXiP` score=138.317 n_cas=6 buys=14 vol=$3.1 syms=TIPPED,PAID,Tokens,TIGRINO,WOJAK,Annoyed
+10. `LionX7R69tL1EEcpRkJ9jRuwV7bi4jFoKmZZnxiVK6y` score=132.723 n_cas=5 buys=21 vol=$4.2 syms=TIPPED,PAID,ANSEM,USELESS,Annoyed
 
 ## Notes
 
