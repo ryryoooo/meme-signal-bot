@@ -17,6 +17,7 @@ GMGN_VET_EVERY_SEC="${GMGN_VET_EVERY_SEC:-10800}"
 PAPER_DAILY_EVERY_SEC="${PAPER_DAILY_EVERY_SEC:-86400}"
 AUDIT_EVERY_SEC="${AUDIT_EVERY_SEC:-21600}"
 HUNT_EVERY_SEC="${HUNT_EVERY_SEC:-900}"
+TREND_HUNT_EVERY_SEC="${TREND_HUNT_EVERY_SEC:-900}"
 AUDIT_WF="wallet-audit.yml"
 POLL_SEC="${POLL_SEC:-120}"
 mkdir -p "$STATE"
@@ -44,6 +45,7 @@ now=$(date +%s)
 [[ -f "$STATE/last_paper_daily" ]] || echo 0 > "$STATE/last_paper_daily"
 [[ -f "$STATE/last_wallet_audit" ]] || echo 0 > "$STATE/last_wallet_audit"
 [[ -f "$STATE/last_onchain_hunt" ]] || echo 0 > "$STATE/last_onchain_hunt"
+[[ -f "$STATE/last_trend_hunt" ]] || echo 0 > "$STATE/last_trend_hunt"
 # RH notify: default SIGNAL_SOURCE=onchain (free RPC). FOMO optional; GMGN stays on GHA
 ensure_signal_tick() {
   local tick="$ROOT/scripts/signal_tick.sh"
@@ -83,7 +85,7 @@ ensure_signal_tick() {
 }
 
 ensure_signal_tick
-log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s"
+log "started pid=$$ deep=${DEEP_EVERY_SEC}s light=${LIGHT_EVERY_SEC}s themaran=${THEMARAN_EVERY_SEC}s gmgn_vet=${GMGN_VET_EVERY_SEC}s paper_daily=${PAPER_DAILY_EVERY_SEC}s audit=${AUDIT_EVERY_SEC}s hunt=${HUNT_EVERY_SEC}s trend_hunt=${TREND_HUNT_EVERY_SEC}s"
 while true; do
   now=$(date +%s)
   action="idle"; result="ok"
@@ -155,6 +157,25 @@ while true; do
       echo "$now" > "$STATE/last_onchain_hunt"
     fi
   fi
+  # Unknown smart wallets from trending CAs (jina gecko/dex + free RH RPC; no GMGN)
+  last_th=$(cat "$STATE/last_trend_hunt" 2>/dev/null || echo 0)
+  if (( now - last_th >= TREND_HUNT_EVERY_SEC )); then
+    action="trend_unknown_hunt"
+    if ( cd "$ROOT" && LIVE_TRADING=0 GMGN_DISABLED=1 TREND_ONCE=1 timeout 480 python3 scripts/hunt_unknown_from_trend.py --once ) >> "$LOG" 2>&1; then
+      echo "$now" > "$STATE/last_trend_hunt"; log "trend_unknown_hunt ok"
+      if ( cd "$ROOT" && git status --porcelain rh-wallets/unknown_trend_smart.jsonl rh-wallets/summary_unknown_trend_smart.md rh-wallets/watch_candidates_unknown.jsonl rh-wallets/raw/unknown_trend_hunt_state.json scripts/hunt_unknown_from_trend.py 2>/dev/null | grep -q . ); then
+        ( cd "$ROOT" && \
+          git add rh-wallets/unknown_trend_smart.jsonl rh-wallets/summary_unknown_trend_smart.md \
+                  rh-wallets/watch_candidates_unknown.jsonl rh-wallets/raw/unknown_trend_hunt_state.json \
+                  scripts/hunt_unknown_from_trend.py scripts/scout-wallet-bot.sh && \
+          git commit -m "chore(onchain): unknown trend smart wallet hunt" && \
+          git pull --rebase origin main && git push origin HEAD:main ) >> "$LOG" 2>&1 || log "trend_unknown_hunt commit/push fail"
+      fi
+    else
+      result="trend_unknown_hunt_failed"; log "trend_unknown_hunt failed"
+      echo "$now" > "$STATE/last_trend_hunt"
+    fi
+
   # GMGN only on GHA, tiny — never on box. Skip while resolve busy or post-429 cool.
   last_gv=$(cat "$STATE/last_gmgn_vet" 2>/dev/null || echo 0)
   gmgn_active=$(gh run list --repo "$REPO" --workflow "$VET_WF" --limit 5 --json status --jq '[.[]|select(.status=="in_progress" or .status=="queued")]|length' 2>/dev/null || echo -1)
