@@ -1,21 +1,21 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-22T02:02:09.961784+00:00
-- Unique pairs: **2284/2560** (89.2%)
-- Trunc rows still unresolved: **449**
-- Methods: pair_cache=42 token_scoped=4 multi_union=0 mega=12 global=0 two_hit=0
+- Updated (UTC): 2026-09-22T03:02:08.696439+00:00
+- Unique pairs: **2293/2565** (89.4%)
+- Trunc rows still unresolved: **446**
+- Methods: pair_cache=22 token_scoped=2 multi_union=0 mega=5 global=0 two_hit=0
 - Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=8 multi_match=0 no_match=268
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=5 multi_match=0 no_match=267
 
 ## Top unresolved blockers
 
-- `no_match`: 268
-- `api_fail`: 8
+- `no_match`: 267
+- `api_fail`: 5
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **268** (huge_pool≥1000 true-dead≈30, mid<500 still deepenable≈214)
+- no_match total: **267** (huge_pool≥1000 true-dead≈30, mid<500 still deepenable≈213)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -30,7 +30,7 @@
 - `0x0768|1a43` reason=no_match tokens=1 union=145 tier=good
 - `0x091e|dbfa` reason=no_match tokens=1 union=135 tier=elite
 - `0x09e8|5769` reason=no_match tokens=1 union=148 tier=good
-- `0x0edf|12ce` reason=no_match tokens=1 union=190 tier=good
+- `0x0edf|12ce` reason=no_match tokens=2 union=190 tier=good
 - `0x0f60|def6` reason=no_match tokens=2 union=272 tier=good
 - `0x0f72|4d3f` reason=no_match tokens=1 union=149 tier=good
 - `0x0f86|98de` reason=no_match tokens=4 union=608 tier=good
@@ -55,10 +55,10 @@
 - `0x1fb3|5246` reason=no_match tokens=1 union=242 tier=elite
 - `0x2189|76a6` reason=no_match tokens=1 union=153 tier=good
 - `0x21d8|b1d7` reason=no_match tokens=1 union=164 tier=good
-- `0x2594|752e` reason=api_fail tokens=1 union=0 tier=good
 - `0x26ef|997e` reason=no_match tokens=1 union=242 tier=good
 - `0x27b7|61aa` reason=no_match tokens=1 union=155 tier=good
 - `0x280a|4999` reason=no_match tokens=1 union=168 tier=elite
 - `0x28e8|4bfc` reason=no_match tokens=1 union=229 tier=good
 - `0x2a22|905d` reason=no_match tokens=1 union=149 tier=good
 - `0x2b1d|75f5` reason=api_fail tokens=1 union=0 tier=good
+- `0x2b39|1d26` reason=no_match tokens=2 union=256 tier=good
