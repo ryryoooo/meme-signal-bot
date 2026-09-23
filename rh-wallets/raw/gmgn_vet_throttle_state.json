@@ -15,11 +15,11 @@
     "0xe28601398a5448d1147e6e8b0e0c6d686f0d216d": "2026-09-22T17:10:20.233122+00:00"
   },
   "fail": {},
-  "last_rate_limit_at": "2026-09-22T23:47:15.716500+00:00",
-  "last_run_at": "2026-09-22T23:47:15.825871+00:00",
-  "last_calls": 4,
-  "last_vetted": 3,
+  "last_rate_limit_at": "2026-09-23T08:51:02.619250+00:00",
+  "last_run_at": "2026-09-23T08:51:02.661415+00:00",
+  "last_calls": 1,
+  "last_vetted": 0,
   "last_err": "rate_limited",
   "last_period": "30d",
-  "last_wr_gained": 3
+  "last_wr_gained": 0
 }
