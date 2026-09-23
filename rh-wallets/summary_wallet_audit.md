@@ -1,27 +1,27 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-09-22T17:07:08.333354+00:00** (UTC) / JST+9
-- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **2776**
-- Elapsed: **0.2s** · tagged_rows=0 · RPC=False
+- Updated: **2026-09-23T00:07:27.610389+00:00** (UTC) / JST+9
+- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **2811**
+- Elapsed: **0.2s** · tagged_rows=102 · RPC=False
 
 ## Counts
 
 | bucket | count | 意味 |
 |---|---:|---|
-| ACTIVE | **435** | 最近取引 or lifetime proxy |
-| INACTIVE | **2341** | 直近証拠なし / 未vet |
-| QUALITY 優良 | **229** | WR≥0.5 + PnL≥1000 + n≥20 |
+| ACTIVE | **438** | 最近取引 or lifetime proxy |
+| INACTIVE | **2373** | 直近証拠なし / 未vet |
+| QUALITY 優良 | **231** | WR≥0.5 + PnL≥1000 + n≥20 |
 | WEAK | **7** | 低WR / 弱いPnL / ワンショット |
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **289/2776** (10.4%)
-- `realized_pnl*` filled: **435/2776** (15.7%)
-- `n_trades*` filled: **289/2776**
-- `*_7d` WR filled: **4/2776** (0.1%) ← GMGN 7d 未充足なら lifetime で判定
-- `n_trades_7d` filled: **4/2776**
-- `last_active*` filled: **0/2776**
-- activity_metric breakdown: `{"unvetted_proxy": 2341, "lifetime_proxy": 431, "n_trades_7d": 4}`
+- `win_rate` filled: **292/2811** (10.4%)
+- `realized_pnl*` filled: **438/2811** (15.6%)
+- `n_trades*` filled: **292/2811**
+- `*_7d` WR filled: **4/2811** (0.1%) ← GMGN 7d 未充足なら lifetime で判定
+- `n_trades_7d` filled: **4/2811**
+- `last_active*` filled: **0/2811**
+- activity_metric breakdown: `{"unvetted_proxy": 2373, "lifetime_proxy": 434, "n_trades_7d": 4}`
 
 ## Thresholds
 
@@ -40,7 +40,7 @@
 7. `0x26a2869488c4958c2aee366455a803757d8bfee7` wr=0.5 pnl=1693354 n=425 scout=None/0.00 active=True metric=lifetime_proxy
 8. `0xac6da909f2132e680aa4998263da00f519c1946b` wr=0.75 pnl=1458297 n=98 scout=None/0.00 active=True metric=lifetime_proxy
 9. `0xe5e9ffe707ee071998340972af6fb178f5c64ba6` wr=0.84 pnl=866592 n=7597 scout=None/0.00 active=True metric=lifetime_proxy
-10. `0xd1794ddf809e9809572e034ba2e3b80dced1f00c` wr=0.9545454545454546 pnl=69313 n=2963 scout=elite/84.60 active=True metric=lifetime_proxy
+10. `0xd1794ddf809e9809572e034ba2e3b80dced1f00c` wr=0.9545454545454546 pnl=69313 n=2963 scout=elite/86.20 active=True metric=lifetime_proxy
 
 ## Top 10 WEAK（prune候補）
 
