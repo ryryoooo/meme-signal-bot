@@ -1,8 +1,8 @@
 # RH wallets
 
-- Updated JST: 2026-09-24T21:16:33.154095+09:00
+- Updated JST: 2026-09-25T01:06:41.466408+09:00
 - Watchlist wallets.jsonl: **2923**
-- On-chain wallets_onchain.jsonl: **9531**
+- On-chain wallets_onchain.jsonl: **9601**
 - New on-chain merges this run: **0** (touched existing: 0)
 - Merge-to-watch: **False** (floor=500.0)
 - Source: Robinhood Blockscout `https://robinhoodchain.blockscout.com/api/v2` (+ etherscan-compat if allowed)
