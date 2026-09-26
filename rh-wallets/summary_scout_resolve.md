@@ -1,20 +1,20 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-26T03:25:07.754091+00:00
-- Unique pairs: **2508/2750** (91.2%)
-- Trunc rows still unresolved: **410**
-- Methods: pair_cache=4 token_scoped=3 multi_union=0 mega=0 global=0 two_hit=0
-- Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=242
+- Updated (UTC): 2026-09-26T05:01:52.986813+00:00
+- Unique pairs: **2511/2752** (91.2%)
+- Trunc rows still unresolved: **408**
+- Methods: pair_cache=6 token_scoped=3 multi_union=0 mega=0 global=0 two_hit=0
+- Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=241
 
 ## Top unresolved blockers
 
-- `no_match`: 242
+- `no_match`: 241
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **242** (huge_pool≥1000 true-dead≈34, mid<500 still deepenable≈177)
+- no_match total: **241** (huge_pool≥1000 true-dead≈34, mid<500 still deepenable≈177)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -36,7 +36,6 @@
 - `0x1343|8a62` reason=no_match tokens=1 union=138 tier=elite
 - `0x1435|b0ae` reason=no_match tokens=1 union=127 tier=good
 - `0x150c|82a5` reason=no_match tokens=1 union=154 tier=good
-- `0x1841|fe32` reason=no_match tokens=2 union=575 tier=elite
 - `0x19e5|5af9` reason=no_match tokens=1 union=128 tier=good
 - `0x1a63|5812` reason=no_match tokens=1 union=335 tier=good
 - `0x1aef|ce1a` reason=no_match tokens=1 union=929 tier=elite
@@ -61,3 +60,4 @@
 - `0x2e56|75ab` reason=no_match tokens=4 union=1927 tier=elite
 - `0x2f2f|c185` reason=no_match tokens=1 union=145 tier=good
 - `0x2f68|19b0` reason=no_match tokens=4 union=531 tier=elite
+- `0x31e4|0552` reason=no_match tokens=1 union=264 tier=elite
