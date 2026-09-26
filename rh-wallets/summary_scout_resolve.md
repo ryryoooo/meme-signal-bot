@@ -1,9 +1,9 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-09-26T02:01:46.249147+00:00
-- Unique pairs: **2505/2747** (91.2%)
+- Updated (UTC): 2026-09-26T03:25:07.754091+00:00
+- Unique pairs: **2508/2750** (91.2%)
 - Trunc rows still unresolved: **410**
-- Methods: pair_cache=85 token_scoped=4 multi_union=0 mega=5 global=0 two_hit=0
+- Methods: pair_cache=4 token_scoped=3 multi_union=0 mega=0 global=0 two_hit=0
 - Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
 - Unresolved reasons (unique pairs): no_token_pool=0 api_fail=0 multi_match=0 no_match=242
 
