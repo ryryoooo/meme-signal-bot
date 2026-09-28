@@ -1,9 +1,9 @@
 # RH wallets
 
-- Updated JST: 2026-09-28T15:17:39.882456+09:00
+- Updated JST: 2026-09-28T21:16:29.976191+09:00
 - Watchlist wallets.jsonl: **2975**
-- On-chain wallets_onchain.jsonl: **12369**
+- On-chain wallets_onchain.jsonl: **12469**
 - New on-chain merges this run: **0** (touched existing: 0)
 - Merge-to-watch: **False** (floor=500.0)
 - Source: Robinhood Blockscout `https://robinhoodchain.blockscout.com/api/v2` (+ etherscan-compat if allowed)
-- Notes: Blockscout /api etherscan-compat reachable; v2 /token-transfers → http=500 "Internal server error"; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
+- Notes: Blockscout /api etherscan-compat reachable; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
