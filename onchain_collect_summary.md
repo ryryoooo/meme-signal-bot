@@ -1,38 +1,38 @@
 # On-chain wallet collect summary
 
-- JST: 2026-09-29T15:17:59.623223+09:00
-- UTC: 2026-09-29T06:17:59.623223+00:00
+- JST: 2026-09-29T20:46:38.135793+09:00
+- UTC: 2026-09-29T11:46:38.135793+00:00
 - Keeper floors: Arc=0.01 RH_onchain=500.0
 
 ## Arc
 
 - **ok**: True
 - **mode**: inline
-- **total**: 5527
-- **added**: 158
-- **refreshed**: 242
+- **total**: 701
+- **added**: 400
+- **refreshed**: 0
 - **transfers_scanned**: 600
 - **accounts_scanned**: 300
 - notes: arcscan chain_id=5042
 
-- file wallets_quality.jsonl rows: **5527**
-- file wallets.jsonl rows: **5527**
+- file wallets_quality.jsonl rows: **701**
+- file wallets.jsonl rows: **701**
 
 ## Robinhood
 
 - **ok**: True
 - **watchlist_n**: 2975
-- **onchain_n**: 13035
+- **onchain_n**: 13174
 - **added**: 0
 - **touched**: 0
 - **merge_to_watch**: False
 - **xfers_scanned**: 300
-- **addrs_scanned**: 50
+- **addrs_scanned**: 150
 - **etherscan_xfers**: 900
-- notes: Blockscout /api etherscan-compat reachable; v2 /addresses → http=500 "Internal server error"; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
+- notes: Blockscout /api etherscan-compat reachable; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
 
 - file wallets.jsonl rows: **2975**
-- file wallets_onchain.jsonl rows: **13035**
+- file wallets_onchain.jsonl rows: **13174**
 
 ## Credit policy
 
