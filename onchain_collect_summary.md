@@ -1,28 +1,28 @@
 # On-chain wallet collect summary
 
-- JST: 2026-09-30T03:16:56.680570+09:00
-- UTC: 2026-09-29T18:16:56.680570+00:00
+- JST: 2026-09-30T06:39:07.182020+09:00
+- UTC: 2026-09-29T21:39:07.182020+00:00
 - Keeper floors: Arc=0.01 RH_onchain=500.0
 
 ## Arc
 
 - **ok**: True
 - **mode**: inline
-- **total**: 1337
-- **added**: 374
-- **refreshed**: 26
+- **total**: 1589
+- **added**: 252
+- **refreshed**: 148
 - **transfers_scanned**: 600
 - **accounts_scanned**: 300
 - notes: arcscan chain_id=5042
 
-- file wallets_quality.jsonl rows: **1337**
-- file wallets.jsonl rows: **1337**
+- file wallets_quality.jsonl rows: **1589**
+- file wallets.jsonl rows: **1589**
 
 ## Robinhood
 
 - **ok**: True
 - **watchlist_n**: 2975
-- **onchain_n**: 13482
+- **onchain_n**: 13583
 - **added**: 0
 - **touched**: 0
 - **merge_to_watch**: False
@@ -32,7 +32,7 @@
 - notes: Blockscout /api etherscan-compat reachable; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
 
 - file wallets.jsonl rows: **2975**
-- file wallets_onchain.jsonl rows: **13482**
+- file wallets_onchain.jsonl rows: **13583**
 
 ## Credit policy
 
