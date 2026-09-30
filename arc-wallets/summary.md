@@ -1,10 +1,10 @@
 # Arc wallets (bot watchlist) — on-chain continuous
 
-- Updated JST: 2026-09-30T06:38:07.486931+09:00
+- Updated JST: 2026-09-30T09:15:56.634342+09:00
 - Mode: arcscan-inline (collect_arc_wallets.py not in checkout)
 - Existing preserved + merged: **1589**
-- New on-chain adds: **252**
-- Existing refreshed: **148**
-- Transfers scanned: **600** | accounts: **300**
+- New on-chain adds: **0**
+- Existing refreshed: **0**
+- Transfers scanned: **0** | accounts: **0**
 - pass_pnl=true / realized floor=0.01
-- Notes: arcscan chain_id=5042
+- Notes: arcscan /v1/chain failed http=530
