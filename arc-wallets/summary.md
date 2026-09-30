@@ -1,6 +1,6 @@
 # Arc wallets (bot watchlist) — on-chain continuous
 
-- Updated JST: 2026-09-30T09:15:56.634342+09:00
+- Updated JST: 2026-09-30T11:53:35.907475+09:00
 - Mode: arcscan-inline (collect_arc_wallets.py not in checkout)
 - Existing preserved + merged: **1589**
 - New on-chain adds: **0**
