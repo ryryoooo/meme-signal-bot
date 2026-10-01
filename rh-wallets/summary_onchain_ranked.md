@@ -1,11 +1,11 @@
 # On-chain expand from ranked S/A seeds
 
-- Updated (UTC): 2026-09-17T10:59:25.928427+00:00
+- Updated (UTC): 2026-10-01T02:06:08.399895+00:00
 - Seeds used: **25** (tiers=['A', 'S'])
 - Tokens scanned: **30**
-- Co-buyer candidates: **0**
-- Added to onchain file: +**0** (file n=2695)
+- Co-buyer candidates: **1116**
+- Added to onchain file: +**962** (file n=15103)
 - Merged to watch: **0** (ONCHAIN_MERGE_WATCH=0)
 - Min co-seed tokens: 2
-- Blockers: no_cobuyers_found
-- Notes: http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:; http=429:{"message":"Too many requests. Increase limits now at https:
+- Blockers: none
+- Notes: http=500:"Internal server error"; http=422:{"errors":[{"title":"Invalid value","source":{"pointer":"/ty; http=500:; http=422:{"errors":[{"title":"Invalid value","source":{"pointer":"/ty; http=500:"Internal server error"; http=422:{"errors":[{"title":"Invalid value","source":{"pointer":"/ty; http=500:"Internal server error"; http=422:{"errors":[{"title":"Invalid value","source":{"pointer":"/ty

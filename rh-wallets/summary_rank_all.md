@@ -1,110 +1,110 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-09-17T10:59:06.642952+00:00
-- Ranked wallets: **1329**
-- Seed (scout_tg resolved): **274** (elite=194)
-- Token graph size: **501**
-- FOMO overlaps: **119**
-- Promoted tags (rank_s/rank_a): **248**
-- Tiers: S=**202** A=**54** B=**289** C=**784**
+- Updated (UTC): 2026-10-01T02:00:26.510115+00:00
+- Ranked wallets: **4721**
+- Seed (scout_tg resolved): **2778** (elite=1160)
+- Token graph size: **1801**
+- FOMO overlaps: **125**
+- Promoted tags (rank_s/rank_a): **2698**
+- Tiers: S=**2165** A=**533** B=**345** C=**1678**
 
 ## Top 40 by rank_score
 
 | # | tier | addr | seed | elite | affE | WR | n | realized | FOMO | score |
 |---|------|------|------|-------|------|----|---|----------|------|-------|
-| 1 | S | `0xb0b7…1657` | Y | 10 | 9 | 48% | 928 | 48,328 | — | 28.65 |
-| 2 | S | `0x6078…58b2` | Y | 27 | 11 | 47% | 25226 | 319,008 | — | 28.5 |
-| 3 | S | `0x0fc7…2608` | Y | 11 | 5 | 66% | 12287 | 67,284 | — | 28.0 |
-| 4 | S | `0xa83b…8811` | Y | 14 | 8 | 44% | 9666 | 96,740 | — | 27.375 |
-| 5 | S | `0x7f4d…234e` | Y | 9 | 11 | 39% | 4693 | 70,840 | — | 26.5 |
-| 6 | S | `0xe7db…e602` | Y | 26 | 15 | 22% | 8992 | 109,068 | — | 25.5 |
-| 7 | S | `0x40e5…6c08` | Y | 4 | 9 | — | — | — | — | 25.0 |
-| 8 | S | `0xe9cb…5a00` | Y | 6 | 8 | — | — | — | — | 23.25 |
-| 9 | S | `0x18a7…ef97` | Y | 8 | 7 | — | — | — | — | 23.0 |
-| 10 | S | `0x4d96…26f3` | Y | 15 | 14 | — | — | — | — | 23.0 |
-| 11 | S | `0x4ede…6d0a` | Y | 9 | 6 | — | — | — | — | 23.0 |
-| 12 | S | `0x5a67…7f35` | Y | 9 | 5 | — | — | — | — | 23.0 |
-| 13 | S | `0x8ee9…3e7b` | Y | 14 | 8 | — | — | — | — | 23.0 |
-| 14 | S | `0x96c1…4c96` | Y | 11 | 8 | — | — | — | — | 23.0 |
-| 15 | S | `0xa1bf…c726` | Y | 9 | 8 | — | — | — | — | 23.0 |
-| 16 | S | `0xaea1…f9cd` | Y | 11 | 5 | — | — | — | — | 23.0 |
-| 17 | S | `0xd632…1718` | Y | 16 | 13 | — | — | — | — | 23.0 |
-| 18 | S | `0xfd1b…c1e9` | Y | 15 | 12 | — | — | — | — | 23.0 |
-| 19 | S | `0x390d…f344` | Y | 12 | 8 | — | — | — | — | 22.95 |
-| 20 | S | `0x48cf…c1fd` | Y | 16 | 12 | — | — | — | — | 22.95 |
-| 21 | S | `0xa9b5…9c81` | Y | 13 | 6 | — | — | — | — | 22.95 |
-| 22 | S | `0xd20d…91d6` | Y | 12 | 10 | — | — | — | — | 22.8 |
-| 23 | S | `0xebaa…5686` | Y | 20 | 8 | — | — | — | — | 22.8 |
-| 24 | S | `0x35fa…cb48` | Y | 4 | 5 | — | — | — | — | 22.55 |
-| 25 | S | `0x3fb0…2f0b` | Y | 8 | 7 | — | — | — | — | 22.5 |
-| 26 | S | `0x7625…200a` | Y | 10 | 9 | — | — | — | — | 22.5 |
-| 27 | S | `0xf493…0db3` | Y | 9 | 6 | — | — | — | — | 22.5 |
-| 28 | S | `0xe53a…57dd` | Y | 10 | 3 | — | — | — | — | 22.45 |
-| 29 | S | `0x9e2c…88da` | Y | 9 | 7 | — | — | — | — | 22.3 |
-| 30 | S | `0xffe5…1ecf` | Y | 14 | 12 | — | — | — | — | 22.3 |
-| 31 | S | `0xa580…89dd` | Y | 11 | 10 | — | — | — | — | 22.25 |
-| 32 | S | `0x873a…c892` | Y | 9 | 8 | — | — | — | — | 22.0 |
-| 33 | S | `0x07cd…8cbe` | Y | 5 | 4 | — | — | — | — | 21.75 |
-| 34 | S | `0xa053…4f0b` | Y | 17 | 14 | — | — | — | — | 21.7 |
-| 35 | S | `0xe286…216d` | Y | 9 | 6 | — | — | — | — | 21.7 |
-| 36 | S | `0xfbcf…1f29` | Y | 15 | 12 | — | — | — | — | 21.7 |
-| 37 | S | `0x1355…d706` | Y | 6 | 5 | — | — | — | — | 21.6 |
-| 38 | S | `0x9fd8…58f5` | Y | 6 | 5 | — | — | — | — | 21.6 |
-| 39 | S | `0x3719…25da` | Y | 8 | 4 | — | — | — | — | 21.5 |
-| 40 | S | `0xf834…2007` | Y | 5 | 4 | — | — | — | — | 21.25 |
+| 1 | S | `0x00d7…4a6b` | Y | 14 | 59 | — | — | — | — | 25.0 |
+| 2 | S | `0x01bf…76a3` | Y | 27 | 29 | — | — | — | — | 25.0 |
+| 3 | S | `0x02b0…711d` | Y | 9 | 12 | — | — | — | — | 25.0 |
+| 4 | S | `0x0718…a967` | Y | 5 | 8 | — | — | — | — | 25.0 |
+| 5 | S | `0x0c15…ec1b` | Y | 17 | 12 | — | — | — | — | 25.0 |
+| 6 | S | `0x0e10…4830` | Y | 7 | 30 | — | — | — | — | 25.0 |
+| 7 | S | `0x0e49…a27c` | Y | 12 | 10 | — | — | — | — | 25.0 |
+| 8 | S | `0x11f1…e76e` | Y | 14 | 17 | — | — | — | — | 25.0 |
+| 9 | S | `0x1672…dac5` | Y | 4 | 20 | — | — | — | — | 25.0 |
+| 10 | S | `0x28ab…ee96` | Y | 9 | 9 | — | — | — | — | 25.0 |
+| 11 | S | `0x2e27…1f97` | Y | 9 | 37 | — | — | — | — | 25.0 |
+| 12 | S | `0x2e54…6bbc` | Y | 7 | 10 | — | — | — | — | 25.0 |
+| 13 | S | `0x38c9…105d` | Y | 5 | 12 | — | — | — | — | 25.0 |
+| 14 | S | `0x3a97…eb99` | Y | 18 | 20 | — | — | — | — | 25.0 |
+| 15 | S | `0x40e5…6c08` | Y | 6 | 39 | — | — | — | — | 25.0 |
+| 16 | S | `0x4dec…3eee` | Y | 6 | 21 | — | — | — | — | 25.0 |
+| 17 | S | `0x4ede…6d0a` | Y | 37 | 29 | — | — | — | — | 25.0 |
+| 18 | S | `0x52c1…75a1` | Y | 12 | 19 | — | — | — | — | 25.0 |
+| 19 | S | `0x55f3…02e8` | Y | 6 | 16 | — | — | — | — | 25.0 |
+| 20 | S | `0x62e5…5645` | Y | 4 | 19 | — | — | — | — | 25.0 |
+| 21 | S | `0x6e57…9bed` | Y | 4 | 16 | — | — | — | — | 25.0 |
+| 22 | S | `0x8ac3…b06d` | Y | 5 | 11 | — | — | — | — | 25.0 |
+| 23 | S | `0x8b21…10ef` | Y | 34 | 53 | — | — | — | — | 25.0 |
+| 24 | S | `0xb41c…f569` | Y | 9 | 12 | — | — | — | — | 25.0 |
+| 25 | S | `0xc2c6…091c` | Y | 13 | 18 | — | — | — | — | 25.0 |
+| 26 | S | `0xc4f8…3a63` | Y | 27 | 16 | — | — | — | — | 25.0 |
+| 27 | S | `0xca29…a115` | Y | 10 | 13 | — | — | — | — | 25.0 |
+| 28 | S | `0xce00…30b3` | Y | 13 | 15 | — | — | — | — | 25.0 |
+| 29 | S | `0xd76c…77fa` | Y | 5 | 12 | — | — | — | — | 25.0 |
+| 30 | S | `0xe5ee…380f` | Y | 17 | 22 | — | — | — | — | 25.0 |
+| 31 | S | `0xebaa…5686` | Y | 30 | 29 | — | — | — | — | 25.0 |
+| 32 | S | `0xeedf…ce40` | Y | 11 | 21 | — | — | — | — | 25.0 |
+| 33 | S | `0xf009…e35a` | Y | 5 | 11 | — | — | — | — | 25.0 |
+| 34 | S | `0xf34b…ec29` | Y | 9 | 20 | — | — | — | — | 25.0 |
+| 35 | S | `0xf565…471d` | Y | 7 | 42 | — | — | — | — | 25.0 |
+| 36 | S | `0x7d8b…9bd4` | Y | 11 | 11 | — | — | — | — | 24.9 |
+| 37 | S | `0xb196…4d6e` | Y | 7 | 10 | — | — | — | — | 24.9 |
+| 38 | S | `0xa83b…8811` | Y | 25 | 26 | — | — | — | — | 24.75 |
+| 39 | S | `0xac35…2b28` | Y | 13 | 14 | — | — | — | — | 24.75 |
+| 40 | S | `0xb881…d05d` | Y | 9 | 10 | — | — | — | — | 24.75 |
 
 ## Tier S
 
-- `0xb0b72fd48bd4212c77e75756a7ec977165a41657` score=28.65 elite=10 affE=9 rp=48328.313994640026 wr=0.47701149425287354
-- `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` score=28.5 elite=27 affE=11 rp=319007.74516258715 wr=0.46974236069502695
-- `0x0fc735ce54de29d20aedef289e9f0c1551de2608` score=28.0 elite=11 affE=5 rp=67284.2133540989 wr=0.6637630662020906
-- `0xa83b73f5644cde337b61da79589f10ea15548811` score=27.375 elite=14 affE=8 rp=96739.60687856855 wr=0.44047619047619047
-- `0x7f4d036153c1acb0f180407e8e5c6cd0f972234e` score=26.5 elite=9 affE=11 rp=70840.36269220228 wr=0.39399293286219084
-- `0xe7db4e546edc6a341a6d63475d5238b4cc1be602` score=25.5 elite=26 affE=15 rp=109067.83451501447 wr=0.22186322024771135
-- `0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08` score=25.0 elite=4 affE=9 rp=None wr=None
-- `0xe9cb04e5c3c876d9ed30b53468a408583da45a00` score=23.25 elite=6 affE=8 rp=None wr=None
-- `0x18a78d024edd70617231c21d0cfde69ae374ef97` score=23.0 elite=8 affE=7 rp=None wr=None
-- `0x4d9644d05fe2123b4eafa8d7fd31b0ea430726f3` score=23.0 elite=15 affE=14 rp=None wr=None
-- `0x4ede7b8dcc2b65592641c87485bc862f15776d0a` score=23.0 elite=9 affE=6 rp=None wr=None
-- `0x5a675b94bdc451cabef6f73bc54cbb3c1cd47f35` score=23.0 elite=9 affE=5 rp=None wr=None
-- `0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b` score=23.0 elite=14 affE=8 rp=None wr=None
-- `0x96c10db3d006b6e549796901faa83c67e4d54c96` score=23.0 elite=11 affE=8 rp=None wr=None
-- `0xa1bf81e88f32f069d02a2248730824970283c726` score=23.0 elite=9 affE=8 rp=None wr=None
-- `0xaea12b0ca4fd4c10355baef4879f2e111f8bf9cd` score=23.0 elite=11 affE=5 rp=None wr=None
-- `0xd632a243fb30cbf5f53a78fa0ed01e7ba13d1718` score=23.0 elite=16 affE=13 rp=None wr=None
-- `0xfd1bc875e2b8307b934edbff1c8601e60af6c1e9` score=23.0 elite=15 affE=12 rp=None wr=None
-- `0x390d0a9098ba7945b7081ee890dd87bccb81f344` score=22.95 elite=12 affE=8 rp=None wr=None
-- `0x48cfadf0b1f29883e09c0a2a5d90066b27d9c1fd` score=22.95 elite=16 affE=12 rp=None wr=None
-- `0xa9b517e958b89c2a1964fecabe12ec293b5a9c81` score=22.95 elite=13 affE=6 rp=None wr=None
-- `0xd20dd65c55188862eaa022009102d2438a8691d6` score=22.8 elite=12 affE=10 rp=None wr=None
-- `0xebaad6991d725d090ea51c1c8466c28df7575686` score=22.8 elite=20 affE=8 rp=None wr=None
-- `0x35fafdb17c24813c348e7d1159146b6e4a8dcb48` score=22.55 elite=4 affE=5 rp=None wr=None
-- `0x3fb0ee621d41da7d9a9e774c5f4c2eb53a872f0b` score=22.5 elite=8 affE=7 rp=None wr=None
+- `0x00d78daf782921b27a6b407d34f19842c10a4a6b` score=25.0 elite=14 affE=59 rp=None wr=None
+- `0x01bfd7a540fd01a34d28b650f3e0f14f978a76a3` score=25.0 elite=27 affE=29 rp=None wr=None
+- `0x02b0c14d2c03852ccebd1b2e66ab3c075a57711d` score=25.0 elite=9 affE=12 rp=None wr=None
+- `0x071840472bf173f59c6fd6b2dc36417236caa967` score=25.0 elite=5 affE=8 rp=None wr=None
+- `0x0c15520ed4faa42468368337f3f8da9b130eec1b` score=25.0 elite=17 affE=12 rp=None wr=None
+- `0x0e10aab4b89a53872ac5dd44aafd589b98bc4830` score=25.0 elite=7 affE=30 rp=None wr=None
+- `0x0e499188bad587aa29089e161a804b3914f0a27c` score=25.0 elite=12 affE=10 rp=None wr=None
+- `0x11f1d1e6ef78fd865a3e0bc4a69d63a6145ee76e` score=25.0 elite=14 affE=17 rp=None wr=None
+- `0x167270c7e9eb9f223f2073d980f5fefd702fdac5` score=25.0 elite=4 affE=20 rp=None wr=None
+- `0x28ab9b5f50bbff7a5fd84ef61d31f62655c3ee96` score=25.0 elite=9 affE=9 rp=None wr=None
+- `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=9 affE=37 rp=None wr=None
+- `0x2e5453a5f77a80fe7bfd09d98fd53d2cf2f46bbc` score=25.0 elite=7 affE=10 rp=None wr=None
+- `0x38c9d6d0bfc808157d8a106e9fc270985e29105d` score=25.0 elite=5 affE=12 rp=None wr=None
+- `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=20 rp=None wr=None
+- `0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08` score=25.0 elite=6 affE=39 rp=None wr=None
+- `0x4decb201ebf98df44c44346d2b2d11d0cba23eee` score=25.0 elite=6 affE=21 rp=None wr=None
+- `0x4ede7b8dcc2b65592641c87485bc862f15776d0a` score=25.0 elite=37 affE=29 rp=None wr=None
+- `0x52c1ebfdeca53da4877488b54a969daf573375a1` score=25.0 elite=12 affE=19 rp=None wr=None
+- `0x55f3422138e9fed0bd81351bff66c882550002e8` score=25.0 elite=6 affE=16 rp=None wr=None
+- `0x62e5332dcb286f1753d245707c91a38821bb5645` score=25.0 elite=4 affE=19 rp=None wr=None
+- `0x6e57d0f76f07a966017b46d319fe93dd84989bed` score=25.0 elite=4 affE=16 rp=None wr=None
+- `0x8ac3fce9c093af3ae5cd632b7c4f9ddb47c8b06d` score=25.0 elite=5 affE=11 rp=None wr=None
+- `0x8b216cc896f32bcabca3649ca918d532f72010ef` score=25.0 elite=34 affE=53 rp=None wr=None
+- `0xb41cb9aa49f8bf0d628956f303946cc29363f569` score=25.0 elite=9 affE=12 rp=None wr=None
+- `0xc2c6acd377458010713e733e1b21dd6f670d091c` score=25.0 elite=13 affE=18 rp=None wr=None
 
 ## Tier A
 
-- `0x7ef7830f948e1cdc9599a8a7816831e21b491af1` score=14.65 elite=0 affE=1 rp=None wr=None
-- `0x83cf1999592a5e5ad50b9027d87e2a24cfccf3fd` score=12.1 elite=0 affE=1 rp=None wr=None
-- `0x3fd9e7989678d7dbaf0dadcfa3bbe746e46e2866` score=10.917 elite=0 affE=1 rp=None wr=None
-- `0xcc8df2253fa263dac721261dc528263a401e717e` score=10.3 elite=0 affE=1 rp=None wr=None
-- `0xd7b83366b001dbdb90de5108f0f291e24d475d31` score=10.3 elite=0 affE=1 rp=None wr=None
-- `0x2f4f25ca8f6354f4a65c825bbd393f2ade9ab8fd` score=10.0 elite=0 affE=0 rp=None wr=None
-- `0xe4c66db1a891034561c5a75ed8ceb95f51077e24` score=9.85 elite=0 affE=1 rp=None wr=None
-- `0x78abb89ba802f0b3794298339d668b4f2c280455` score=9.615 elite=0 affE=1 rp=None wr=None
-- `0xa6ebe798a17b351b0c04cd61654c7ca38860e253` score=9.45 elite=0 affE=1 rp=None wr=None
-- `0x35ad20bc46e9c037075b811a3bd1b6fb91b944a1` score=9.265 elite=0 affE=1 rp=None wr=None
-- `0x14c4c1c250cc1ea702e25a9089b787c554db74c2` score=9.1 elite=0 affE=0 rp=None wr=None
-- `0x1cb66fc8891e1758964c891bc17a9a8cdd25e7b0` score=8.98 elite=2 affE=0 rp=None wr=None
-- `0xeedf66927405f7e5f98c623c303d1aa39d93ce40` score=8.98 elite=2 affE=1 rp=None wr=None
-- `0x09a86b384cb3aec6e5fc82262d538be208d0c312` score=8.865 elite=2 affE=1 rp=None wr=None
-- `0xc9f787fd5a67c0522349848ce888b619d0fe42a3` score=8.745 elite=2 affE=1 rp=None wr=None
-- `0xd657bf12b59dfde3573c521abc3b111b62dfe3c5` score=8.647 elite=2 affE=0 rp=None wr=None
-- `0xe4239a18550ae158a0f7c795651a6765a6f6c9be` score=8.6 elite=1 affE=1 rp=None wr=None
-- `0x84cca95512170c4e2e319a069dc00a42376db97d` score=8.432 elite=1 affE=1 rp=None wr=None
-- `0x5d85bd0fead68fb21a6eba50d0a450edfc5a801d` score=8.355 elite=1 affE=1 rp=None wr=None
-- `0x7649a32e792d2b59d3d616fef17700ec70e27d1a` score=8.3 elite=2 affE=0 rp=None wr=None
-- `0xff530642b6b945f27ef486f7120e31ad017db890` score=8.3 elite=2 affE=0 rp=None wr=None
-- `0xc5d3c566a195cf4a9b8b29dc3c7f8e133d7cf19e` score=8.25 elite=2 affE=0 rp=None wr=None
-- `0x60922555145732b6dcce4f9823c91ff79f8df498` score=8.05 elite=0 affE=1 rp=None wr=None
-- `0x01cf616693dc8e3ef21f985acf21d2bca646136a` score=7.913 elite=1 affE=1 rp=None wr=None
-- `0x9472ab12bec4c610688f9d6606eae01fb11c512b` score=7.77 elite=0 affE=0 rp=None wr=None
+- `0x3f896c3e77101e64f7f507465b9a2f31c5d56bfc` score=14.1 elite=0 affE=1 rp=None wr=None
+- `0x9e3006c4262e7470881d1b92ab64f527ef301a7b` score=14.1 elite=0 affE=1 rp=None wr=None
+- `0xb89007a0908d4bcac0926425266b23d0dc3f0cda` score=12.8 elite=0 affE=1 rp=None wr=None
+- `0xf10fc94e0710d19e434f0f809f4e6b0f413852c3` score=12.35 elite=0 affE=1 rp=None wr=None
+- `0x95721483769958eeba65ae6818d7dbc60abbe6d5` score=12.25 elite=0 affE=1 rp=None wr=None
+- `0xacd18bc98b792ec6dacdc2f03c3a0738cc0dc9a7` score=12.25 elite=0 affE=1 rp=None wr=None
+- `0xba21d3b710b1d9c9acb325cb2a4351151b53c001` score=11.55 elite=0 affE=1 rp=None wr=None
+- `0xf84b96bf9a7f5731e35f8fcf5331f5d71ef59cd9` score=11.55 elite=0 affE=1 rp=None wr=None
+- `0x05990ad252ff8eea290b864213e9711c3d065b0c` score=11.5 elite=0 affE=1 rp=None wr=None
+- `0xcccccc64ad22a0dde2014a294a48bd5fdf2acccc` score=11.5 elite=0 affE=1 rp=None wr=None
+- `0x356339d1f7641ad5fce79e51e8e7565150a1a86b` score=10.9 elite=0 affE=1 rp=None wr=None
+- `0x5825194cdb2d29326f47c957c5d14c2e1136f9b8` score=10.9 elite=0 affE=1 rp=None wr=None
+- `0x85a3d3379b76b6e3e8b4ab6f8c163c294d1f7ff8` score=10.9 elite=0 affE=1 rp=None wr=None
+- `0x92f31b55f280c4293e4c382f66c607be14e30ada` score=10.9 elite=0 affE=1 rp=None wr=None
+- `0xc5749feb3a85a9e696fce3dc250aca82e5d678ae` score=10.9 elite=0 affE=1 rp=None wr=None
+- `0xd9c7cedd950a4ce3ee1e40b951a37ea0514afcd3` score=10.9 elite=0 affE=1 rp=None wr=None
+- `0x005c8e7c1fd9fa3d6f4eca270b9d29794e9b1099` score=10.84 elite=0 affE=1 rp=None wr=None
+- `0x5711328d6ad4c27d320e0be0109e9c003ef0548f` score=10.82 elite=0 affE=1 rp=None wr=None
+- `0xdb5c8b2ea50d9c49b84a58e5abe523109d4d167f` score=10.8 elite=0 affE=1 rp=None wr=None
+- `0x44c1ec521d2a347323d963d35d6f0a8b966075f9` score=10.795 elite=0 affE=1 rp=None wr=None
+- `0x9ac05d1fe9483e21a5850a8cf0f557d8297d3366` score=10.78 elite=0 affE=1 rp=None wr=None
+- `0xd7131152a7fd8b651a48a44f109d5ae73a0b39e9` score=10.78 elite=0 affE=1 rp=None wr=None
+- `0x0940a9b85939f3c427d0186422824b6974d708f2` score=10.75 elite=0 affE=1 rp=None wr=None
+- `0x502f80162c4c3b5a4849dc695970211550b7f9d2` score=10.75 elite=0 affE=1 rp=None wr=None
+- `0x69e5ad0ddadfd4c5b8d18ea7ae537740fc54fd8a` score=10.75 elite=0 affE=1 rp=None wr=None
