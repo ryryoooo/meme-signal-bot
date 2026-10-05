@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-10-05T02:01:24.108161+00:00
-- Ranked wallets: **3738**
-- Seed (scout_tg resolved): **3076** (elite=1382)
-- Token graph size: **2063**
+- Updated (UTC): 2026-10-05T07:02:03.770571+00:00
+- Ranked wallets: **3746**
+- Seed (scout_tg resolved): **3084** (elite=1389)
+- Token graph size: **2072**
 - FOMO overlaps: **132**
-- Promoted tags (rank_s/rank_a): **2997**
-- Tiers: S=**2450** A=**547** B=**343** C=**398**
+- Promoted tags (rank_s/rank_a): **3006**
+- Tiers: S=**2462** A=**544** B=**342** C=**398**
 
 ## Top 40 by rank_score
 
@@ -36,7 +36,7 @@
 | 22 | S | `0x6e57…9bed` | Y | 4 | 20 | — | — | — | — | 25.0 |
 | 23 | S | `0x8ac3…b06d` | Y | 5 | 13 | — | — | — | — | 25.0 |
 | 24 | S | `0x8b21…10ef` | Y | 34 | 59 | — | — | — | — | 25.0 |
-| 25 | S | `0x8ca8…b128` | Y | 24 | 27 | — | — | — | — | 25.0 |
+| 25 | S | `0x8ca8…b128` | Y | 27 | 29 | — | — | — | — | 25.0 |
 | 26 | S | `0xa83b…8811` | Y | 28 | 30 | — | — | — | — | 25.0 |
 | 27 | S | `0xac35…2b28` | Y | 13 | 15 | — | — | — | — | 25.0 |
 | 28 | S | `0xb41c…f569` | Y | 9 | 12 | — | — | — | — | 25.0 |
@@ -79,20 +79,18 @@
 - `0x6e57d0f76f07a966017b46d319fe93dd84989bed` score=25.0 elite=4 affE=20 rp=None wr=None
 - `0x8ac3fce9c093af3ae5cd632b7c4f9ddb47c8b06d` score=25.0 elite=5 affE=13 rp=None wr=None
 - `0x8b216cc896f32bcabca3649ca918d532f72010ef` score=25.0 elite=34 affE=59 rp=None wr=None
-- `0x8ca820e3ad07fe17b77922ade10319a2ab9cb128` score=25.0 elite=24 affE=27 rp=None wr=None
+- `0x8ca820e3ad07fe17b77922ade10319a2ab9cb128` score=25.0 elite=27 affE=29 rp=None wr=None
 
 ## Tier A
 
-- `0x3f896c3e77101e64f7f507465b9a2f31c5d56bfc` score=14.1 elite=0 affE=1 rp=None wr=None
-- `0x9e3006c4262e7470881d1b92ab64f527ef301a7b` score=14.1 elite=0 affE=1 rp=None wr=None
 - `0xb89007a0908d4bcac0926425266b23d0dc3f0cda` score=12.8 elite=0 affE=1 rp=None wr=None
 - `0xf10fc94e0710d19e434f0f809f4e6b0f413852c3` score=12.35 elite=0 affE=1 rp=None wr=None
 - `0x95721483769958eeba65ae6818d7dbc60abbe6d5` score=12.25 elite=0 affE=1 rp=None wr=None
 - `0xacd18bc98b792ec6dacdc2f03c3a0738cc0dc9a7` score=12.25 elite=0 affE=1 rp=None wr=None
 - `0xba21d3b710b1d9c9acb325cb2a4351151b53c001` score=11.55 elite=0 affE=1 rp=None wr=None
-- `0xf84b96bf9a7f5731e35f8fcf5331f5d71ef59cd9` score=11.55 elite=0 affE=1 rp=None wr=None
 - `0x05990ad252ff8eea290b864213e9711c3d065b0c` score=11.5 elite=0 affE=1 rp=None wr=None
 - `0xcccccc64ad22a0dde2014a294a48bd5fdf2acccc` score=11.5 elite=0 affE=1 rp=None wr=None
+- `0x44203c507f43079a9e62eabf341830acda9dacd6` score=11.4 elite=0 affE=1 rp=None wr=None
 - `0x356339d1f7641ad5fce79e51e8e7565150a1a86b` score=10.9 elite=0 affE=1 rp=None wr=None
 - `0x5825194cdb2d29326f47c957c5d14c2e1136f9b8` score=10.9 elite=0 affE=1 rp=None wr=None
 - `0x85a3d3379b76b6e3e8b4ab6f8c163c294d1f7ff8` score=10.9 elite=0 affE=1 rp=None wr=None
@@ -108,3 +106,5 @@
 - `0x733c3320dcf0467f3e929e5508f54c2f60d54749` score=10.75 elite=0 affE=1 rp=None wr=None
 - `0x32f1f3d9131977fc82942ae8c973e063201f7215` score=10.7 elite=0 affE=1 rp=None wr=None
 - `0x75a16f80f8104a5d96598ac567e67e8601338b1c` score=10.7 elite=0 affE=1 rp=None wr=None
+- `0xe8f3187203bacdb98b50b82fffb2ce3109d692f7` score=10.7 elite=0 affE=1 rp=None wr=None
+- `0xffca88900f3668c8076a3f16f1bb690870af43c3` score=10.7 elite=0 affE=1 rp=None wr=None
