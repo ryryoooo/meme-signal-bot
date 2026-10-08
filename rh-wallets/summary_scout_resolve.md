@@ -1,21 +1,21 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-10-08T02:01:46.625412+00:00
-- Unique pairs: **3111/3473** (89.6%)
-- Trunc rows still unresolved: **811**
-- Methods: pair_cache=800 token_scoped=2 multi_union=0 mega=23 global=2 two_hit=0
-- Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=111 multi_match=0 no_match=251
+- Updated (UTC): 2026-10-08T08:01:28.464362+00:00
+- Unique pairs: **3119/3479** (89.7%)
+- Trunc rows still unresolved: **791**
+- Methods: pair_cache=61 token_scoped=1 multi_union=0 mega=7 global=0 two_hit=0
+- Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=108 multi_match=0 no_match=252
 
 ## Top unresolved blockers
 
-- `no_match`: 251
-- `api_fail`: 111
+- `no_match`: 252
+- `api_fail`: 108
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **251** (huge_pool≥1000 true-dead≈44, mid<500 still deepenable≈167)
+- no_match total: **252** (huge_pool≥1000 true-dead≈43, mid<500 still deepenable≈167)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -32,7 +32,6 @@
 - `0x0765|b870` reason=no_match tokens=3 union=343 tier=good
 - `0x0768|1a43` reason=no_match tokens=1 union=145 tier=good
 - `0x080d|8ea9` reason=api_fail tokens=1 union=0 tier=elite
-- `0x08f3|acd5` reason=api_fail tokens=1 union=0 tier=elite
 - `0x091e|dbfa` reason=no_match tokens=1 union=135 tier=elite
 - `0x09e8|5769` reason=no_match tokens=1 union=148 tier=good
 - `0x0c67|08bc` reason=api_fail tokens=1 union=0 tier=elite
@@ -62,3 +61,4 @@
 - `0x1b7c|647f` reason=api_fail tokens=1 union=0 tier=elite
 - `0x1cd7|9573` reason=no_match tokens=1 union=155 tier=good
 - `0x1d99|0161` reason=no_match tokens=5 union=1613 tier=elite
+- `0x1db8|28fa` reason=api_fail tokens=2 union=0 tier=elite
