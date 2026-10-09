@@ -1,27 +1,27 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-10-09T06:20:16.838398+00:00** (UTC) / JST+9
+- Updated: **2026-10-09T18:25:23.285401+00:00** (UTC) / JST+9
 - Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3509**
-- Elapsed: **0.2s** · tagged_rows=0 · RPC=False
+- Elapsed: **0.3s** · tagged_rows=5 · RPC=False
 
 ## Counts
 
 | bucket | count | 意味 |
 |---|---:|---|
-| ACTIVE | **391** | 最近取引 or lifetime proxy |
-| INACTIVE | **3118** | 直近証拠なし / 未vet |
-| QUALITY 優良 | **217** | WR≥0.5 + PnL≥1000 + n≥20 |
-| WEAK | **0** | 低WR / 弱いPnL / ワンショット |
+| ACTIVE | **396** | 最近取引 or lifetime proxy |
+| INACTIVE | **3113** | 直近証拠なし / 未vet |
+| QUALITY 優良 | **221** | WR≥0.5 + PnL≥1000 + n≥20 |
+| WEAK | **1** | 低WR / 弱いPnL / ワンショット |
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **262/3509** (7.5%)
-- `realized_pnl*` filled: **391/3509** (11.1%)
-- `n_trades*` filled: **262/3509**
+- `win_rate` filled: **267/3509** (7.6%)
+- `realized_pnl*` filled: **396/3509** (11.3%)
+- `n_trades*` filled: **267/3509**
 - `*_7d` WR filled: **0/3509** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
 - `n_trades_7d` filled: **0/3509**
 - `last_active*` filled: **0/3509**
-- activity_metric breakdown: `{"lifetime_proxy": 391, "unvetted_proxy": 3118}`
+- activity_metric breakdown: `{"lifetime_proxy": 396, "unvetted_proxy": 3113}`
 
 ## Thresholds
 
@@ -38,13 +38,13 @@
 5. `0x5f60a59f2d243d533f82fd9844149d56ff363659` wr=0.8 pnl=1552304 n=97 scout=None/0.00 active=True metric=lifetime_proxy
 6. `0x5b0051e4ea8eaf6ec523ab2aa76fe0149e68b040` wr=0.5346534653465347 pnl=1514938 n=2068 scout=None/0.00 active=True metric=lifetime_proxy
 7. `0x26a2869488c4958c2aee366455a803757d8bfee7` wr=0.5 pnl=1693354 n=425 scout=None/0.00 active=True metric=lifetime_proxy
-8. `0xac6da909f2132e680aa4998263da00f519c1946b` wr=0.75 pnl=1458297 n=98 scout=None/0.00 active=True metric=lifetime_proxy
-9. `0xe5e9ffe707ee071998340972af6fb178f5c64ba6` wr=0.84 pnl=866592 n=7597 scout=None/0.00 active=True metric=lifetime_proxy
-10. `0xde4c44e841972c2c4db1b1e27a353340fe9899de` wr=1.0 pnl=1055509 n=281 scout=None/0.00 active=True metric=lifetime_proxy
+8. `0xd1794ddf809e9809572e034ba2e3b80dced1f00c` wr=0.8956043956043956 pnl=88039 n=4005 scout=elite/84.86 active=True metric=lifetime_proxy
+9. `0xac6da909f2132e680aa4998263da00f519c1946b` wr=0.75 pnl=1458297 n=98 scout=None/0.00 active=True metric=lifetime_proxy
+10. `0xe5e9ffe707ee071998340972af6fb178f5c64ba6` wr=0.84 pnl=866592 n=7597 scout=None/0.00 active=True metric=lifetime_proxy
 
 ## Top 10 WEAK（prune候補）
 
-- (none)
+1. `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` wr=0.3466666666666667 pnl=48891 n=2277 reason=low_wr=0.347 n=2277
 
 ## Action
 
