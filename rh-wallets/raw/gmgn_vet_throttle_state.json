@@ -21,11 +21,11 @@
     "0xa053641c649d93b51ce88eafec998ffb9f534f0b": "2026-10-10T12:53:14.468902+00:00"
   },
   "fail": {},
-  "last_rate_limit_at": "2026-10-10T12:53:55.456281+00:00",
-  "last_run_at": "2026-10-10T12:53:55.576788+00:00",
-  "last_calls": 3,
-  "last_vetted": 2,
+  "last_rate_limit_at": "2026-10-10T19:26:16.264364+00:00",
+  "last_run_at": "2026-10-10T19:26:16.295022+00:00",
+  "last_calls": 1,
+  "last_vetted": 0,
   "last_err": "rate_limited",
   "last_period": "30d",
-  "last_wr_gained": 2
+  "last_wr_gained": 0
 }
