@@ -1,21 +1,21 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-10-08T08:01:28.464362+00:00
-- Unique pairs: **3119/3479** (89.7%)
-- Trunc rows still unresolved: **791**
-- Methods: pair_cache=61 token_scoped=1 multi_union=0 mega=7 global=0 two_hit=0
-- Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=108 multi_match=0 no_match=252
+- Updated (UTC): 2026-10-12T02:01:30.580212+00:00
+- Unique pairs: **3151/3513** (89.7%)
+- Trunc rows still unresolved: **797**
+- Methods: pair_cache=328 token_scoped=0 multi_union=0 mega=32 global=0 two_hit=0
+- Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=114 multi_match=0 no_match=248
 
 ## Top unresolved blockers
 
-- `no_match`: 252
-- `api_fail`: 108
+- `no_match`: 248
+- `api_fail`: 114
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **252** (huge_pool≥1000 true-dead≈43, mid<500 still deepenable≈167)
+- no_match total: **248** (huge_pool≥1000 true-dead≈43, mid<500 still deepenable≈164)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -50,6 +50,8 @@
 - `0x150c|82a5` reason=no_match tokens=1 union=154 tier=good
 - `0x15b0|5ea4` reason=api_fail tokens=1 union=0 tier=elite
 - `0x164d|8943` reason=api_fail tokens=7 union=0 tier=elite
+- `0x165b|0b1d` reason=api_fail tokens=1 union=0 tier=good
+- `0x17e9|413a` reason=api_fail tokens=1 union=0 tier=good
 - `0x1809|845d` reason=api_fail tokens=2 union=0 tier=good
 - `0x1956|e514` reason=api_fail tokens=1 union=0 tier=elite
 - `0x19e5|5af9` reason=no_match tokens=1 union=128 tier=good
@@ -60,5 +62,3 @@
 - `0x1b58|b8c0` reason=no_match tokens=1 union=133 tier=good
 - `0x1b7c|647f` reason=api_fail tokens=1 union=0 tier=elite
 - `0x1cd7|9573` reason=no_match tokens=1 union=155 tier=good
-- `0x1d99|0161` reason=no_match tokens=5 union=1613 tier=elite
-- `0x1db8|28fa` reason=api_fail tokens=2 union=0 tier=elite

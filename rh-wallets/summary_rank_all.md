@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-10-08T08:01:33.966948+00:00
-- Ranked wallets: **3777**
-- Seed (scout_tg resolved): **3119** (elite=1401)
-- Token graph size: **2161**
-- FOMO overlaps: **130**
-- Promoted tags (rank_s/rank_a): **3043**
-- Tiers: S=**2506** A=**538** B=**339** C=**394**
+- Updated (UTC): 2026-10-12T02:01:36.330776+00:00
+- Ranked wallets: **3810**
+- Seed (scout_tg resolved): **3151** (elite=1414)
+- Token graph size: **2202**
+- FOMO overlaps: **131**
+- Promoted tags (rank_s/rank_a): **3071**
+- Tiers: S=**2528** A=**544** B=**343** C=**395**
 
 ## Top 40 by rank_score
 
@@ -21,20 +21,20 @@
 | 7 | S | `0x0e49…a27c` | Y | 14 | 12 | — | — | — | — | 25.0 |
 | 8 | S | `0x11f1…e76e` | Y | 14 | 34 | — | — | — | — | 25.0 |
 | 9 | S | `0x1672…dac5` | Y | 4 | 21 | — | — | — | — | 25.0 |
-| 10 | S | `0x28ab…ee96` | Y | 9 | 9 | — | — | — | — | 25.0 |
+| 10 | S | `0x28ab…ee96` | Y | 9 | 10 | — | — | — | — | 25.0 |
 | 11 | S | `0x2e27…1f97` | Y | 9 | 44 | — | — | — | — | 25.0 |
 | 12 | S | `0x2e54…6bbc` | Y | 7 | 10 | — | — | — | — | 25.0 |
 | 13 | S | `0x38c9…105d` | Y | 5 | 13 | — | — | — | — | 25.0 |
-| 14 | S | `0x3a97…eb99` | Y | 18 | 23 | — | — | — | — | 25.0 |
-| 15 | S | `0x40e5…6c08` | Y | 6 | 46 | — | — | — | — | 25.0 |
+| 14 | S | `0x3a97…eb99` | Y | 18 | 24 | — | — | — | — | 25.0 |
+| 15 | S | `0x40e5…6c08` | Y | 6 | 49 | — | — | — | — | 25.0 |
 | 16 | S | `0x4dec…3eee` | Y | 6 | 21 | — | — | — | — | 25.0 |
-| 17 | S | `0x4ede…6d0a` | Y | 39 | 30 | — | — | — | — | 25.0 |
+| 17 | S | `0x4ede…6d0a` | Y | 39 | 31 | — | — | — | — | 25.0 |
 | 18 | S | `0x4f0c…1995` | Y | 4 | 10 | — | — | — | — | 25.0 |
-| 19 | S | `0x52c1…75a1` | Y | 12 | 23 | — | — | — | — | 25.0 |
-| 20 | S | `0x55f3…02e8` | Y | 6 | 16 | — | — | — | — | 25.0 |
+| 19 | S | `0x52c1…75a1` | Y | 12 | 26 | — | — | — | — | 25.0 |
+| 20 | S | `0x55f3…02e8` | Y | 6 | 19 | — | — | — | — | 25.0 |
 | 21 | S | `0x62e5…5645` | Y | 4 | 20 | — | — | — | — | 25.0 |
-| 22 | S | `0x6d39…889d` | Y | 8 | 22 | — | — | — | — | 25.0 |
-| 23 | S | `0x6e57…9bed` | Y | 6 | 21 | — | — | — | — | 25.0 |
+| 22 | S | `0x6d39…889d` | Y | 8 | 23 | — | — | — | — | 25.0 |
+| 23 | S | `0x6e57…9bed` | Y | 6 | 22 | — | — | — | — | 25.0 |
 | 24 | S | `0x8ac3…b06d` | Y | 5 | 13 | — | — | — | — | 25.0 |
 | 25 | S | `0x8b21…10ef` | Y | 34 | 60 | — | — | — | — | 25.0 |
 | 26 | S | `0x8ca8…b128` | Y | 44 | 45 | — | — | — | — | 25.0 |
@@ -44,11 +44,11 @@
 | 30 | S | `0xbe66…dae5` | Y | 6 | 8 | — | — | — | — | 25.0 |
 | 31 | S | `0xc2c6…091c` | Y | 18 | 23 | — | — | — | — | 25.0 |
 | 32 | S | `0xc4f8…3a63` | Y | 27 | 16 | — | — | — | — | 25.0 |
-| 33 | S | `0xc5c3…6280` | Y | 11 | 27 | — | — | — | — | 25.0 |
+| 33 | S | `0xc5c3…6280` | Y | 14 | 29 | — | — | — | — | 25.0 |
 | 34 | S | `0xca29…a115` | Y | 10 | 13 | — | — | — | — | 25.0 |
 | 35 | S | `0xce00…30b3` | Y | 13 | 15 | — | — | — | — | 25.0 |
 | 36 | S | `0xd76c…77fa` | Y | 5 | 12 | — | — | — | — | 25.0 |
-| 37 | S | `0xe286…216d` | Y | 55 | 49 | — | — | — | — | 25.0 |
+| 37 | S | `0xe286…216d` | Y | 55 | 50 | — | — | — | — | 25.0 |
 | 38 | S | `0xe37f…7252` | Y | 12 | 23 | — | — | — | — | 25.0 |
 | 39 | S | `0xe5ee…380f` | Y | 17 | 22 | — | — | — | — | 25.0 |
 | 40 | S | `0xebaa…5686` | Y | 30 | 29 | — | — | — | — | 25.0 |
@@ -64,20 +64,20 @@
 - `0x0e499188bad587aa29089e161a804b3914f0a27c` score=25.0 elite=14 affE=12 rp=None wr=None
 - `0x11f1d1e6ef78fd865a3e0bc4a69d63a6145ee76e` score=25.0 elite=14 affE=34 rp=None wr=None
 - `0x167270c7e9eb9f223f2073d980f5fefd702fdac5` score=25.0 elite=4 affE=21 rp=None wr=None
-- `0x28ab9b5f50bbff7a5fd84ef61d31f62655c3ee96` score=25.0 elite=9 affE=9 rp=None wr=None
+- `0x28ab9b5f50bbff7a5fd84ef61d31f62655c3ee96` score=25.0 elite=9 affE=10 rp=None wr=None
 - `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=9 affE=44 rp=None wr=None
 - `0x2e5453a5f77a80fe7bfd09d98fd53d2cf2f46bbc` score=25.0 elite=7 affE=10 rp=None wr=None
 - `0x38c9d6d0bfc808157d8a106e9fc270985e29105d` score=25.0 elite=5 affE=13 rp=None wr=None
-- `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=23 rp=None wr=None
-- `0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08` score=25.0 elite=6 affE=46 rp=None wr=None
+- `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=24 rp=None wr=None
+- `0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08` score=25.0 elite=6 affE=49 rp=None wr=None
 - `0x4decb201ebf98df44c44346d2b2d11d0cba23eee` score=25.0 elite=6 affE=21 rp=None wr=None
-- `0x4ede7b8dcc2b65592641c87485bc862f15776d0a` score=25.0 elite=39 affE=30 rp=None wr=None
+- `0x4ede7b8dcc2b65592641c87485bc862f15776d0a` score=25.0 elite=39 affE=31 rp=None wr=None
 - `0x4f0c3ba33a6eca7b646f1d28b8de970e39621995` score=25.0 elite=4 affE=10 rp=None wr=None
-- `0x52c1ebfdeca53da4877488b54a969daf573375a1` score=25.0 elite=12 affE=23 rp=None wr=None
-- `0x55f3422138e9fed0bd81351bff66c882550002e8` score=25.0 elite=6 affE=16 rp=None wr=None
+- `0x52c1ebfdeca53da4877488b54a969daf573375a1` score=25.0 elite=12 affE=26 rp=None wr=None
+- `0x55f3422138e9fed0bd81351bff66c882550002e8` score=25.0 elite=6 affE=19 rp=None wr=None
 - `0x62e5332dcb286f1753d245707c91a38821bb5645` score=25.0 elite=4 affE=20 rp=None wr=None
-- `0x6d39b8ad0e4e9649d7b2a14ae1ac81165c9b889d` score=25.0 elite=8 affE=22 rp=None wr=None
-- `0x6e57d0f76f07a966017b46d319fe93dd84989bed` score=25.0 elite=6 affE=21 rp=None wr=None
+- `0x6d39b8ad0e4e9649d7b2a14ae1ac81165c9b889d` score=25.0 elite=8 affE=23 rp=None wr=None
+- `0x6e57d0f76f07a966017b46d319fe93dd84989bed` score=25.0 elite=6 affE=22 rp=None wr=None
 - `0x8ac3fce9c093af3ae5cd632b7c4f9ddb47c8b06d` score=25.0 elite=5 affE=13 rp=None wr=None
 - `0x8b216cc896f32bcabca3649ca918d532f72010ef` score=25.0 elite=34 affE=60 rp=None wr=None
 

@@ -1,10 +1,10 @@
 # On-chain expand from ranked S/A seeds
 
-- Updated (UTC): 2026-10-08T08:04:34.884128+00:00
+- Updated (UTC): 2026-10-12T02:03:50.512864+00:00
 - Seeds used: **25** (tiers=['A', 'S'])
 - Tokens scanned: **30**
-- Co-buyer candidates: **1569**
-- Added to onchain file: +**7** (file n=21504)
+- Co-buyer candidates: **1545**
+- Added to onchain file: +**52** (file n=25151)
 - Merged to watch: **0** (ONCHAIN_MERGE_WATCH=0)
 - Min co-seed tokens: 2
 - Blockers: none
