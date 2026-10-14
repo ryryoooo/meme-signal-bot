@@ -1,7 +1,7 @@
 # On-chain wallet collect summary
 
-- JST: 2026-10-14T11:37:26.723078+09:00
-- UTC: 2026-10-14T02:37:26.723078+00:00
+- JST: 2026-10-14T15:18:49.512081+09:00
+- UTC: 2026-10-14T06:18:49.512081+00:00
 - Keeper floors: Arc=0.01 RH_onchain=500.0
 
 ## Arc
@@ -22,17 +22,17 @@
 
 - **ok**: True
 - **watchlist_n**: 3545
-- **onchain_n**: 26416
+- **onchain_n**: 26522
 - **added**: 0
 - **touched**: 0
 - **merge_to_watch**: False
-- **xfers_scanned**: 50
-- **addrs_scanned**: 0
+- **xfers_scanned**: 300
+- **addrs_scanned**: 100
 - **etherscan_xfers**: 800
-- notes: Blockscout /api etherscan-compat reachable; v2 /token-transfers → http=500 "Internal server error"; v2 /addresses → http=500 "Internal server error"; tokentx 0x5fc5360d http=500; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
+- notes: Blockscout /api etherscan-compat reachable; v2 /addresses → http=500 "Internal server error"; tokentx 0xcec185eb http=500; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
 
 - file wallets.jsonl rows: **3545**
-- file wallets_onchain.jsonl rows: **26416**
+- file wallets_onchain.jsonl rows: **26522**
 
 ## Credit policy
 
