@@ -1,6 +1,6 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-10-14T05:03:20.817024+00:00** (UTC) / JST+9
+- Updated: **2026-10-14T17:20:58.607219+00:00** (UTC) / JST+9
 - Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3545**
 - Elapsed: **0.3s** · tagged_rows=0 · RPC=False
 
