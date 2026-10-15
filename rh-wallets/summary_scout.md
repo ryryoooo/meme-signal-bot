@@ -1,11 +1,11 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-10-15T02:02:26.668415+00:00
-- Ranked wallets: **3182**
+- Updated (UTC): 2026-10-15T06:00:56.984883+00:00
+- Ranked wallets: **3188**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=None
 - FOMO overlaps: **0**
-- Merged to main watch: **3182**
+- Merged to main watch: **3188**
 
 ## Top by scout_rank_score
 
@@ -34,8 +34,8 @@
 | 21 | `0xd269…a1c0` | elite | 62 | 62 | 25,498 | — | — | — | — | 55.26 |
 | 22 | `0x0fc7…2608` | elite | 62 | 62 | 16,970 | — | — | — | — | 55.26 |
 | 23 | `0xfd4a…1910` | elite | 59 | 59 | 18,380 | — | — | — | — | 52.86 |
-| 24 | `0xe286…216d` | elite | 64 | 55 | 34,877 | — | — | — | — | 49.66 |
-| 25 | `0xa450…00bb` | elite | 54 | 54 | 10,664 | — | — | — | — | 48.86 |
+| 24 | `0xa450…00bb` | elite | 56 | 56 | 11,016 | — | — | — | — | 50.46 |
+| 25 | `0xe286…216d` | elite | 64 | 55 | 34,877 | — | — | — | — | 49.66 |
 | 26 | `0x24e9…7ba3` | elite | 53 | 53 | 20,111 | — | — | — | — | 48.06 |
 | 27 | `0x47a2…1b32` | elite | 53 | 53 | 12,770 | — | — | — | — | 48.06 |
 | 28 | `0x2d5f…72b7` | elite | 53 | 53 | 42,549 | — | — | — | — | 48.06 |
