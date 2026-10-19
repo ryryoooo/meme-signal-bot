@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-10-19T02:02:12.855626+00:00
-- Ranked wallets: **3861**
-- Seed (scout_tg resolved): **3212** (elite=1438)
+- Updated (UTC): 2026-10-19T07:02:05.922227+00:00
+- Ranked wallets: **3873**
+- Seed (scout_tg resolved): **3222** (elite=1443)
 - Token graph size: **2285**
-- FOMO overlaps: **121**
-- Promoted tags (rank_s/rank_a): **3135**
-- Tiers: S=**2589** A=**546** B=**340** C=**386**
+- FOMO overlaps: **123**
+- Promoted tags (rank_s/rank_a): **3145**
+- Tiers: S=**2599** A=**546** B=**340** C=**388**
 
 ## Top 40 by rank_score
 
