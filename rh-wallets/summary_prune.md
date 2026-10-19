@@ -1,8 +1,8 @@
-# Watchlist prune (2026-10-18T17:52:35.260764+00:00)
+# Watchlist prune (2026-10-19T20:26:00.250102+00:00)
 
 - Watch: `rh-wallets/wallets.jsonl`
-- Before: **3561** (+0 promote-missing)
-- After: **3561**
+- Before: **3605** (+0 promote-missing)
+- After: **3605**
 - Mode: `demote` dry_run=False
 - Demoted: **0** · Removed: **0** · Flagged: **0**
 - Pruned list: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/raw/pruned_wallets.jsonl`
