@@ -1,19 +1,19 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-10-22T02:00:50.190735+00:00
-- Ranked wallets: **3893**
-- Seed (scout_tg resolved): **3235** (elite=1444)
-- Token graph size: **2302**
+- Updated (UTC): 2026-10-22T07:01:53.041252+00:00
+- Ranked wallets: **3907**
+- Seed (scout_tg resolved): **3249** (elite=1452)
+- Token graph size: **2306**
 - FOMO overlaps: **132**
-- Promoted tags (rank_s/rank_a): **3158**
-- Tiers: S=**2609** A=**549** B=**340** C=**395**
+- Promoted tags (rank_s/rank_a): **3171**
+- Tiers: S=**2619** A=**552** B=**341** C=**395**
 
 ## Top 40 by rank_score
 
 | # | tier | addr | seed | elite | affE | WR | n | realized | FOMO | score |
 |---|------|------|------|-------|------|----|---|----------|------|-------|
 | 1 | S | `0x00d7…4a6b` | Y | 14 | 67 | — | — | — | — | 25.0 |
-| 2 | S | `0x01bf…76a3` | Y | 29 | 32 | — | — | — | — | 25.0 |
+| 2 | S | `0x01bf…76a3` | Y | 31 | 33 | — | — | — | — | 25.0 |
 | 3 | S | `0x02b0…711d` | Y | 12 | 14 | — | — | — | — | 25.0 |
 | 4 | S | `0x0718…a967` | Y | 5 | 9 | — | — | — | — | 25.0 |
 | 5 | S | `0x0c15…ec1b` | Y | 17 | 12 | — | — | — | — | 25.0 |
@@ -56,7 +56,7 @@
 ## Tier S
 
 - `0x00d78daf782921b27a6b407d34f19842c10a4a6b` score=25.0 elite=14 affE=67 rp=None wr=None
-- `0x01bfd7a540fd01a34d28b650f3e0f14f978a76a3` score=25.0 elite=29 affE=32 rp=None wr=None
+- `0x01bfd7a540fd01a34d28b650f3e0f14f978a76a3` score=25.0 elite=31 affE=33 rp=None wr=None
 - `0x02b0c14d2c03852ccebd1b2e66ab3c075a57711d` score=25.0 elite=12 affE=14 rp=None wr=None
 - `0x071840472bf173f59c6fd6b2dc36417236caa967` score=25.0 elite=5 affE=9 rp=None wr=None
 - `0x0c15520ed4faa42468368337f3f8da9b130eec1b` score=25.0 elite=17 affE=12 rp=None wr=None
