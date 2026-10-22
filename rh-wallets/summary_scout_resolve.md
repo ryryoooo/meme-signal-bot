@@ -1,16 +1,16 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-10-19T07:02:01.496156+00:00
-- Unique pairs: **3222/3582** (89.9%)
-- Trunc rows still unresolved: **783**
-- Methods: pair_cache=38 token_scoped=3 multi_union=0 mega=7 global=0 two_hit=0
-- Blockscout: tokens_fetched=3 nonempty=3 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=121 multi_match=0 no_match=239
+- Updated (UTC): 2026-10-22T02:00:43.978736+00:00
+- Unique pairs: **3235/3597** (89.9%)
+- Trunc rows still unresolved: **798**
+- Methods: pair_cache=149 token_scoped=0 multi_union=0 mega=13 global=0 two_hit=0
+- Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=123 multi_match=0 no_match=239
 
 ## Top unresolved blockers
 
 - `no_match`: 239
-- `api_fail`: 121
+- `api_fail`: 123
 
 
 ## Hard ceiling / plateau
@@ -43,7 +43,7 @@
 - `0x1002|b2f5` reason=no_match tokens=4 union=4118 tier=elite
 - `0x113f|ac20` reason=no_match tokens=1 union=248 tier=elite
 - `0x12c5|3470` reason=no_match tokens=2 union=311 tier=elite
-- `0x12fd|6a34` reason=api_fail tokens=5 union=0 tier=good
+- `0x12fd|6a34` reason=api_fail tokens=6 union=0 tier=good
 - `0x1343|8a62` reason=no_match tokens=1 union=138 tier=elite
 - `0x1435|b0ae` reason=no_match tokens=2 union=536 tier=good
 - `0x150c|82a5` reason=no_match tokens=1 union=154 tier=good

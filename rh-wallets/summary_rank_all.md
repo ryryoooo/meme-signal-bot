@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-10-19T07:02:05.922227+00:00
-- Ranked wallets: **3873**
-- Seed (scout_tg resolved): **3222** (elite=1443)
-- Token graph size: **2285**
-- FOMO overlaps: **123**
-- Promoted tags (rank_s/rank_a): **3145**
-- Tiers: S=**2599** A=**546** B=**340** C=**388**
+- Updated (UTC): 2026-10-22T02:00:50.190735+00:00
+- Ranked wallets: **3893**
+- Seed (scout_tg resolved): **3235** (elite=1444)
+- Token graph size: **2302**
+- FOMO overlaps: **132**
+- Promoted tags (rank_s/rank_a): **3158**
+- Tiers: S=**2609** A=**549** B=**340** C=**395**
 
 ## Top 40 by rank_score
 
@@ -25,7 +25,7 @@
 | 11 | S | `0x2e27…1f97` | Y | 9 | 51 | — | — | — | — | 25.0 |
 | 12 | S | `0x2e54…6bbc` | Y | 7 | 10 | — | — | — | — | 25.0 |
 | 13 | S | `0x38c9…105d` | Y | 5 | 14 | — | — | — | — | 25.0 |
-| 14 | S | `0x3a97…eb99` | Y | 18 | 28 | — | — | — | — | 25.0 |
+| 14 | S | `0x3a97…eb99` | Y | 18 | 29 | — | — | — | — | 25.0 |
 | 15 | S | `0x40e5…6c08` | Y | 6 | 53 | — | — | — | — | 25.0 |
 | 16 | S | `0x4dec…3eee` | Y | 6 | 21 | — | — | — | — | 25.0 |
 | 17 | S | `0x4ede…6d0a` | Y | 39 | 31 | — | — | — | — | 25.0 |
@@ -36,19 +36,19 @@
 | 22 | S | `0x6d39…889d` | Y | 8 | 23 | — | — | — | — | 25.0 |
 | 23 | S | `0x6e57…9bed` | Y | 6 | 22 | — | — | — | — | 25.0 |
 | 24 | S | `0x8ac3…b06d` | Y | 5 | 14 | — | — | — | — | 25.0 |
-| 25 | S | `0x8b21…10ef` | Y | 34 | 68 | — | — | — | — | 25.0 |
+| 25 | S | `0x8b21…10ef` | Y | 34 | 70 | — | — | — | — | 25.0 |
 | 26 | S | `0x8ca8…b128` | Y | 44 | 45 | — | — | — | — | 25.0 |
 | 27 | S | `0xa83b…8811` | Y | 30 | 33 | — | — | — | — | 25.0 |
 | 28 | S | `0xac35…2b28` | Y | 13 | 15 | — | — | — | — | 25.0 |
 | 29 | S | `0xb41c…f569` | Y | 9 | 12 | — | — | — | — | 25.0 |
 | 30 | S | `0xbe66…dae5` | Y | 6 | 18 | — | — | — | — | 25.0 |
-| 31 | S | `0xc2c6…091c` | Y | 23 | 26 | — | — | — | — | 25.0 |
+| 31 | S | `0xc2c6…091c` | Y | 25 | 27 | — | — | — | — | 25.0 |
 | 32 | S | `0xc4f8…3a63` | Y | 27 | 16 | — | — | — | — | 25.0 |
 | 33 | S | `0xc5c3…6280` | Y | 26 | 38 | — | — | — | — | 25.0 |
 | 34 | S | `0xca29…a115` | Y | 10 | 13 | — | — | — | — | 25.0 |
 | 35 | S | `0xce00…30b3` | Y | 13 | 15 | — | — | — | — | 25.0 |
 | 36 | S | `0xd76c…77fa` | Y | 5 | 12 | — | — | — | — | 25.0 |
-| 37 | S | `0xd85c…e170` | Y | 21 | 20 | — | — | — | — | 25.0 |
+| 37 | S | `0xd85c…e170` | Y | 21 | 21 | — | — | — | — | 25.0 |
 | 38 | S | `0xe286…216d` | Y | 55 | 53 | — | — | — | — | 25.0 |
 | 39 | S | `0xe37f…7252` | Y | 12 | 24 | — | — | — | — | 25.0 |
 | 40 | S | `0xe5ee…380f` | Y | 17 | 22 | — | — | — | — | 25.0 |
@@ -68,7 +68,7 @@
 - `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=9 affE=51 rp=None wr=None
 - `0x2e5453a5f77a80fe7bfd09d98fd53d2cf2f46bbc` score=25.0 elite=7 affE=10 rp=None wr=None
 - `0x38c9d6d0bfc808157d8a106e9fc270985e29105d` score=25.0 elite=5 affE=14 rp=None wr=None
-- `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=28 rp=None wr=None
+- `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=29 rp=None wr=None
 - `0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08` score=25.0 elite=6 affE=53 rp=None wr=None
 - `0x4decb201ebf98df44c44346d2b2d11d0cba23eee` score=25.0 elite=6 affE=21 rp=None wr=None
 - `0x4ede7b8dcc2b65592641c87485bc862f15776d0a` score=25.0 elite=39 affE=31 rp=None wr=None
@@ -79,7 +79,7 @@
 - `0x6d39b8ad0e4e9649d7b2a14ae1ac81165c9b889d` score=25.0 elite=8 affE=23 rp=None wr=None
 - `0x6e57d0f76f07a966017b46d319fe93dd84989bed` score=25.0 elite=6 affE=22 rp=None wr=None
 - `0x8ac3fce9c093af3ae5cd632b7c4f9ddb47c8b06d` score=25.0 elite=5 affE=14 rp=None wr=None
-- `0x8b216cc896f32bcabca3649ca918d532f72010ef` score=25.0 elite=34 affE=68 rp=None wr=None
+- `0x8b216cc896f32bcabca3649ca918d532f72010ef` score=25.0 elite=34 affE=70 rp=None wr=None
 
 ## Tier A
 
