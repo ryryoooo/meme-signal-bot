@@ -1,27 +1,27 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-10-23T05:02:55.712938+00:00** (UTC) / JST+9
+- Updated: **2026-10-23T17:17:01.374684+00:00** (UTC) / JST+9
 - Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3641**
-- Elapsed: **0.2s** · tagged_rows=0 · RPC=False
+- Elapsed: **0.3s** · tagged_rows=5 · RPC=False
 
 ## Counts
 
 | bucket | count | 意味 |
 |---|---:|---|
-| ACTIVE | **393** | 最近取引 or lifetime proxy |
-| INACTIVE | **3248** | 直近証拠なし / 未vet |
-| QUALITY 優良 | **216** | WR≥0.5 + PnL≥1000 + n≥20 |
+| ACTIVE | **395** | 最近取引 or lifetime proxy |
+| INACTIVE | **3246** | 直近証拠なし / 未vet |
+| QUALITY 優良 | **217** | WR≥0.5 + PnL≥1000 + n≥20 |
 | WEAK | **1** | 低WR / 弱いPnL / ワンショット |
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **261/3641** (7.2%)
-- `realized_pnl*` filled: **393/3641** (10.8%)
-- `n_trades*` filled: **261/3641**
+- `win_rate` filled: **266/3641** (7.3%)
+- `realized_pnl*` filled: **398/3641** (10.9%)
+- `n_trades*` filled: **263/3641**
 - `*_7d` WR filled: **0/3641** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
 - `n_trades_7d` filled: **0/3641**
 - `last_active*` filled: **0/3641**
-- activity_metric breakdown: `{"lifetime_proxy": 393, "unvetted_proxy": 3248}`
+- activity_metric breakdown: `{"lifetime_proxy": 395, "unvetted_proxy": 3246}`
 
 ## Thresholds
 
