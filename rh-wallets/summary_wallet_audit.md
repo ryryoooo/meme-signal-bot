@@ -1,27 +1,27 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-10-25T16:34:42.122643+00:00** (UTC) / JST+9
-- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3641**
-- Elapsed: **0.3s** · tagged_rows=0 · RPC=False
+- Updated: **2026-10-26T04:59:07.918002+00:00** (UTC) / JST+9
+- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3691**
+- Elapsed: **0.3s** · tagged_rows=3366 · RPC=False
 
 ## Counts
 
 | bucket | count | 意味 |
 |---|---:|---|
-| ACTIVE | **399** | 最近取引 or lifetime proxy |
-| INACTIVE | **3242** | 直近証拠なし / 未vet |
-| QUALITY 優良 | **218** | WR≥0.5 + PnL≥1000 + n≥20 |
-| WEAK | **3** | 低WR / 弱いPnL / ワンショット |
+| ACTIVE | **402** | 最近取引 or lifetime proxy |
+| INACTIVE | **3289** | 直近証拠なし / 未vet |
+| QUALITY 優良 | **216** | WR≥0.5 + PnL≥1000 + n≥20 |
+| WEAK | **0** | 低WR / 弱いPnL / ワンショット |
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **270/3641** (7.4%)
-- `realized_pnl*` filled: **402/3641** (11.0%)
-- `n_trades*` filled: **267/3641**
-- `*_7d` WR filled: **0/3641** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
-- `n_trades_7d` filled: **0/3641**
-- `last_active*` filled: **0/3641**
-- activity_metric breakdown: `{"lifetime_proxy": 399, "unvetted_proxy": 3242}`
+- `win_rate` filled: **260/3691** (7.0%)
+- `realized_pnl*` filled: **402/3691** (10.9%)
+- `n_trades*` filled: **260/3691**
+- `*_7d` WR filled: **0/3691** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
+- `n_trades_7d` filled: **0/3691**
+- `last_active*` filled: **0/3691**
+- activity_metric breakdown: `{"lifetime_proxy": 402, "unvetted_proxy": 3289}`
 
 ## Thresholds
 
@@ -44,9 +44,7 @@
 
 ## Top 10 WEAK（prune候補）
 
-1. `0xa053641c649d93b51ce88eafec998ffb9f534f0b` wr=0.2506297229219144 pnl=3095 n=2566 reason=low_wr=0.251 n=2566
-2. `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` wr=0.32142857142857145 pnl=-9937 n=3871 reason=low_wr=0.321 n=3871
-3. `0x8ee99f56672daaaff9d79b0f86d5b1e41f0f3e7b` wr=0.3393665158371041 pnl=3475 n=419 reason=low_wr=0.339 n=419
+- (none)
 
 ## Action
 
