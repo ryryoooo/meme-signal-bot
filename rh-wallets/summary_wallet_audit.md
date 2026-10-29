@@ -1,27 +1,27 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-10-28T18:23:20.383499+00:00** (UTC) / JST+9
-- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3678**
-- Elapsed: **0.3s** · tagged_rows=0 · RPC=False
+- Updated: **2026-10-29T06:00:17.393418+00:00** (UTC) / JST+9
+- Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3712**
+- Elapsed: **0.3s** · tagged_rows=3407 · RPC=False
 
 ## Counts
 
 | bucket | count | 意味 |
 |---|---:|---|
 | ACTIVE | **393** | 最近取引 or lifetime proxy |
-| INACTIVE | **3285** | 直近証拠なし / 未vet |
-| QUALITY 優良 | **217** | WR≥0.5 + PnL≥1000 + n≥20 |
-| WEAK | **2** | 低WR / 弱いPnL / ワンショット |
+| INACTIVE | **3319** | 直近証拠なし / 未vet |
+| QUALITY 優良 | **216** | WR≥0.5 + PnL≥1000 + n≥20 |
+| WEAK | **0** | 低WR / 弱いPnL / ワンショット |
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **270/3678** (7.3%)
-- `realized_pnl*` filled: **397/3678** (10.8%)
-- `n_trades*` filled: **266/3678**
-- `*_7d` WR filled: **0/3678** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
-- `n_trades_7d` filled: **0/3678**
-- `last_active*` filled: **0/3678**
-- activity_metric breakdown: `{"lifetime_proxy": 393, "unvetted_proxy": 3285}`
+- `win_rate` filled: **260/3712** (7.0%)
+- `realized_pnl*` filled: **393/3712** (10.6%)
+- `n_trades*` filled: **260/3712**
+- `*_7d` WR filled: **0/3712** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
+- `n_trades_7d` filled: **0/3712**
+- `last_active*` filled: **0/3712**
+- activity_metric breakdown: `{"lifetime_proxy": 393, "unvetted_proxy": 3319}`
 
 ## Thresholds
 
@@ -44,8 +44,7 @@
 
 ## Top 10 WEAK（prune候補）
 
-1. `0xa053641c649d93b51ce88eafec998ffb9f534f0b` wr=0.25235109717868337 pnl=2318 n=1995 reason=low_wr=0.252 n=1995
-2. `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` wr=0.3165905631659056 pnl=-12178 n=3507 reason=low_wr=0.317 n=3507
+- (none)
 
 ## Action
 
