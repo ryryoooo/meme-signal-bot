@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-11-05T09:01:15.181373+00:00
-- Ranked wallets: **3979**
-- Seed (scout_tg resolved): **3356** (elite=1489)
-- Token graph size: **2423**
-- FOMO overlaps: **97**
-- Promoted tags (rank_s/rank_a): **3274**
-- Tiers: S=**2712** A=**562** B=**346** C=**359**
+- Updated (UTC): 2026-11-09T02:01:02.667366+00:00
+- Ranked wallets: **3956**
+- Seed (scout_tg resolved): **3366** (elite=1490)
+- Token graph size: **2434**
+- FOMO overlaps: **64**
+- Promoted tags (rank_s/rank_a): **3283**
+- Tiers: S=**2715** A=**568** B=**346** C=**327**
 
 ## Top 40 by rank_score
 
@@ -23,8 +23,8 @@
 | 9 | S | `0x1672…dac5` | Y | 4 | 21 | — | — | — | — | 25.0 |
 | 10 | S | `0x1937…2835` | Y | 8 | 4 | — | — | — | — | 25.0 |
 | 11 | S | `0x28ab…ee96` | Y | 9 | 10 | — | — | — | — | 25.0 |
-| 12 | S | `0x2e27…1f97` | Y | 11 | 58 | — | — | — | — | 25.0 |
-| 13 | S | `0x2e54…6bbc` | Y | 7 | 10 | — | — | — | — | 25.0 |
+| 12 | S | `0x2e27…1f97` | Y | 11 | 59 | — | — | — | — | 25.0 |
+| 13 | S | `0x2e54…6bbc` | Y | 9 | 11 | — | — | — | — | 25.0 |
 | 14 | S | `0x38c9…105d` | Y | 5 | 14 | — | — | — | — | 25.0 |
 | 15 | S | `0x3a97…eb99` | Y | 18 | 30 | — | — | — | — | 25.0 |
 | 16 | S | `0x40e5…6c08` | Y | 6 | 53 | — | — | — | — | 25.0 |
@@ -66,8 +66,8 @@
 - `0x167270c7e9eb9f223f2073d980f5fefd702fdac5` score=25.0 elite=4 affE=21 rp=None wr=None
 - `0x19373466ea82bf277ba0ad97566ec59b09ea2835` score=25.0 elite=8 affE=4 rp=None wr=None
 - `0x28ab9b5f50bbff7a5fd84ef61d31f62655c3ee96` score=25.0 elite=9 affE=10 rp=None wr=None
-- `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=11 affE=58 rp=None wr=None
-- `0x2e5453a5f77a80fe7bfd09d98fd53d2cf2f46bbc` score=25.0 elite=7 affE=10 rp=None wr=None
+- `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=11 affE=59 rp=None wr=None
+- `0x2e5453a5f77a80fe7bfd09d98fd53d2cf2f46bbc` score=25.0 elite=9 affE=11 rp=None wr=None
 - `0x38c9d6d0bfc808157d8a106e9fc270985e29105d` score=25.0 elite=5 affE=14 rp=None wr=None
 - `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=30 rp=None wr=None
 - `0x40e56fa7759c1bdc67764fcd76c8ee7bc9486c08` score=25.0 elite=6 affE=53 rp=None wr=None

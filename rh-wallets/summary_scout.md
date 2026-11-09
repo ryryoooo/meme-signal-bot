@@ -1,17 +1,17 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-11-05T09:01:10.253023+00:00
-- Ranked wallets: **3356**
+- Updated (UTC): 2026-11-09T02:00:58.378760+00:00
+- Ranked wallets: **3366**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=None
 - FOMO overlaps: **0**
-- Merged to main watch: **3356**
+- Merged to main watch: **3366**
 
 ## Top by scout_rank_score
 
 | # | addr | tier | hits | elite | buy$ | WR | n | realized | FOMO | score |
 |---|------|------|------|-------|------|----|---|----------|------|-------|
-| 1 | `0x6078…58b2` | elite | 159 | 159 | 61,285 | — | — | — | — | 132.86 |
+| 1 | `0x6078…58b2` | elite | 161 | 161 | 62,009 | — | — | — | — | 134.46 |
 | 2 | `0x2fd1…003d` | elite | 136 | 136 | 51,903 | — | — | — | — | 114.46 |
 | 3 | `0x3a13…e4ef` | elite | 110 | 110 | 49,894 | — | — | — | — | 93.66 |
 | 4 | `0xd179…f00c` | elite | 99 | 99 | 67,639 | — | — | — | — | 84.86 |
@@ -54,7 +54,7 @@
 
 ## Top elite by frequency
 
-- `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` elite=159 hits=159 buy=$61,285 rp=None wr=None
+- `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` elite=161 hits=161 buy=$62,009 rp=None wr=None
 - `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` elite=136 hits=136 buy=$51,903 rp=None wr=None
 - `0x3a1345bc81e8479438234826f52e885f6817e4ef` elite=110 hits=110 buy=$49,894 rp=None wr=None
 - `0xd1794ddf809e9809572e034ba2e3b80dced1f00c` elite=99 hits=99 buy=$67,639 rp=None wr=None
