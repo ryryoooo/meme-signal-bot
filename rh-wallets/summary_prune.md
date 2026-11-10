@@ -1,4 +1,4 @@
-# Watchlist prune (2026-11-09T23:42:51.553146+00:00)
+# Watchlist prune (2026-11-10T21:13:23.436847+00:00)
 
 - Watch: `rh-wallets/wallets.jsonl`
 - Before: **3701** (+0 promote-missing)
