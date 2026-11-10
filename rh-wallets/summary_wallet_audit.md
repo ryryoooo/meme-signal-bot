@@ -1,8 +1,8 @@
 # RH Wallet Audit（品質分類）
 
-- Updated: **2026-11-10T07:29:47.714213+00:00** (UTC) / JST+9
+- Updated: **2026-11-10T19:51:30.988397+00:00** (UTC) / JST+9
 - Watch: `/home/runner/work/meme-signal-bot/meme-signal-bot/rh-wallets/wallets.jsonl` · total **3701**
-- Elapsed: **0.3s** · tagged_rows=5 · RPC=False
+- Elapsed: **0.3s** · tagged_rows=2 · RPC=False
 
 ## Counts
 
@@ -15,8 +15,8 @@
 
 ## Data coverage（どの指標か明示）
 
-- `win_rate` filled: **265/3701** (7.2%)
-- `realized_pnl*` filled: **333/3701** (9.0%)
+- `win_rate` filled: **267/3701** (7.2%)
+- `realized_pnl*` filled: **335/3701** (9.1%)
 - `n_trades*` filled: **263/3701**
 - `*_7d` WR filled: **0/3701** (0.0%) ← GMGN 7d 未充足なら lifetime で判定
 - `n_trades_7d` filled: **0/3701**
