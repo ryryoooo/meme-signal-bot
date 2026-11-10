@@ -1,7 +1,7 @@
 # On-chain wallet collect summary
 
-- JST: 2026-11-09T23:40:22.850099+09:00
-- UTC: 2026-11-09T14:40:22.850099+00:00
+- JST: 2026-11-10T09:16:08.414050+09:00
+- UTC: 2026-11-10T00:16:08.414050+00:00
 - Keeper floors: Arc=0.01 RH_onchain=500.0
 
 ## Arc
@@ -22,17 +22,17 @@
 
 - **ok**: True
 - **watchlist_n**: 3701
-- **onchain_n**: 45177
+- **onchain_n**: 45245
 - **added**: 0
 - **touched**: 0
 - **merge_to_watch**: False
 - **xfers_scanned**: 300
 - **addrs_scanned**: 150
-- **etherscan_xfers**: 0
-- notes: Blockscout /api etherscan-compat reachable; v2 /tokens?type=ERC-20 → http=0 TimeoutError: The read operation timed out; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
+- **etherscan_xfers**: 900
+- notes: Blockscout /api etherscan-compat reachable; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x74be72af http=429; tokentx 0xc6911796 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
 
 - file wallets.jsonl rows: **3701**
-- file wallets_onchain.jsonl rows: **45177**
+- file wallets_onchain.jsonl rows: **45245**
 
 ## Credit policy
 
