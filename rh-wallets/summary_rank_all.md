@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-11-09T09:01:02.987355+00:00
-- Ranked wallets: **3967**
-- Seed (scout_tg resolved): **3373** (elite=1490)
-- Token graph size: **2434**
-- FOMO overlaps: **68**
-- Promoted tags (rank_s/rank_a): **3290**
-- Tiers: S=**2722** A=**568** B=**346** C=**331**
+- Updated (UTC): 2026-11-12T02:01:37.849977+00:00
+- Ranked wallets: **3991**
+- Seed (scout_tg resolved): **3388** (elite=1496)
+- Token graph size: **2443**
+- FOMO overlaps: **78**
+- Promoted tags (rank_s/rank_a): **3303**
+- Tiers: S=**2731** A=**572** B=**348** C=**340**
 
 ## Top 40 by rank_score
 
@@ -23,7 +23,7 @@
 | 9 | S | `0x1672…dac5` | Y | 4 | 21 | — | — | — | — | 25.0 |
 | 10 | S | `0x1937…2835` | Y | 8 | 4 | — | — | — | — | 25.0 |
 | 11 | S | `0x28ab…ee96` | Y | 9 | 10 | — | — | — | — | 25.0 |
-| 12 | S | `0x2e27…1f97` | Y | 11 | 59 | — | — | — | — | 25.0 |
+| 12 | S | `0x2e27…1f97` | Y | 11 | 60 | — | — | — | — | 25.0 |
 | 13 | S | `0x2e54…6bbc` | Y | 9 | 11 | — | — | — | — | 25.0 |
 | 14 | S | `0x38c9…105d` | Y | 5 | 14 | — | — | — | — | 25.0 |
 | 15 | S | `0x3a97…eb99` | Y | 18 | 30 | — | — | — | — | 25.0 |
@@ -45,12 +45,12 @@
 | 31 | S | `0xbe66…dae5` | Y | 6 | 18 | — | — | — | — | 25.0 |
 | 32 | S | `0xc2c6…091c` | Y | 30 | 30 | — | — | — | — | 25.0 |
 | 33 | S | `0xc4f8…3a63` | Y | 27 | 16 | — | — | — | — | 25.0 |
-| 34 | S | `0xc5c3…6280` | Y | 26 | 38 | — | — | — | — | 25.0 |
+| 34 | S | `0xc5c3…6280` | Y | 26 | 39 | — | — | — | — | 25.0 |
 | 35 | S | `0xca29…a115` | Y | 10 | 13 | — | — | — | — | 25.0 |
 | 36 | S | `0xce00…30b3` | Y | 13 | 15 | — | — | — | — | 25.0 |
 | 37 | S | `0xd76c…77fa` | Y | 5 | 12 | — | — | — | — | 25.0 |
-| 38 | S | `0xd85c…e170` | Y | 21 | 32 | — | — | — | — | 25.0 |
-| 39 | S | `0xe286…216d` | Y | 55 | 54 | — | — | — | — | 25.0 |
+| 38 | S | `0xd85c…e170` | Y | 21 | 35 | — | — | — | — | 25.0 |
+| 39 | S | `0xe286…216d` | Y | 57 | 55 | — | — | — | — | 25.0 |
 | 40 | S | `0xe37f…7252` | Y | 12 | 24 | — | — | — | — | 25.0 |
 
 ## Tier S
@@ -66,7 +66,7 @@
 - `0x167270c7e9eb9f223f2073d980f5fefd702fdac5` score=25.0 elite=4 affE=21 rp=None wr=None
 - `0x19373466ea82bf277ba0ad97566ec59b09ea2835` score=25.0 elite=8 affE=4 rp=None wr=None
 - `0x28ab9b5f50bbff7a5fd84ef61d31f62655c3ee96` score=25.0 elite=9 affE=10 rp=None wr=None
-- `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=11 affE=59 rp=None wr=None
+- `0x2e27296db73efa090c33823b0b637f031d1a1f97` score=25.0 elite=11 affE=60 rp=None wr=None
 - `0x2e5453a5f77a80fe7bfd09d98fd53d2cf2f46bbc` score=25.0 elite=9 affE=11 rp=None wr=None
 - `0x38c9d6d0bfc808157d8a106e9fc270985e29105d` score=25.0 elite=5 affE=14 rp=None wr=None
 - `0x3a9732edd0624b39d006c89a0e327020dc06eb99` score=25.0 elite=18 affE=30 rp=None wr=None
