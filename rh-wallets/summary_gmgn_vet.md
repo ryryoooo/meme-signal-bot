@@ -1,6 +1,6 @@
 # GMGN throttled vet
 
-- Updated: **2026-11-15T06:59:25.489369+00:00**
+- Updated: **2026-11-15T16:31:22.688155+00:00**
 - Period: **30d**
 - Calls: **5** vetted_ok: **4** wr_gained: **0** err: `rate_limited`
 - Cap/sleep: 5/20.0s priority=elite
