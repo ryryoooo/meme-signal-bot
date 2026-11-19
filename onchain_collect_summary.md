@@ -1,7 +1,7 @@
 # On-chain wallet collect summary
 
-- JST: 2026-11-19T21:16:13.531692+09:00
-- UTC: 2026-11-19T12:16:13.531692+00:00
+- JST: 2026-11-19T23:52:57.623932+09:00
+- UTC: 2026-11-19T14:52:57.623932+00:00
 - Keeper floors: Arc=0.01 RH_onchain=500.0
 
 ## Arc
@@ -22,7 +22,7 @@
 
 - **ok**: True
 - **watchlist_n**: 3736
-- **onchain_n**: 49026
+- **onchain_n**: 49085
 - **added**: 0
 - **touched**: 0
 - **merge_to_watch**: False
@@ -32,7 +32,7 @@
 - notes: Blockscout /api etherscan-compat reachable; tokentx 0x5fc5360d http=429; tokentx 0xce24439f http=429; tokentx 0xeeca2e7d http=429; tokentx 0x40858070 http=429; watch_merge=off (wallets_onchain only; set RH_ONCHAIN_MERGE_TO_WATCH=1 after vet)
 
 - file wallets.jsonl rows: **3736**
-- file wallets_onchain.jsonl rows: **49026**
+- file wallets_onchain.jsonl rows: **49085**
 
 ## Credit policy
 
