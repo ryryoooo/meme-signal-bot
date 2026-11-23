@@ -1,21 +1,21 @@
 # Scout TG trunc resolve summary
 
-- Updated (UTC): 2026-11-23T02:00:57.538002+00:00
-- Unique pairs: **3418/3758** (91.0%)
-- Trunc rows still unresolved: **690**
-- Methods: pair_cache=82 token_scoped=4 multi_union=0 mega=6 global=1 two_hit=0
-- Blockscout: tokens_fetched=2 nonempty=2 api_fail=0 gmgn_calls=0
-- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=140 multi_match=0 no_match=200
+- Updated (UTC): 2026-11-23T09:02:10.756280+00:00
+- Unique pairs: **3419/3758** (91.0%)
+- Trunc rows still unresolved: **687**
+- Methods: pair_cache=2 token_scoped=0 multi_union=0 mega=1 global=0 two_hit=0
+- Blockscout: tokens_fetched=1 nonempty=1 api_fail=0 gmgn_calls=0
+- Unresolved reasons (unique pairs): no_token_pool=0 api_fail=140 multi_match=0 no_match=199
 
 ## Top unresolved blockers
 
-- `no_match`: 200
+- `no_match`: 199
 - `api_fail`: 140
 
 
 ## Hard ceiling / plateau
 
-- no_match total: **200** (huge_pool≥1000 true-dead≈41, mid<500 still deepenable≈126)
+- no_match total: **199** (huge_pool≥1000 true-dead≈40, mid<500 still deepenable≈125)
 - neighbor_ca hits this run: **0**
 - Cross-pool mega-union miss on all current no_match ⇒ trunc never appears in any cached BS/GT pool.
 - Ceiling: keep chunked BS redeepen for mid pools; huge_pool no_match needs new TG CA association or alternate indexer — do not burn GMGN traders here.
@@ -27,7 +27,6 @@
 - `0x01b3|b1aa` reason=api_fail tokens=3 union=0 tier=good
 - `0x02c9|4c26` reason=api_fail tokens=4 union=0 tier=good
 - `0x03a5|a616` reason=api_fail tokens=1 union=0 tier=good
-- `0x03a8|2468` reason=no_match tokens=3 union=1069 tier=elite
 - `0x04eb|b6a4` reason=api_fail tokens=1 union=0 tier=good
 - `0x075c|9a26` reason=api_fail tokens=1 union=0 tier=good
 - `0x0768|1a43` reason=no_match tokens=1 union=145 tier=good
@@ -62,3 +61,4 @@
 - `0x1cf4|66c5` reason=api_fail tokens=1 union=0 tier=elite
 - `0x1d70|028d` reason=api_fail tokens=1 union=0 tier=good
 - `0x1d99|0161` reason=no_match tokens=5 union=1613 tier=elite
+- `0x1ec8|4cda` reason=api_fail tokens=1 union=0 tier=good
