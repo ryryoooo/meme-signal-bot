@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-11-19T09:01:35.759143+00:00
-- Ranked wallets: **4002**
-- Seed (scout_tg resolved): **3407** (elite=1499)
-- Token graph size: **2451**
-- FOMO overlaps: **70**
-- Promoted tags (rank_s/rank_a): **3318**
-- Tiers: S=**2745** A=**573** B=**351** C=**333**
+- Updated (UTC): 2026-11-23T02:01:01.983181+00:00
+- Ranked wallets: **4017**
+- Seed (scout_tg resolved): **3418** (elite=1504)
+- Token graph size: **2455**
+- FOMO overlaps: **74**
+- Promoted tags (rank_s/rank_a): **3329**
+- Tiers: S=**2758** A=**571** B=**351** C=**337**
 
 ## Top 40 by rank_score
 
@@ -39,7 +39,7 @@
 | 25 | S | `0x8ac3…b06d` | Y | 5 | 14 | — | — | — | — | 25.0 |
 | 26 | S | `0x8b21…10ef` | Y | 34 | 71 | — | — | — | — | 25.0 |
 | 27 | S | `0x8ca8…b128` | Y | 44 | 45 | — | — | — | — | 25.0 |
-| 28 | S | `0xa83b…8811` | Y | 30 | 37 | — | — | — | — | 25.0 |
+| 28 | S | `0xa83b…8811` | Y | 30 | 39 | — | — | — | — | 25.0 |
 | 29 | S | `0xac35…2b28` | Y | 13 | 15 | — | — | — | — | 25.0 |
 | 30 | S | `0xb41c…f569` | Y | 9 | 12 | — | — | — | — | 25.0 |
 | 31 | S | `0xbe66…dae5` | Y | 6 | 18 | — | — | — | — | 25.0 |

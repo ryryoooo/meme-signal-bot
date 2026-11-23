@@ -1,17 +1,17 @@
 # Scout TG wallet ranking
 
-- Updated (UTC): 2026-11-19T09:01:30.272237+00:00
-- Ranked wallets: **3407**
+- Updated (UTC): 2026-11-23T02:00:58.269694+00:00
+- Ranked wallets: **3418**
 - Portfolio vetted this run: **0** (cap=0)
 - GMGN calls: **0** err=None
 - FOMO overlaps: **0**
-- Merged to main watch: **3407**
+- Merged to main watch: **3418**
 
 ## Top by scout_rank_score
 
 | # | addr | tier | hits | elite | buy$ | WR | n | realized | FOMO | score |
 |---|------|------|------|-------|------|----|---|----------|------|-------|
-| 1 | `0x6078…58b2` | elite | 163 | 163 | 62,533 | — | — | — | — | 136.06 |
+| 1 | `0x6078…58b2` | elite | 165 | 165 | 62,877 | — | — | — | — | 137.66 |
 | 2 | `0x2fd1…003d` | elite | 136 | 136 | 51,903 | — | — | — | — | 114.46 |
 | 3 | `0x3a13…e4ef` | elite | 110 | 110 | 49,894 | — | — | — | — | 93.66 |
 | 4 | `0xd179…f00c` | elite | 99 | 99 | 67,639 | — | — | — | — | 84.86 |
@@ -28,8 +28,8 @@
 | 15 | `0x4176…e4e0` | elite | 72 | 72 | 80,197 | — | — | — | — | 63.26 |
 | 16 | `0xd20d…91d6` | elite | 71 | 71 | 12,352 | — | — | — | — | 62.46 |
 | 17 | `0x5737…8d78` | elite | 71 | 71 | 72,276 | — | — | — | — | 62.46 |
-| 18 | `0x48cf…c1fd` | elite | 69 | 69 | 11,457 | — | — | — | — | 60.86 |
-| 19 | `0xa450…00bb` | elite | 68 | 68 | 13,561 | — | — | — | — | 60.06 |
+| 18 | `0xa450…00bb` | elite | 70 | 70 | 13,843 | — | — | — | — | 61.66 |
+| 19 | `0x48cf…c1fd` | elite | 69 | 69 | 11,457 | — | — | — | — | 60.86 |
 | 20 | `0xd269…a1c0` | elite | 66 | 66 | 26,826 | — | — | — | — | 58.46 |
 | 21 | `0x7f4d…234e` | elite | 69 | 66 | 77,590 | — | — | — | — | 58.46 |
 | 22 | `0x5ece…2c12` | elite | 66 | 66 | 11,017 | — | — | — | — | 58.46 |
@@ -54,7 +54,7 @@
 
 ## Top elite by frequency
 
-- `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` elite=163 hits=163 buy=$62,533 rp=None wr=None
+- `0x6078ee8a93697c6d67863fcbff77141d9ab358b2` elite=165 hits=165 buy=$62,877 rp=None wr=None
 - `0x2fd1887e5d99014cb0b8884f06560ed20d65003d` elite=136 hits=136 buy=$51,903 rp=None wr=None
 - `0x3a1345bc81e8479438234826f52e885f6817e4ef` elite=110 hits=110 buy=$49,894 rp=None wr=None
 - `0xd1794ddf809e9809572e034ba2e3b80dced1f00c` elite=99 hits=99 buy=$67,639 rp=None wr=None
