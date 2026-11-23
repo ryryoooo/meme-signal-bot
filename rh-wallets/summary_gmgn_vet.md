@@ -1,3 +1,9 @@
 # GMGN throttled vet
 
-- skipped: post-429 cooldown (last=2026-11-22T19:56:05.221110+00:00)
+- Updated: **2026-11-23T13:29:19.000204+00:00**
+- Period: **30d**
+- Calls: **1** vetted_ok: **0** wr_gained: **0** err: `rate_limited`
+- Cap/sleep: 5/20.0s priority=elite
+- Remaining candidates (approx): 3414
+
+## This run
