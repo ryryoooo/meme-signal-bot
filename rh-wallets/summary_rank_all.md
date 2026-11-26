@@ -1,12 +1,12 @@
 # All-wallet ranking (scout_tg seed benchmark)
 
-- Updated (UTC): 2026-11-23T09:02:15.616979+00:00
-- Ranked wallets: **4027**
-- Seed (scout_tg resolved): **3419** (elite=1505)
+- Updated (UTC): 2026-11-26T02:00:35.050755+00:00
+- Ranked wallets: **4025**
+- Seed (scout_tg resolved): **3420** (elite=1505)
 - Token graph size: **2455**
-- FOMO overlaps: **83**
-- Promoted tags (rank_s/rank_a): **3330**
-- Tiers: S=**2759** A=**571** B=**351** C=**346**
+- FOMO overlaps: **80**
+- Promoted tags (rank_s/rank_a): **3331**
+- Tiers: S=**2759** A=**572** B=**351** C=**343**
 
 ## Top 40 by rank_score
 
@@ -91,7 +91,7 @@
 - `0x536f36d8d80e50470a88b73b99db9a5dc67c9784` score=11.54 elite=0 affE=1 rp=None wr=None
 - `0x05990ad252ff8eea290b864213e9711c3d065b0c` score=11.5 elite=0 affE=1 rp=None wr=None
 - `0x44203c507f43079a9e62eabf341830acda9dacd6` score=11.4 elite=0 affE=1 rp=None wr=None
-- `0x3b2305cfa99106fa90a87b55d4d8e493a03eed19` score=10.95 elite=0 affE=1 rp=None wr=None
+- `0x3b2305cfa99106fa90a87b55d4d8e493a03eed19` score=11.1 elite=0 affE=1 rp=None wr=None
 - `0x356339d1f7641ad5fce79e51e8e7565150a1a86b` score=10.9 elite=0 affE=1 rp=None wr=None
 - `0x5825194cdb2d29326f47c957c5d14c2e1136f9b8` score=10.9 elite=0 affE=1 rp=None wr=None
 - `0x85a3d3379b76b6e3e8b4ab6f8c163c294d1f7ff8` score=10.9 elite=0 affE=1 rp=None wr=None
