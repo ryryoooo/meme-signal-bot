@@ -1,8 +1,8 @@
 # GMGN throttled vet
 
-- Updated: **2026-11-27T01:53:47.452188+00:00**
+- Updated: **2026-11-27T12:58:24.198430+00:00**
 - Period: **30d**
-- Calls: **5** vetted_ok: **4** wr_gained: **2** err: `rate_limited`
+- Calls: **5** vetted_ok: **4** wr_gained: **0** err: `rate_limited`
 - Cap/sleep: 5/20.0s priority=elite
 - Remaining candidates (approx): 3412
 
